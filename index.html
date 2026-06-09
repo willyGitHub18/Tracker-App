@@ -159,7 +159,11 @@ tr:last-child td{border-bottom:none}
 /* ── SUIVI MUSCULAIRE ── */
 .musc-layout{display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:flex-start}
 @media(max-width:860px){.musc-layout{grid-template-columns:260px 1fr;gap:18px}}
-@media(max-width:700px){.musc-layout{grid-template-columns:1fr}}
+@media(max-width:700px){
+  .musc-layout{grid-template-columns:1fr;gap:16px}
+  .musc-left{position:static}
+  .musc-right{position:static;margin-top:0}
+}
 .musc-left{position:sticky;top:44px;display:flex;flex-direction:column;align-items:stretch;gap:0}
 .musc-week-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:0;padding:12px 14px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:none}
 .musc-legend-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;width:100%}
@@ -172,13 +176,13 @@ tr:last-child td{border-bottom:none}
 .body-view{display:none}
 .body-view.active-view{display:block}
 /* body chart container — seamless avec la toolbar */
-#bodyChartContainer{background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:16px 0 24px;overflow:hidden}
+#bodyChartContainer{background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:16px 0 24px;overflow:visible}
 #bodyChartContainer svg{display:block;margin:0 auto;max-width:100%;width:100%}
 .fm-group{cursor:pointer}
 .fm-group polygon{transition:fill .2s,stroke .15s}
 .fm-group:hover polygon{opacity:0.72}
 /* right panel */
-.musc-right{display:flex;flex-direction:column;gap:14px;min-width:0}
+.musc-right{display:flex;flex-direction:column;gap:14px;min-width:0;position:relative;z-index:1}
 .musc-detail{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
 .musc-detail-title{font-size:14px;font-weight:600;margin-bottom:10px}
 .musc-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
@@ -200,7 +204,8 @@ tr:last-child td{border-bottom:none}
 
 
 /* ── PROGRAMME STYLES ── */
-.prog-top-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.5rem}
+.prog-top-nav{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:1.5rem;padding-bottom:4px;scrollbar-width:none}
+.prog-top-nav::-webkit-scrollbar{display:none}
 .prog-top-nav button{font-size:12px;padding:5px 12px;background:transparent;border:1px solid var(--border-md);border-radius:var(--radius);cursor:pointer;color:var(--text2);font-family:var(--sans);transition:background .15s}
 .prog-top-nav button.active{background:var(--surface2);border-color:rgba(0,0,0,.25);color:var(--text);font-weight:500}
 .prog-tab{display:none}.prog-tab.active{display:block}
@@ -282,19 +287,16 @@ tr:last-child td{border-bottom:none}
   </style>
 </head>
 <body>
-
 <header>
   <h1>ATHX // Plan complet</h1>
   <span class="sub">ATHX — Compétition 2026</span>
 </header>
-
 <div class="top-nav">
   <button class="top-nav-btn active" onclick="showSection('tracker')">&#x1F4CA; Tracker</button>
   <button class="top-nav-btn" onclick="showSection('musculaire');renderMusculaire()">&#x1F9AC; Muscles</button>
   <button class="top-nav-btn" onclick="showSection('programme')">&#x1F4CB; Programme</button>
   <button class="top-nav-btn" onclick="showSection('doc')">&#x1F4D6; Docs</button>
 </div>
-
 <div class="main">
 <div id="tracker" class="section-panel active">
   <div class="tabs">
@@ -1050,7 +1052,6 @@ tr:last-child td{border-bottom:none}
   </div><!-- /doc-layout -->
 </div>
 </div>
-
 <script>
 /* ── db.js ── */
 /**
@@ -2552,6 +2553,5 @@ function _showUpdateBanner() {
 document.addEventListener('DOMContentLoaded', init);
 
 </script>
-
 </body>
 </html>
