@@ -8,17 +8,278 @@
   <meta name="apple-mobile-web-app-title" content="ATHX">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1a1a18">
-  <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self' 'unsafe-inline' fonts.googleapis.com fonts.gstatic.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com;">
-
   <title>ATHX Tracker</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 
-  <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/tracker.css">
-  <link rel="stylesheet" href="/css/musculaire.css">
-  <link rel="stylesheet" href="/css/programme.css">
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f6f5f0;--surface:#ffffff;--surface2:#f0ede6;
+  --border:rgba(0,0,0,0.08);--border-md:rgba(0,0,0,0.14);
+  --text:#1a1a18;--text2:#6b6b65;--text3:#9b9b94;
+  --blue:#1a5fb4;--blue-bg:#e8f0fc;
+  --green:#1b6b45;--green-bg:#e0f4eb;
+  --amber:#7c4a00;--amber-bg:#fdf0d8;
+  --red:#9c2222;--red-bg:#fdeaea;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --radius:10px;--radius-lg:14px;
+  --max-w:900px;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* HEADER */
+header{background:var(--text);color:#fff;padding:16px 24px 14px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+header h1{font-family:var(--mono);font-size:17px;font-weight:500;letter-spacing:-.02em}
+header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono)}
+
+/* TOP NAV */
+.top-nav{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.top-nav-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:11px 16px;border:none;background:transparent;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-align:center}
+.top-nav-btn.active{color:var(--text);border-bottom-color:var(--text)}
+.top-nav-btn:hover:not(.active){color:var(--text);background:var(--surface2)}
+
+/* MAIN */
+.main{max-width:var(--max-w);margin:0 auto;padding:24px 20px 60px}
+.section-panel{display:none}.section-panel.active{display:block}
+
+/* musculaire s'étend à toute la largeur disponible dans .main */
+#musculaire{padding:0}
+
+
+/* ── TRACKER STYLES ── */
+.tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px}
+.tab-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:7px 10px;border:none;border-radius:7px;background:transparent;color:var(--text2);cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
+.tab-btn.active{background:var(--text);color:#fff}
+.data-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:20px}
+.data-toolbar-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-right:4px}
+.tool-btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:5px 14px;border:1px solid var(--border-md);border-radius:var(--radius);background:transparent;color:var(--text);cursor:pointer;transition:background .15s;display:inline-flex;align-items:center;gap:5px}
+.tool-btn:hover{background:var(--surface2)}
+.tool-btn.import-btn{color:var(--blue);border-color:rgba(26,95,180,.25)}
+.tool-btn.import-btn:hover{background:var(--blue-bg)}
+.tool-btn.export-json{color:var(--green);border-color:rgba(27,107,69,.25)}
+.tool-btn.export-json:hover{background:var(--green-bg)}
+.tool-btn.export-csv{color:var(--amber);border-color:rgba(124,74,0,.25)}
+.tool-btn.export-csv:hover{background:var(--amber-bg)}
+.import-feedback{font-size:12px;font-weight:500;color:var(--green);display:none}
+#importFileInput{display:none}
+.week-bar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.week-bar label{font-size:12px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.week-bar select,.wsel{font-family:var(--mono);font-size:14px;font-weight:500;padding:6px 28px 6px 10px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236b6b65' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;color:var(--text);cursor:pointer;appearance:none;-webkit-appearance:none}
+.phase-tag{display:inline-block;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;letter-spacing:.01em}
+.day-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:14px;overflow:hidden}
+.day-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.day-name{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text2)}
+.ex-wrap{padding:10px 16px 14px}
+.ex-block{padding:10px 0;border-bottom:1px solid var(--border)}
+.ex-block:last-child{border-bottom:none;padding-bottom:0}
+.ex-top{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.ex-name-t{font-size:14px;font-weight:600;color:var(--text)}
+.ex-scheme{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.ex-plan-txt{font-size:12px;color:var(--text2);margin-bottom:8px}
+.ex-plan-txt strong{font-family:var(--mono);font-weight:500;color:var(--text)}
+.input-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.input-row label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;min-width:75px}
+.input-row input[type=number]{font-family:var(--mono);font-size:14px;width:80px;padding:5px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);outline:none}
+.input-row input[type=number]:focus{border-color:#1a5fb4}
+.input-row select{font-family:var(--mono);font-size:13px;padding:5px 24px 5px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface) url("data:image/svg+xml,%3Csvg width='8' height='5' viewBox='0 0 8 5' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L4 4L7 1' stroke='%236b6b65' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 8px center;color:var(--text);outline:none;appearance:none;-webkit-appearance:none}
+.adj-box{font-size:12px;line-height:1.6;padding:7px 12px;border-radius:var(--radius);margin:6px 0}
+.adj-ok{background:var(--green-bg);color:var(--green)}
+.adj-ahead{background:var(--blue-bg);color:var(--blue)}
+.adj-behind{background:var(--red-bg);color:var(--red)}
+.adj-slight{background:var(--amber-bg);color:var(--amber)}
+.next-rec{font-size:12px;color:var(--text2);margin-top:2px}
+.next-rec strong{font-family:var(--mono);font-weight:500;color:var(--text)}
+.next-rec-block{border-radius:var(--radius);padding:9px 12px;margin-top:6px;font-size:12px;border:1px solid}
+.next-rec-block .rec-line{font-weight:500;color:var(--text);margin-bottom:3px}
+.next-rec-block .rec-line strong{font-family:var(--mono)}
+.next-rec-block .reason{font-size:11px;color:var(--text2);font-style:italic;line-height:1.4}
+.next-rec-success{background:#e0f4eb;border-color:rgba(27,107,69,.25)}
+.next-rec-success .rec-line strong{color:#1b6b45}
+.next-rec-hold{background:#f6f5f0;border-color:var(--border-md)}
+.next-rec-hold .rec-line strong{color:var(--text)}
+.next-rec-back{background:#fdf0d8;border-color:rgba(192,100,42,.25)}
+.next-rec-back .rec-line strong{color:#7c4a00}
+/* statut séance */
+.session-status{display:flex;gap:4px;align-items:center}
+.session-status-btn{font-family:var(--sans);font-size:11px;font-weight:500;padding:3px 10px;border:1px solid var(--border-md);border-radius:20px;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.session-status-btn.active-normal {background:#e0f4eb;border-color:#1b6b45;color:#1b6b45}
+.session-status-btn.active-skipped{background:#fdeaea;border-color:#c0392b;color:#c0392b}
+.session-status-btn.active-hyrox {background:#fdf0d8;border-color:#d4860a;color:#7c4a00}
+.day-status-banner{font-size:12px;padding:7px 14px;border-radius:var(--radius);margin:0 0 10px;line-height:1.4}
+.day-status-skipped{background:#fdeaea;color:#9c2222;border:1px solid rgba(192,57,43,.2)}
+.day-status-hyrox{background:#fdf0d8;color:#7c4a00;border:1px solid rgba(212,134,10,.2)}
+.save-row{display:flex;align-items:center;gap:10px;padding:10px 16px 14px;border-top:1px solid var(--border)}
+.save-btn{font-family:var(--sans);font-size:13px;font-weight:500;padding:7px 18px;border:1px solid var(--border-md);border-radius:var(--radius);background:transparent;color:var(--text);cursor:pointer;transition:background .15s}
+.save-btn:hover{background:var(--surface2)}
+.save-ok{font-size:12px;color:var(--green);font-weight:500;display:none}
+.prog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:700px){.prog-grid{grid-template-columns:1fr 1fr}} @media(max-width:480px){.prog-grid{grid-template-columns:1fr}}
+.prog-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+.prog-card-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.prog-card-day{font-size:11px;color:var(--text3);margin-bottom:12px}
+.prog-bar-wrap{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.prog-bar{height:6px;border-radius:3px;transition:width .4s ease}
+.prog-nums{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--text3)}
+.prog-current{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--text);margin-bottom:2px}
+.hist-block{margin-bottom:16px}
+.hist-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+td{padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px}
+tr:last-child td{border-bottom:none}
+.delta-pos{color:var(--green);font-weight:500}
+.delta-neg{color:var(--red);font-weight:500}
+.delta-neu{color:var(--text3)}
+.empty{text-align:center;padding:40px 16px;color:var(--text3);font-size:13px}
+.tracker-panel{display:none}.tracker-panel.active{display:block}
+.reset-btn{font-size:12px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:var(--sans);margin-top:24px;display:block}
+
+
+/* ── SÉRIE-PAR-SÉRIE STYLES ── */
+/* ── SÉRIE-PAR-SÉRIE STYLES ── */
+.sets-table-wrap{overflow-x:auto;margin:8px 0}.sets-table{width:100%;border-collapse:collapse}
+.sets-table th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);text-align:center;padding:4px 6px;border-bottom:1px solid var(--border)}
+.sets-table td{padding:4px 4px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+.sets-table tr:last-child td{border-bottom:none}
+.set-num{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text3);width:28px}
+.set-inp{font-family:var(--mono);font-size:13px;width:58px;padding:4px 6px;border:1px solid var(--border-md);border-radius:7px;background:var(--surface);color:var(--text);text-align:center;outline:none}
+.set-inp:focus{border-color:#1a5fb4}
+.set-inp.reps-inp{width:46px}
+.set-rpe{font-family:var(--mono);font-size:12px;padding:4px 2px 4px 6px;border:1px solid var(--border-md);border-radius:7px;background:var(--surface) url("data:image/svg+xml,%3Csvg width='8' height='5' viewBox='0 0 8 5' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L4 4L7 1' stroke='%236b6b65' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 5px center;color:var(--text);outline:none;appearance:none;-webkit-appearance:none;width:54px}
+.set-status{width:20px;font-size:13px;line-height:1}
+.sets-summary{font-size:11px;color:var(--text2);margin-top:4px;font-family:var(--mono)}
+.sets-summary strong{color:var(--text)}
+
+
+
+/* ── SUIVI MUSCULAIRE ── */
+.musc-layout{display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:flex-start}
+@media(max-width:860px){.musc-layout{grid-template-columns:260px 1fr;gap:18px}}
+@media(max-width:700px){.musc-layout{grid-template-columns:1fr}}
+.musc-left{position:sticky;top:44px;display:flex;flex-direction:column;align-items:stretch;gap:0}
+.musc-week-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:0;padding:12px 14px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:none}
+.musc-legend-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;width:100%}
+.musc-leg{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;color:#fff}
+/* view toggle */
+.musc-view-btns{display:flex;gap:4px;width:100%}
+.musc-view-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 0;border:1px solid var(--border-md);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.musc-view-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
+/* body views */
+.body-view{display:none}
+.body-view.active-view{display:block}
+/* body chart container — seamless avec la toolbar */
+#bodyChartContainer{background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:16px 0 24px;overflow:hidden}
+#bodyChartContainer svg{display:block;margin:0 auto;max-width:100%;width:100%}
+.fm-group{cursor:pointer}
+.fm-group polygon{transition:fill .2s,stroke .15s}
+.fm-group:hover polygon{opacity:0.72}
+/* right panel */
+.musc-right{display:flex;flex-direction:column;gap:14px;min-width:0}
+.musc-detail{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+.musc-detail-title{font-size:14px;font-weight:600;margin-bottom:10px}
+.musc-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.musc-bar-label{font-size:12px;color:var(--text2);min-width:90px}
+.musc-bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.musc-bar-fill{height:8px;border-radius:4px;transition:width .4s}
+.musc-bar-val{font-family:var(--mono);font-size:11px;color:var(--text2);min-width:36px;text-align:right}
+.musc-summary{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+.musc-summary-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px}
+.musc-ex-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.musc-ex-row:last-child{border-bottom:none}
+.musc-ex-name{font-weight:500;color:var(--text);flex:1}
+.musc-ex-role{font-size:10px;padding:1px 6px;border-radius:8px;font-weight:500;flex-shrink:0}
+.musc-ex-vol{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.musc-alert{padding:8px 12px;border-radius:var(--radius);font-size:11px;line-height:1.5;margin-top:4px}
+.musc-alert.warn{background:#fdf0d8;color:#7c4a00}
+.musc-alert.danger{background:#fdeaea;color:#9c2222}
+.musc-alert.ok{background:#e0f4eb;color:#1b6b45}
+
+
+/* ── PROGRAMME STYLES ── */
+.prog-top-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.5rem}
+.prog-top-nav button{font-size:12px;padding:5px 12px;background:transparent;border:1px solid var(--border-md);border-radius:var(--radius);cursor:pointer;color:var(--text2);font-family:var(--sans);transition:background .15s}
+.prog-top-nav button.active{background:var(--surface2);border-color:rgba(0,0,0,.25);color:var(--text);font-weight:500}
+.prog-tab{display:none}.prog-tab.active{display:block}
+.p-section{margin-bottom:1.5rem}
+.p-sec-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.p-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:8px}
+.p-card-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:5px}
+.p-card-body{font-size:12px;color:var(--text2);line-height:1.6}
+.p-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:1rem}
+.p-metric{background:var(--surface2);border-radius:var(--radius);padding:10px 12px;text-align:center}
+.p-metric-val{font-size:20px;font-weight:500;color:var(--text);line-height:1;font-family:var(--mono)}
+.p-metric-lbl{font-size:11px;color:var(--text2);margin-top:3px}
+.p-tag{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;margin-right:4px;margin-bottom:4px}
+.p-tag-f{background:#E6F1FB;color:#0C447C}
+.p-tag-c{background:#EAF3DE;color:#27500A}
+.p-tag-m{background:#FAEEDA;color:#633806}
+.p-tag-r{background:#F1EFE8;color:#444441}
+.p-tag-n{background:#E1F5EE;color:#085041}
+.p-ex-row{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.p-ex-row:last-child{border-bottom:none}
+.p-ex-num{font-size:11px;font-weight:500;color:var(--text2);min-width:20px;padding-top:1px;font-family:var(--mono)}
+.p-ex-name{font-size:12px;font-weight:500;color:var(--text);min-width:150px}
+.p-ex-detail{font-size:11px;color:var(--text2);flex:1;line-height:1.5}
+.p-ex-tag{font-size:10px;font-weight:500;padding:1px 6px;border-radius:8px;white-space:nowrap;flex-shrink:0}
+.p-time-badge{font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:2px 8px;color:var(--text2);display:inline-block;margin-bottom:8px}
+.p-note{background:#E6F1FB;border-radius:var(--radius);padding:8px 12px;font-size:11px;color:#185FA5;margin-top:8px;line-height:1.5}
+.p-note.green{background:#E1F5EE;color:#0F6E56}
+.p-note.amber{background:#FAEEDA;color:#854F0B}
+.p-warn{background:#FCEBEB;border-radius:var(--radius);padding:8px 12px;font-size:11px;color:#A32D2D;margin-top:6px;line-height:1.5}
+.p-meal-row{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.p-meal-row:last-child{border-bottom:none}
+.p-meal-time{font-size:11px;font-weight:500;color:var(--text2);min-width:55px;padding-top:1px;font-family:var(--mono)}
+.p-meal-name{font-size:12px;font-weight:500;color:var(--text);min-width:140px}
+.p-meal-detail{font-size:11px;color:var(--text2);flex:1;line-height:1.5}
+.p-macro-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:6px 0}
+.p-macro-p{background:#378ADD}.p-macro-g{background:#1D9E75}.p-macro-l{background:#EF9F27}
+.p-macro-legend{display:flex;gap:12px;font-size:10px;color:var(--text2);margin-top:2px}
+.p-legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
+.p-week-sel{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.p-week-sel button{font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--border-md);border-radius:var(--radius);cursor:pointer;color:var(--text2);font-family:var(--sans)}
+.p-week-sel button.active{background:var(--surface2);border-color:rgba(0,0,0,.25);color:var(--text);font-weight:500}
+.p-phase-bar{padding:4px 10px;border-radius:var(--radius);font-size:11px;font-weight:500;margin-bottom:12px;display:inline-block}
+
+
+/* ── DOCUMENTATION ── */
+.doc-layout{display:grid;grid-template-columns:200px 1fr;gap:28px;align-items:flex-start}
+@media(max-width:700px){.doc-layout{grid-template-columns:1fr}}
+.doc-nav{position:sticky;top:44px;display:flex;flex-direction:column;gap:2px}
+.doc-nav-item{font-size:12px;font-weight:500;padding:6px 10px;border-radius:var(--radius);color:var(--text2);cursor:pointer;transition:background .15s;border:none;background:none;text-align:left;width:100%}
+.doc-nav-item:hover{background:var(--surface2);color:var(--text)}
+.doc-nav-item.active{background:var(--text);color:#fff}
+.doc-content{min-width:0}
+.doc-section{display:none}.doc-section.active{display:block}
+.doc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:16px}
+.doc-h1{font-size:20px;font-weight:600;margin-bottom:4px;letter-spacing:-.02em}
+.doc-h2{font-size:15px;font-weight:600;margin:20px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.doc-h3{font-size:13px;font-weight:600;margin:14px 0 6px;color:var(--text)}
+.doc-p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:10px}
+.doc-p:last-child{margin-bottom:0}
+.doc-table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0}
+.doc-table th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);text-align:left;padding:6px 10px;border-bottom:2px solid var(--border)}
+.doc-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}
+.doc-table td:first-child{font-weight:500;color:var(--text);white-space:nowrap}
+.doc-table tr:last-child td{border-bottom:none}
+.doc-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;margin:0 2px}
+.doc-badge.green{background:#e0f4eb;color:#1b6b45}
+.doc-badge.amber{background:#fdf0d8;color:#7c4a00}
+.doc-badge.red{background:#fdeaea;color:#9c2222}
+.doc-badge.blue{background:#e8f0fc;color:#1a5fb4}
+.doc-badge.grey{background:var(--surface2);color:var(--text2)}
+.doc-formula{font-family:var(--mono);font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin:8px 0;line-height:1.8;color:var(--text)}
+.doc-rule{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.doc-rule:last-child{border-bottom:none}
+.doc-rule-icon{font-size:16px;flex-shrink:0;width:24px;text-align:center}
+.doc-rule-body{font-size:13px;line-height:1.6}
+.doc-rule-body strong{color:var(--text);font-weight:600}
+.doc-rule-body span{color:var(--text2)}
+
+  </style>
 </head>
 <body>
 
@@ -28,47 +289,2268 @@
 </header>
 
 <div class="top-nav">
-  <button class="top-nav-btn active" onclick="showSection('tracker')">📊 Tracker</button>
-  <button class="top-nav-btn" onclick="showSection('musculaire');renderMusculaire()">🧬 Muscles</button>
-  <button class="top-nav-btn" onclick="showSection('programme')">📋 Programme</button>
-  <button class="top-nav-btn" onclick="showSection('doc')">📖 Docs</button>
+  <button class="top-nav-btn active" onclick="showSection('tracker')">&#x1F4CA; Tracker</button>
+  <button class="top-nav-btn" onclick="showSection('musculaire');renderMusculaire()">&#x1F9AC; Muscles</button>
+  <button class="top-nav-btn" onclick="showSection('programme')">&#x1F4CB; Programme</button>
+  <button class="top-nav-btn" onclick="showSection('doc')">&#x1F4D6; Docs</button>
 </div>
 
-<div class="main" id="app-root">
-  <!-- Sections injected by loadViews() -->
-  <div id="view-loading" style="padding:60px 20px;text-align:center;color:var(--text3)">
-    Chargement…
+<div class="main">
+<div id="tracker" class="section-panel active">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTracker('saisie')">Saisie semaine</button>
+    <button class="tab-btn" onclick="showTracker('progression')">Progression</button>
+    <button class="tab-btn" onclick="showTracker('historique')">Historique</button>
+  </div>
+
+  <div class="data-toolbar">
+    <span class="data-toolbar-label">Données</span>
+    <button class="tool-btn export-json" onclick="exportJSON()">&#x2B07; Export JSON</button>
+    <button class="tool-btn export-csv" onclick="exportCSV()">&#x2B07; Export CSV</button>
+    <button class="tool-btn import-btn" onclick="document.getElementById('importFileInput').click()">&#x2B06; Importer</button>
+    <input type="file" id="importFileInput" accept=".json" onchange="importJSON(event)">
+    <span class="import-feedback" id="importFeedback">&#x2713; Import réussi</span>
+  </div>
+
+  <div id="t-saisie" class="tracker-panel active">
+    <div class="week-bar">
+      <label>Semaine</label>
+      <select id="weekSel" onchange="renderSaisie()"></select>
+      <span id="phaseBadge" class="phase-tag"></span>
+    </div>
+    <div id="saisieContent"></div>
+  </div>
+
+  <div id="t-progression" class="tracker-panel">
+    <div id="progressionContent"></div>
+  </div>
+
+  <div id="t-historique" class="tracker-panel">
+    <div id="historiqueContent"></div>
   </div>
 </div>
+<div id="musculaire" class="section-panel">
+  <div class="musc-layout">
 
-<script type="module">
-  import { showSection, showTracker, showProg, showWeek, showDoc } from '/js/app.js';
+    <!-- GAUCHE : schéma -->
+    <div class="musc-left">
+      <div class="musc-week-bar">
+        <div class="musc-view-btns">
+          <button id="btnFront" class="musc-view-btn active" onclick="switchBodyView('front')">Face avant</button>
+          <button id="btnBack"  class="musc-view-btn"        onclick="switchBodyView('back')">Face arrière</button>
+        </div>
+        <span class="musc-legend-row">
+          <span class="musc-leg" style="background:#d8d3cc;color:#666">Repos</span>
+          <span class="musc-leg" style="background:#68c49a">Récup</span>
+          <span class="musc-leg" style="background:#f5a623">Modéré</span>
+          <span class="musc-leg" style="background:#c0392b">Fatigue</span>
+        </span>
+      </div>
 
-  /**
-   * Load all view fragments into the DOM, then boot the app.
-   * Using fetch() keeps index.html small and makes each view
-   * independently cacheable by the Service Worker.
-   */
-  async function loadViews() {
-    const views  = ['tracker','musculaire','programme','doc'];
-    const root   = document.getElementById('app-root');
-    const loader = document.getElementById('view-loading');
+      <!-- FRONT -->
+      <div id="body-front" class="body-view active-view">
+<svg id="svg-front" viewBox="0 0 100 200" width="100%" style="max-width:260px;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="200" fill="none" pointer-events="none"/>
+  <polygon class="fm-group" data-muscle="pec" points="51.8367347,41.6326531 51.0204082,55.1020408 57.9591837,57.9591837 67.755102,55.5102041 70.6122449,47.3469388 62.0408163,41.6326531" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="pec" points="29.7959184,46.5306122 31.4285714,55.5102041 40.8163265,57.9591837 48.1632653,55.1020408 47.755102,42.0408163 37.5510204,42.0408163" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="core" points="68.5714286,63.2653061 67.3469388,57.1428571 58.7755102,59.5918367 60,64.0816327 60.4081633,83.2653061 65.7142857,78.7755102 66.5306122,69.7959184" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="core" points="33.877551,78.3673469 33.0612245,71.8367347 31.0204082,63.2653061 32.244898,57.1428571 40.8163265,59.1836735 39.1836735,63.2653061 39.1836735,83.6734694" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="core" points="56.3265306,59.1836735 57.9591837,64.0816327 58.3673469,77.9591837 58.3673469,92.6530612 56.3265306,98.3673469 55.1020408,104.081633 51.4285714,107.755102 51.0204082,84.4897959 50.6122449,67.3469388 51.0204082,57.1428571" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="core" points="43.6734694,58.7755102 48.5714286,57.1428571 48.9795918,67.3469388 48.5714286,84.4897959 48.1632653,107.346939 44.4897959,103.673469 40.8163265,91.4285714 40.8163265,78.3673469 41.2244898,64.4897959" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="biceps" points="16.7346939,68.1632653 17.9591837,71.4285714 22.8571429,66.122449 28.9795918,53.877551 27.755102,49.3877551 20.4081633,55.9183673" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="biceps" points="71.4285714,49.3877551 70.2040816,54.6938776 76.3265306,66.122449 81.6326531,71.8367347 82.8571429,68.9795918 78.7755102,55.5102041" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="triceps" points="69.3877551,55.5102041 69.3877551,61.6326531 75.9183673,72.6530612 77.5510204,70.2040816 75.5102041,67.3469388" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="triceps" points="22.4489796,69.3877551 29.7959184,55.5102041 29.7959184,60.8163265 22.8571429,73.0612245" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="trapeze" points="55.5102041,23.6734694 50.6122449,33.4693878 50.6122449,39.1836735 61.6326531,40 70.6122449,44.8979592 69.3877551,36.7346939 63.2653061,35.1020408 58.3673469,30.6122449" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="trapeze" points="28.9795918,44.8979592 30.2040816,37.1428571 36.3265306,35.1020408 41.2244898,30.2040816 44.4897959,24.4897959 48.9795918,33.877551 48.5714286,39.1836735 37.9591837,39.5918367" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="deltAnt" points="78.3673469,53.0612245 79.5918367,47.755102 79.1836735,41.2244898 75.9183673,37.9591837 71.0204082,36.3265306 72.244898,42.8571429 71.4285714,47.3469388" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="deltAnt" points="28.1632653,47.3469388 21.2244898,53.0612245 20,47.755102 20.4081633,40.8163265 24.4897959,37.1428571 28.5714286,37.1428571 26.9387755,43.2653061" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon points="42.4489796,2.85714286 40,11.8367347 42.0408163,19.5918367 46.122449,23.2653061 49.7959184,25.3061224 54.6938776,22.4489796 57.5510204,19.1836735 59.1836735,10.2040816 57.1428571,2.44897959 49.7959184,0" fill="#e2ddd8" stroke="#c8c4bc" stroke-width="0.4" pointer-events="none"/>
+  <polygon class="fm-group" data-muscle="quad" points="52.6530612,110.204082 54.2857143,124.897959 60,110.204082 62.0408163,100 64.8979592,94.2857143 60,92.6530612 56.7346939,104.489796" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="quad" points="47.755102,110.612245 44.8979592,125.306122 42.0408163,115.918367 40.4081633,113.061224 39.5918367,107.346939 37.9591837,102.44898 34.6938776,93.877551 39.5918367,92.244898 41.6326531,99.1836735 43.6734694,105.306122" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="quad" points="34.6938776,98.7755102 37.1428571,108.163265 37.1428571,127.755102 34.2857143,137.142857 31.0204082,132.653061 29.3877551,120 28.1632653,111.428571 29.3877551,100.816327 32.244898,94.6938776" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="quad" points="63.2653061,105.714286 64.4897959,100 66.9387755,94.6938776 70.2040816,101.22449 71.0204082,111.836735 68.1632653,133.061224 65.3061224,137.55102 62.4489796,128.571429 62.0408163,111.428571" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="quad" points="38.7755102,129.387755 38.3673469,112.244898 41.2244898,118.367347 44.4897959,129.387755 42.8571429,135.102041 40,146.122449 36.3265306,146.530612 35.5102041,140" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="quad" points="59.5918367,145.714286 55.5102041,128.979592 60.8163265,113.877551 61.2244898,130.204082 64.0816327,139.591837 62.8571429,146.530612" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="quad" points="32.6530612,138.367347 26.5306122,145.714286 25.7142857,136.734694 25.7142857,127.346939 26.9387755,114.285714 29.3877551,133.469388" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="quad" points="71.8367347,113.061224 73.877551,124.081633 73.877551,140.408163 72.6530612,145.714286 66.5306122,138.367347 70.2040816,133.469388" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon points="33.877551,140 34.6938776,143.265306 35.5102041,147.346939 36.3265306,151.020408 35.1020408,156.734694 29.7959184,156.734694 27.3469388,152.653061 27.3469388,147.346939 30.2040816,144.081633" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" pointer-events="none"/>
+  <polygon points="65.7142857,140 72.244898,147.755102 72.244898,152.244898 69.7959184,157.142857 64.8979592,156.734694 62.8571429,151.020408" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" pointer-events="none"/>
+  <polygon class="fm-group" data-muscle="mollets" points="71.4285714,160.408163 73.4693878,153.469388 76.7346939,161.22449 79.5918367,167.755102 78.3673469,187.755102 79.5918367,195.510204 74.6938776,195.510204" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="mollets" points="24.8979592,194.693878 27.755102,164.897959 28.1632653,160.408163 26.122449,154.285714 24.8979592,157.55102 22.4489796,161.632653 20.8163265,167.755102 22.0408163,188.163265 20.8163265,195.510204" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="mollets" points="72.6530612,195.102041 69.7959184,159.183673 65.3061224,158.367347 64.0816327,162.44898 64.0816327,165.306122 65.7142857,177.142857" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="mollets" points="35.5102041,158.367347 35.9183673,162.44898 35.9183673,166.938776 35.1020408,172.244898 35.1020408,176.734694 32.244898,182.040816 30.6122449,187.346939 26.9387755,194.693878 27.3469388,187.755102 28.1632653,180.408163 28.5714286,175.510204 28.9795918,169.795918 29.7959184,164.081633 30.2040816,158.77551" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="avantbras" points="6.12244898,88.5714286 10.2040816,75.1020408 14.6938776,70.2040816 16.3265306,74.2857143 19.1836735,73.4693878 4.48979592,97.5510204 0,100" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="avantbras" points="84.4897959,69.7959184 83.2653061,73.4693878 80,73.0612245 95.1020408,98.3673469 100,100.408163 93.4693878,89.3877551 89.7959184,76.3265306" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="avantbras" points="77.5510204,72.244898 77.5510204,77.5510204 80.4081633,84.0816327 85.3061224,89.7959184 92.244898,101.22449 94.6938776,99.5918367" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="avantbras" points="6.93877551,101.22449 13.4693878,90.6122449 18.7755102,84.0816327 21.6326531,77.1428571 21.2244898,71.8367347 4.89795918,98.7755102" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+</svg>
+      </div>
 
-    const htmlFragments = await Promise.all(
-      views.map(v => fetch(`views/${v}.html`).then(r => r.text()))
-    );
+      <!-- BACK -->
+      <div id="body-back" class="body-view">
+<svg id="svg-back" viewBox="0 0 100 220" width="100%" style="max-width:260px;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="220" fill="none" pointer-events="none"/>
+  <polygon points="50.6382979,0 45.9574468,0.85106383 40.8510638,5.53191489 40.4255319,12.7659574 45.106383,20 55.7446809,20 59.1489362,13.6170213 59.5744681,4.68085106 55.7446809,1.27659574" fill="#e2ddd8" stroke="#c8c4bc" stroke-width="0.4" pointer-events="none"/>
+  <polygon class="fm-group" data-muscle="trapeze" points="44.6808511,21.7021277 47.6595745,21.7021277 47.2340426,38.2978723 47.6595745,64.6808511 38.2978723,53.1914894 35.3191489,40.8510638 31.0638298,36.5957447 39.1489362,33.1914894 43.8297872,27.2340426" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="trapeze" points="52.3404255,21.7021277 55.7446809,21.7021277 56.5957447,27.2340426 60.8510638,32.7659574 68.9361702,36.5957447 64.6808511,40.4255319 61.7021277,53.1914894 52.3404255,64.6808511 53.1914894,38.2978723" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="deltPost" points="29.3617021,37.0212766 22.9787234,39.1489362 17.4468085,44.2553191 18.2978723,53.6170213 24.2553191,49.3617021 27.2340426,46.3829787" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="deltPost" points="71.0638298,37.0212766 78.2978723,39.5744681 82.5531915,44.6808511 81.7021277,53.6170213 74.893617,48.9361702 72.3404255,45.106383" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="dorsaux" points="31.0638298,38.7234043 28.0851064,48.9361702 28.5106383,55.3191489 34.0425532,75.3191489 47.2340426,71.0638298 47.2340426,66.3829787 36.5957447,54.0425532 33.6170213,41.2765957" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="dorsaux" points="68.9361702,38.7234043 71.9148936,49.3617021 71.4893617,56.1702128 65.9574468,75.3191489 52.7659574,71.0638298 52.7659574,66.3829787 63.4042553,54.4680851 66.3829787,41.7021277" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="triceps" points="26.8085106,49.787234 17.8723404,55.7446809 14.4680851,72.3404255 16.5957447,81.7021277 21.7021277,63.8297872 26.8085106,55.7446809" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="triceps" points="73.6170213,50.212766 82.1276596,55.7446809 85.9574468,73.1914894 83.4042553,82.1276596 77.8723404,62.9787234 73.1914894,55.7446809" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="triceps" points="26.8085106,58.2978723 26.8085106,68.5106383 22.9787234,75.3191489 19.1489362,77.4468085 22.5531915,65.5319149" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="triceps" points="72.7659574,58.2978723 77.0212766,64.6808511 80.4255319,77.4468085 76.5957447,75.3191489 72.7659574,68.9361702" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="lombaires" points="47.6595745,72.7659574 34.4680851,77.0212766 35.3191489,83.4042553 49.3617021,102.12766 46.8085106,82.9787234" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="lombaires" points="52.3404255,72.7659574 65.5319149,77.0212766 64.6808511,83.4042553 50.6382979,102.12766 53.1914894,83.8297872" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="avantbras" points="86.3829787,75.7446809 91.0638298,83.4042553 93.1914894,94.0425532 100,106.382979 96.1702128,104.255319 88.0851064,89.3617021 84.2553191,83.8297872" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="avantbras" points="13.6170213,75.7446809 8.93617021,83.8297872 6.80851064,93.6170213 0,106.382979 3.82978723,104.255319 12.3404255,88.5106383 15.7446809,82.9787234" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="avantbras" points="81.2765957,79.5744681 77.4468085,77.8723404 79.1489362,84.6808511 91.0638298,103.829787 93.1914894,108.93617 94.4680851,104.680851" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="avantbras" points="18.7234043,79.5744681 22.1276596,77.8723404 20.8510638,84.2553191 9.36170213,102.978723 6.80851064,108.510638 5.10638298,104.680851" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="fessiers" points="44.6808511,99.5744681 30.212766,108.510638 29.787234,118.723404 31.4893617,125.957447 47.2340426,121.276596 49.3617021,114.893617" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="fessiers" points="55.3191489,99.1489362 51.0638298,114.468085 52.3404255,120.851064 68.0851064,125.957447 69.787234,119.148936 69.3617021,108.510638" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="fessiers" points="48.0851064,122.978723 44.6808511,122.978723 41.2765957,125.531915 45.106383,144.255319 48.5106383,135.744681 48.9361702,129.361702" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="fessiers" points="51.9148936,122.553191 55.7446809,123.404255 59.1489362,125.957447 54.893617,144.255319 51.9148936,136.170213 51.0638298,129.361702" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="ischio" points="28.9361702,122.12766 31.0638298,129.361702 36.5957447,125.957447 35.3191489,135.319149 34.4680851,150.212766 29.3617021,158.297872 28.9361702,146.808511 27.6595745,141.276596 27.2340426,131.489362" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="ischio" points="71.4893617,121.702128 69.3617021,128.93617 63.8297872,125.957447 65.5319149,136.595745 66.3829787,150.212766 71.0638298,158.297872 71.4893617,147.659574 72.7659574,142.12766 73.6170213,131.914894" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="ischio" points="38.7234043,125.531915 44.2553191,145.957447 40.4255319,166.808511 36.1702128,152.765957 37.0212766,135.319149" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="ischio" points="61.7021277,125.531915 63.4042553,136.170213 64.2553191,153.191489 60,166.808511 56.1702128,146.382979" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon points="34.4680851,153.191489 31.0638298,159.148936 33.6170213,166.382979 37.4468085,162.553191" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" pointer-events="none"/>
+  <polygon points="66.3829787,153.617021 62.9787234,162.978723 66.8085106,166.382979 69.3617021,159.148936" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" pointer-events="none"/>
+  <polygon class="fm-group" data-muscle="mollets" points="29.3617021,160.425532 28.5106383,167.234043 24.6808511,179.574468 23.8297872,192.765957 25.5319149,197.021277 28.5106383,193.191489 29.787234,180 31.9148936,171.06383 31.9148936,166.808511" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="mollets" points="37.4468085,165.106383 35.3191489,167.659574 33.1914894,171.914894 31.0638298,180.425532 30.212766,191.914894 34.0425532,200 38.7234043,190.638298 39.1489362,168.93617" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="mollets" points="62.9787234,165.106383 61.2765957,168.510638 61.7021277,190.638298 66.3829787,199.574468 70.6382979,191.914894 68.9361702,179.574468 66.8085106,170.212766" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="mollets" points="70.6382979,160.425532 72.3404255,168.510638 75.7446809,179.148936 76.5957447,192.765957 74.4680851,196.595745 72.3404255,193.617021 70.6382979,179.574468 68.0851064,168.085106" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="mollets" points="28.5106383,195.744681 30.212766,195.744681 33.6170213,201.702128 30.6382979,220 28.5106383,213.617021 26.8085106,198.297872" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+  <polygon class="fm-group" data-muscle="mollets" points="69.787234,195.744681 71.9148936,195.744681 73.6170213,198.297872 71.9148936,213.191489 70.212766,219.574468 67.2340426,202.12766" fill="#ddd8d0" stroke="#c8c4bc" stroke-width="0.4" style="cursor:pointer"/>
+</svg>
+      </div>
 
-    root.innerHTML = htmlFragments.join('\n');
+    </div><!-- /musc-left -->
 
-    // Boot the app once DOM is populated
-    const { default: initApp } = await import('/js/app.js');
+    <!-- DROITE : detail + bilan -->
+    <div class="musc-right">
+      <div id="muscDetailPanel"><div class="empty" style="margin-top:40px">Clique sur un muscle pour voir le détail</div></div>
+      <div id="muscSummaryPanel"></div>
+    </div>
+
+  </div><!-- /musc-layout -->
+</div>
+<div id="programme" class="section-panel">
+
+  <div class="prog-top-nav" id="progNav">
+    <button class="active" onclick="showProg('nutrition')">&#x1F957; Nutrition</button>
+    <button onclick="showProg('warmup')">&#x1F525; Échauffements</button>
+    <button onclick="showProg('mardi')">Mardi — Cardio</button>
+    <button onclick="showProg('mercredi')">Mercredi — Force</button>
+    <button onclick="showProg('jeudi')">Jeudi — Force/MetCon</button>
+    <button onclick="showProg('vendredi')">Vendredi — MetCon</button>
+  </div>
+
+  <!-- NUTRITION -->
+  <div id="nutrition" class="prog-tab active">
+    <div class="p-section">
+      <div class="p-sec-title">Profil nutritionnel — 73 kg · 176 cm · athlète en phase de compétition</div>
+      <div class="p-metrics">
+        <div class="p-metric"><div class="p-metric-val">2 650</div><div class="p-metric-lbl">kcal/jour (entraînement)</div></div>
+        <div class="p-metric"><div class="p-metric-val">2 250</div><div class="p-metric-lbl">kcal/jour (repos)</div></div>
+        <div class="p-metric"><div class="p-metric-val">147 g</div><div class="p-metric-lbl">protéines/jour (2,0 g/kg)</div></div>
+        <div class="p-metric"><div class="p-metric-val">23,6</div><div class="p-metric-lbl">IMC</div></div>
+      </div>
+      <div class="p-note">Calcul : MB Harris-Benedict (1846 kcal) × NAP 1,55 (actif modéré) = 2 861 kcal TDEE. En phase de construction musculaire légère (surplus 0–150 kcal les jours d'entraînement, déficit modéré les jours de repos). Macros basées sur la méta-analyse Morton et al. 2018 pour la force.</div>
+    </div>
+    <div class="p-section">
+      <div class="p-sec-title">Répartition des macronutriments</div>
+      <div class="p-card">
+        <div class="p-card-body">
+          <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap">
+            <div><span style="font-size:18px;font-weight:500;color:var(--text)">147 g</span><div style="font-size:11px;color:var(--text2)">Protéines · 2,0 g/kg</div></div>
+            <div><span style="font-size:18px;font-weight:500;color:var(--text)">310 g</span><div style="font-size:11px;color:var(--text2)">Glucides · ~4,2 g/kg</div></div>
+            <div><span style="font-size:18px;font-weight:500;color:var(--text)">75 g</span><div style="font-size:11px;color:var(--text2)">Lipides · ~1,0 g/kg</div></div>
+          </div>
+          <div class="p-macro-bar"><div class="p-macro-p" style="width:22%"></div><div class="p-macro-g" style="width:47%"></div><div class="p-macro-l" style="width:26%"></div></div>
+          <div class="p-macro-legend">
+            <span><span class="p-legend-dot" style="background:#378ADD"></span>Protéines 22%</span>
+            <span><span class="p-legend-dot" style="background:#1D9E75"></span>Glucides 47%</span>
+            <span><span class="p-legend-dot" style="background:#EF9F27"></span>Lipides 26%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="p-section">
+      <div class="p-sec-title">Plan alimentaire — jour d'entraînement (midi)</div>
+      <div class="p-card">
+        <div class="p-meal-row"><div class="p-meal-time">7h00</div><div class="p-meal-name">Petit-déjeuner</div><div class="p-meal-detail">80 g flocons d'avoine + 200 ml lait demi-écrémé + 1 banane + 20 g whey ou 2 œufs brouillés. <strong style="color:var(--text)">~600 kcal · 35 g P · 85 g G · 12 g L</strong></div></div>
+        <div class="p-meal-row"><div class="p-meal-time">10h30</div><div class="p-meal-name">Collation pré-entraînement</div><div class="p-meal-detail">1 banane + 30 g flocons d'avoine + 1 café. Ingérer 90 min avant la séance. <strong style="color:var(--text)">~280 kcal · 8 g P · 55 g G · 3 g L</strong></div></div>
+        <div class="p-meal-row"><div class="p-meal-time">12h–14h</div><div class="p-meal-name">Séance (fenêtre training)</div><div class="p-meal-detail">500 ml eau + électrolytes si chaud. Optionnel : 1 gel glucidique pour séances MetCon &gt;50 min.</div></div>
+        <div class="p-meal-row"><div class="p-meal-time">14h00</div><div class="p-meal-name">Repas post-entraînement ★</div><div class="p-meal-detail">200 g poulet/thon/œufs + 150 g riz cuit + légumes verts + 1 filet d'huile olive. Ingérer dans les 30–60 min post-séance. <strong style="color:var(--text)">~700 kcal · 45 g P · 75 g G · 15 g L</strong></div></div>
+        <div class="p-meal-row"><div class="p-meal-time">17h30</div><div class="p-meal-name">Collation</div><div class="p-meal-detail">150 g yaourt grec 0% + 30 g noix + 1 fruit. <strong style="color:var(--text)">~320 kcal · 20 g P · 25 g G · 14 g L</strong></div></div>
+        <div class="p-meal-row"><div class="p-meal-time">20h00</div><div class="p-meal-name">Dîner</div><div class="p-meal-detail">150 g saumon/viande rouge 1–2×/sem + 200 g patate douce ou pâtes + légumes. <strong style="color:var(--text)">~650 kcal · 38 g P · 70 g G · 18 g L</strong></div></div>
+        <div class="p-meal-row"><div class="p-meal-time">21h30</div><div class="p-meal-name">Collation nocturne (opt.)</div><div class="p-meal-detail">20–30 g caséine (fromage blanc 0% + cannelle) pour synthèse protéique nocturne. <strong style="color:var(--text)">~120 kcal · 20 g P · 8 g G · 1 g L</strong></div></div>
+      </div>
+      <div class="p-note green">Total estimé jour entraînement : ~2 670 kcal · 166 g P · 318 g G · 63 g L. La veille des séances lourdes (mardi soir et jeudi soir) : augmenter les glucides de 50–80 g (portion de riz/pâtes supplémentaire).</div>
+    </div>
+    <div class="p-section">
+      <div class="p-sec-title">Supplémentation — evidence-based uniquement</div>
+      <div class="p-card">
+        <div class="p-ex-row"><div class="p-ex-name">Créatine monohydrate</div><div class="p-ex-detail">5 g/jour, tous les jours, peu importe le timing. Seul supplément avec preuve solide sur la force et la puissance (méta-analyse Lanhers 2017). Pas de phase de charge nécessaire.</div><div class="p-ex-tag p-tag-f">Grade A</div></div>
+        <div class="p-ex-row"><div class="p-ex-name">Whey protéine</div><div class="p-ex-detail">20–30 g post-séance si l'apport protéique alimentaire est insuffisant. Outil pratique, pas magique — la priorité reste l'alimentation réelle.</div><div class="p-ex-tag p-tag-f">Grade A</div></div>
+        <div class="p-ex-row"><div class="p-ex-name">Caféine</div><div class="p-ex-detail">3–6 mg/kg (220–440 mg) 60 min avant séance. Améliore force, endurance et perception de l'effort (Grgic et al. 2020). 1–2 cafés suffisent souvent.</div><div class="p-ex-tag p-tag-c">Grade A</div></div>
+        <div class="p-ex-row"><div class="p-ex-name">Bêta-alanine</div><div class="p-ex-detail">3,2–6,4 g/jour en doses fractionnées. Réduit la fatigue musculaire sur efforts 1–10 min (pertinent MetCon ATHX). Peut causer fourmillements bénins.</div><div class="p-ex-tag p-tag-m">Grade B</div></div>
+        <div class="p-ex-row"><div class="p-ex-name">Vitamine D3</div><div class="p-ex-detail">1 000–2 000 UI/jour si exposition solaire faible (automne/hiver). Rôle dans la fonction musculaire et la récupération.</div><div class="p-ex-tag p-tag-r">Grade B</div></div>
+      </div>
+      <div class="p-warn">Les compléments non listés (BCAA, pré-workouts complexes, brûleurs, HMB…) n'ont pas de preuve suffisante à ce niveau pour justifier leur coût. Priorité : alimentation d'abord.</div>
+    </div>
+  </div>
+
+  <!-- ÉCHAUFFEMENTS -->
+  <div id="warmup" class="prog-tab">
+    <div class="p-section">
+      <div class="p-sec-title">Échauffement A — jours force (mercredi + jeudi)</div>
+      <span class="p-time-badge">10–12 min</span>
+      <div class="p-card">
+        <div class="p-card-title">Phase 1 — Élévation température centrale (3 min)</div>
+        <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Vélo/rameur léger</div><div class="p-ex-detail">3 min à allure légère (&lt; 130 bpm). Objectif : température musculaire +1–2°C, viscosité synoviale réduite.</div></div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Phase 2 — Mobilité articulaire spécifique (5 min)</div>
+        <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Rotation thoracique</div><div class="p-ex-detail">10 reps/côté en quadrupédie. Critique pour rack position du squat et press overhead.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Couch stretch</div><div class="p-ex-detail">60 sec/côté au sol. Ouverture fléchisseurs de hanche = profondeur squat et position debout deadlift.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Dislocations épaules</div><div class="p-ex-detail">10 reps avec bande élastique légère. Amplitude overhead + stabilité scapulaire pour press.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">4</div><div class="p-ex-name">Hip circles</div><div class="p-ex-detail">10 reps/côté. Préparation rotation externe = genoux dans l'axe au squat.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">5</div><div class="p-ex-name">Ankle mobility</div><div class="p-ex-detail">10 reps/côté, genou en avant sur le mur. Dorsiflexion = profondeur squat sans talon levé.</div></div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Phase 3 — Activation neuromusculaire (4 min)</div>
+        <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Banded clamshells</div><div class="p-ex-detail">2×15 avec bande légère. Activation fessiers moyens = stabilité genou squat.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Face pulls bande</div><div class="p-ex-detail">2×15. Activation rotateurs externes épaule = protection articulation pour press.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Séries montantes press/squat/DL</div><div class="p-ex-detail">Barre vide × 10 → 50% 1RM × 5 → 70% × 3 → 85% × 1 (avant série de travail). Ne jamais commencer à charge maximale à froid.</div></div>
+      </div>
+      <div class="p-note">Mercredi : insister sur mobilité épaule + thoracique (press prioritaire). Jeudi : insister sur hanches + chevilles (squat + deadlift prioritaires). Adapter en 2 min si temps limité : garder mobilité thoracique + séries montantes.</div>
+    </div>
+    <div class="p-section">
+      <div class="p-sec-title">Échauffement B — jours cardio/MetCon (mardi + vendredi)</div>
+      <span class="p-time-badge">8–10 min</span>
+      <div class="p-card">
+        <div class="p-card-title">Phase 1 — Cardio progressif (3 min)</div>
+        <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Jogging léger ou ski-erg</div><div class="p-ex-detail">3 min progressif Z1→Z2. Prépare le système cardiovasculaire sans fatiguer les muscles locomoteurs.</div></div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Phase 2 — Dynamique full body (4 min)</div>
+        <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Leg swings</div><div class="p-ex-detail">10 reps/côté avant + latéral. Prépare hanche pour le run et les box jumps.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Inchworms</div><div class="p-ex-detail">6 reps. Chaîne postérieure + épaules + core — couvre tous les plans du MetCon ATHX.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Jumping jacks</div><div class="p-ex-detail">20 reps. Élévation FC + coordination membres inférieurs/supérieurs.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">4</div><div class="p-ex-name">Arm circles progressifs</div><div class="p-ex-detail">10 petits → 10 grands par sens. Préparation épaule pour ski-erg et GTOH.</div></div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Phase 3 — Activation spécifique (3 min)</div>
+        <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Box step-ups</div><div class="p-ex-detail">10 reps/côté à cadence lente sur la box de compétition. Préparation neuromusculaire box jump.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">GTOH à vide ou 10 kg</div><div class="p-ex-detail">5 reps/côté. Activation pattern de mouvement + proprioception épaule sous charge légère.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">2–3 burpees lents</div><div class="p-ex-detail">Activation full body + rappel neuromoteur du pattern burpee broad jump.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARDI -->
+  <div id="mardi" class="prog-tab">
+    <div class="p-section">
+      <div class="p-sec-title">Mardi — Endurance / Cardio ATHX</div>
+      <span class="p-time-badge">50 min total · Échauffement B (8 min) + séance (40 min) + retour au calme (2 min)</span>
+      <div class="p-week-sel" id="mardiWeeks">
+        <button class="active" onclick="showWeek('mardi','b1')">Bloc 1 (S1–5)</button>
+        <button onclick="showWeek('mardi','b1d')">S6 Deload</button>
+        <button onclick="showWeek('mardi','b2')">Bloc 2 (S7–11)</button>
+        <button onclick="showWeek('mardi','b2d')">S12 Deload</button>
+        <button onclick="showWeek('mardi','b3')">Bloc 3 (S13–16)</button>
+        <button onclick="showWeek('mardi','b3d')">S17 Taper</button>
+      </div>
+      <div id="mardi-b1">
+        <span class="p-phase-bar" style="background:#E6F1FB;color:#185FA5">Bloc 1 — Base aérobie Z2</span>
+        <div class="p-card"><div class="p-card-title">Objectif : construire le moteur aérobie, habitude course + rameur</div><div class="p-card-body">FC cible : 130–150 bpm (zone 2). Allure conversationnelle — tu peux parler en phrases.</div></div>
+        <div class="p-card">
+          <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Course 750m</div><div class="p-ex-detail">Allure ~5:30–6:00/km. Respiration nasale si possible. ×1 tour complet.</div><div class="p-ex-tag p-tag-c">3 tours piste</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Rameur 750m</div><div class="p-ex-detail">Damper 4–5. Cadence 24–26 spm. FC ≤ 150 bpm. Maintenir posture : tibia vertical, bascule tronc.</div><div class="p-ex-tag p-tag-c">~3:30–4:00</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">–</div><div class="p-ex-name">Récupération passive</div><div class="p-ex-detail">3 min assis/marche entre chaque tour.</div><div class="p-ex-tag p-tag-r">×3 min</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Répéter</div><div class="p-ex-detail">3 tours complets (run + row). Total : ~2 250m run + 2 250m row.</div><div class="p-ex-tag p-tag-c">3 rounds</div></div>
+        </div>
+        <div class="p-note">Progression S1→S5 : S1 = 2 rounds, S2 = 2 rounds + finisher 5 min, S3–S4 = 3 rounds, S5 = 3 rounds + réduire récup à 2 min.</div>
+      </div>
+      <div id="mardi-b1d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 6 — Deload actif</span><div class="p-card"><div class="p-card-body">2 × (500m run + 500m row) à allure très légère (Z1, &lt; 130 bpm). Récup 4 min. Durée totale : 30 min.</div></div></div>
+      <div id="mardi-b2" style="display:none">
+        <span class="p-phase-bar" style="background:#FAEEDA;color:#854F0B">Bloc 2 — Travail au seuil</span>
+        <div class="p-card"><div class="p-card-title">Objectif : repousser le seuil lactique, intensité ATHX réelle</div><div class="p-card-body">FC cible : 155–170 bpm (zone 3–4). Allure inconfortable mais tenable.</div></div>
+        <div class="p-card">
+          <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Run 750m</div><div class="p-ex-detail">Allure 4:45–5:15/km. Simule exactement le format ATHX. Maintenir allure constante sur les 3 tours.</div><div class="p-ex-tag p-tag-c">Allure comp</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Row 750m</div><div class="p-ex-detail">Pace cible : 2:05–2:20/500m. Transition immédiate depuis la course (pas de pause). Simule le vrai format ATHX pairs.</div><div class="p-ex-tag p-tag-c">Transition directe</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">–</div><div class="p-ex-name">Récupération</div><div class="p-ex-detail">90 sec entre tours (S7–9) → 60 sec (S10–11).</div><div class="p-ex-tag p-tag-r">90s→60s</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Répéter</div><div class="p-ex-detail">4 à 5 tours complets selon niveau de fatigue. Stopper si FC &gt; 180 bpm et ne redescend pas.</div><div class="p-ex-tag p-tag-c">4–5 rounds</div></div>
+        </div>
+        <div class="p-note">S7–9 : 4 rounds à 90s récup. S10–11 : 5 rounds à 60s récup. Chronomètre chaque run et row — noter les temps pour suivre la progression.</div>
+      </div>
+      <div id="mardi-b2d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 12 — Deload</span><div class="p-card"><div class="p-card-body">2 × (750m run + 750m row) à 70% de plan S+1 reconduit. compétition ATHX — avec partenaire idéalement</div><div class="p-card-body">Objectif : tenir 22 min à intensité maximale. Chrono obligatoire. Comptabiliser la distance totale.</div></div>
+        <div class="p-card">
+          <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Simulation ATHX 22 min</div><div class="p-ex-detail">Run 750m → Row 750m → Run 750m → Row 750m → continuer jusqu'à 22 min. Viser max distance. Transitions immédiates.</div><div class="p-ex-tag p-tag-c">Format réel</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Analyse post-séance</div><div class="p-ex-detail">Noter : distance totale, temps/tour, FC max, où la fatigue a cassé l'allure. Ajuster stratégie de course en duo.</div><div class="p-ex-tag p-tag-r">Débriefing</div></div>
+        </div>
+        <div class="p-note green">S13–15 : simulation pleine. S16 : simulation à 80%. S17 Taper : 20 min Z2 léger seulement.</div>
+      </div>
+      <div id="mardi-b3d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 17 — Taper</span><div class="p-card"><div class="p-card-body">20 min jogging Z1 léger (&lt; 130 bpm) + 10 min étirements. Aucun effort intense.</div></div></div>
+    </div>
+  </div>
+
+  <!-- MERCREDI -->
+  <div id="mercredi" class="prog-tab">
+    <div class="p-section">
+      <div class="p-sec-title">Mercredi — Force (Strict Press prioritaire + Squat)</div>
+      <span class="p-time-badge">55 min total · Échauffement A (12 min) + séance (40 min) + retour calme (3 min)</span>
+      <div class="p-week-sel" id="mercrediWeeks">
+        <button class="active" onclick="showWeek('mercredi','b1')">Bloc 1 (S1–5)</button>
+        <button onclick="showWeek('mercredi','b1d')">S6 Deload</button>
+        <button onclick="showWeek('mercredi','b2')">Bloc 2 (S7–11)</button>
+        <button onclick="showWeek('mercredi','b2d')">S12 Deload</button>
+        <button onclick="showWeek('mercredi','b3')">Bloc 3 (S13–16)</button>
+        <button onclick="showWeek('mercredi','b3d')">S17 Taper</button>
+      </div>
+      <div id="mercredi-b1">
+        <span class="p-phase-bar" style="background:#E6F1FB;color:#185FA5">Bloc 1 — Apprentissage technique + progression linéaire</span>
+        <div class="p-card">
+          <div class="p-card-title">Strict Press — programme linéaire (+2,5 kg/semaine)</div>
+          <div class="p-card-body" style="margin-bottom:6px">1RM actuel : 50 kg. Démarrer à 70% = 35 kg.</div>
+          <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Strict Press</div><div class="p-ex-detail">5×5 @ 70–75% · S1:35kg, S2:37,5kg, S3:40kg, S4:42,5kg, S5:45kg. Récup 3 min. Focus : gainage abdo, fessiers contractés, barre dans l'axe du nez.</div><div class="p-ex-tag p-tag-f">Primaire</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Press assis haltères</div><div class="p-ex-detail">3×10 @ 2×15–17,5 kg. Renforce les stabilisateurs de l'épaule. Récup 2 min.</div><div class="p-ex-tag p-tag-f">Accessoire</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Lat pulldown prise large</div><div class="p-ex-detail">3×12 @ 60% corps. Antagoniste du press — équilibre scapulaire, prévention blessure épaule.</div><div class="p-ex-tag p-tag-f">Accessoire</div></div>
+        </div>
+        <div class="p-card">
+          <div class="p-card-title">Back Squat — technique + base</div>
+          <div class="p-ex-row"><div class="p-ex-num">4</div><div class="p-ex-name">Back Squat</div><div class="p-ex-detail">4×5 @ 70% = 77,5 kg. Récup 3 min. Focus : descente 3 sec, pause 1 sec en bas, poussée explosive. Vérifier profondeur (hanche sous genou).</div><div class="p-ex-tag p-tag-f">Primaire</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">5</div><div class="p-ex-name">Gainage core (planche)</div><div class="p-ex-detail">3×45 sec. Transfert direct vers la stabilité du press overhead.</div><div class="p-ex-tag p-tag-r">Core</div></div>
+        </div>
+        <div class="p-note">Press 5×5 = ~18 min, Squat 4×5 = ~15 min. Accessoires en super-set si besoin de gagner du temps.</div>
+      </div>
+      <div id="mercredi-b1d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 6 — Deload</span><div class="p-card"><div class="p-card-body">Press 3×5 @ 60% (30 kg). Squat 3×5 @ 60% (66 kg). Aucun accessoire. Durée : 30 min.</div></div></div>
+      <div id="mercredi-b2" style="display:none">
+        <span class="p-phase-bar" style="background:#FAEEDA;color:#854F0B">Bloc 2 — Intensité croissante (75–85%)</span>
+        <div class="p-card">
+          <div class="p-card-title">Strict Press — modèle ondulé semaine lourde/légère</div>
+          <div class="p-card-body" style="margin-bottom:6px">S7–8–9 : semaines lourdes (85%) · S10–11 : semaines légères (75%) avant deload</div>
+          <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Strict Press</div><div class="p-ex-detail">S7:5×3@47,5kg · S8:5×3@50kg · S9:5×3@52,5kg · S10:4×5@45kg · S11:4×5@47,5kg. Récup 3–4 min.</div><div class="p-ex-tag p-tag-f">Primaire</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Push Press</div><div class="p-ex-detail">3×6 @ 90–95% du 1RM strict press. Développe la force en position haute et la vitesse de barre. Récup 2 min.</div><div class="p-ex-tag p-tag-f">Accessoire clé</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Tirage vertical prise serrée</div><div class="p-ex-detail">3×10. Renforcement dentelé antérieur et grands dorsaux — stabilisateurs clés du press strict.</div><div class="p-ex-tag p-tag-f">Accessoire</div></div>
+        </div>
+        <div class="p-card">
+          <div class="p-card-title">Back Squat — intensité montante</div>
+          <div class="p-ex-row"><div class="p-ex-num">4</div><div class="p-ex-name">Back Squat</div><div class="p-ex-detail">S7:4×4@90kg · S8:4×4@92,5kg · S9:4×4@95kg · S10:3×5@85kg · S11:3×5@90kg. Récup 3–4 min.</div><div class="p-ex-tag p-tag-f">Primaire</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">5</div><div class="p-ex-name">Split squat bulgare</div><div class="p-ex-detail">3×8/côté @ 2×10–15 kg haltères. Travail unilatéral = équilibre musculaire + transfert box jumps/lunges ATHX.</div><div class="p-ex-tag p-tag-f">Accessoire</div></div>
+        </div>
+      </div>
+      <div id="mercredi-b2d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 12 — Deload</span><div class="p-card"><div class="p-card-body">Press 3×3 @ 70% (35 kg). Squat 3×3 @ 70% (77 kg). Accessoires supprimés. Séance 30 min.</div></div></div>
+      <div id="mercredi-b3" style="display:none">
+        <span class="p-phase-bar" style="background:#E1F5EE;color:#0F6E56">Bloc 3 — Simulation compétition force</span>
+        <div class="p-card">
+          <div class="p-card-title">Format ATHX : tentatives 1RM Press + 3RM Squat sous pression chronométrée</div>
+          <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Strict Press — tentative 1RM</div><div class="p-ex-detail">Montée : barre vide×5 → 50%×3 → 70%×2 → 85%×1 → 92–95%×1 → tentative max. Simuler les 6 min de fenêtre ATHX. Viser 55–60 kg.</div><div class="p-ex-tag p-tag-f">Simulation comp</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Back Squat — 3RM</div><div class="p-ex-detail">S13:3×3@92% · S14:3×2@95% · S15:tentative 3RM max (viser 125–132 kg) · S16:3×3@85% (récup). Simuler le protocole rack ATHX.</div><div class="p-ex-tag p-tag-f">Simulation comp</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Accessoire léger</div><div class="p-ex-detail">Face pulls 3×15 + planches 2×45s. Maintien posture + gainage sans surcharger.</div><div class="p-ex-tag p-tag-r">Maintenance</div></div>
+        </div>
+        <div class="p-note green">Semaine 15 : test complet format ATHX force avec partenaire. Chronométrer les 6 min de chaque fenêtre.</div>
+      </div>
+      <div id="mercredi-b3d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 17 — Taper</span><div class="p-card"><div class="p-card-body">Press 3×3 @ 60% (30 kg). Squat 3×3 @ 60% (66 kg). Mouvements doux, ne pas approcher la fatigue.</div></div></div>
+    </div>
+  </div>
+
+  <!-- JEUDI -->
+  <div id="jeudi" class="prog-tab">
+    <div class="p-section">
+      <div class="p-sec-title">Jeudi — Force (Deadlift) + Introduction MetCon</div>
+      <span class="p-time-badge">55 min total · Échauffement A (12 min) + séance (40 min) + retour calme (3 min)</span>
+      <div class="p-week-sel" id="jeudiWeeks">
+        <button class="active" onclick="showWeek('jeudi','b1')">Bloc 1 (S1–5)</button>
+        <button onclick="showWeek('jeudi','b1d')">S6 Deload</button>
+        <button onclick="showWeek('jeudi','b2')">Bloc 2 (S7–11)</button>
+        <button onclick="showWeek('jeudi','b2d')">S12 Deload</button>
+        <button onclick="showWeek('jeudi','b3')">Bloc 3 (S13–16)</button>
+        <button onclick="showWeek('jeudi','b3d')">S17 Repos</button>
+      </div>
+      <div id="jeudi-b1">
+        <span class="p-phase-bar" style="background:#E6F1FB;color:#185FA5">Bloc 1 — Deadlift technique + base force</span>
+        <div class="p-card">
+          <div class="p-card-title">Deadlift — progression linéaire</div>
+          <div class="p-card-body" style="margin-bottom:6px">1RM actuel : 140 kg. 5RM estimé : ~120 kg. Démarrer à 70% = 84 kg (arrondi 85 kg).</div>
+          <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Deadlift</div><div class="p-ex-detail">4×4 @ 70–75% · S1:85kg, S2:90kg, S3:95kg, S4:100kg, S5:105kg. Récup 3–4 min. Pas de rebond, pause à chaque rep. Règle ATHX : mains en contact avec la barre entre reps.</div><div class="p-ex-tag p-tag-f">Primaire</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Romanian Deadlift</div><div class="p-ex-detail">3×10 @ 50–55% DL = 70–77 kg. Renforce les ischio-jambiers.</div><div class="p-ex-tag p-tag-f">Accessoire</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Fentes marchées</div><div class="p-ex-detail">3×10/côté @ poids de corps. Préparation aux walking lunges 20 kg ATHX. Genou arrière touche sol à chaque rep.</div><div class="p-ex-tag p-tag-m">Transfert MetCon</div></div>
+        </div>
+        <div class="p-note">Le jeudi vient après le mercredi (force). La fatigue résiduelle est normale et souhaitée. Si douleur lombaire persistante : supprimer le RDL et remplacer par hyperextensions légères.</div>
+      </div>
+      <div id="jeudi-b1d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 6 — Deload</span><div class="p-card"><div class="p-card-body">Deadlift 3×3 @ 60% (84 kg). RDL supprimé. Fentes poids de corps 2×10. Durée : 30 min.</div></div></div>
+      <div id="jeudi-b2" style="display:none">
+        <span class="p-phase-bar" style="background:#FAEEDA;color:#854F0B">Bloc 2 — Force + MetCon intégré</span>
+        <div class="p-card">
+          <div class="p-card-title">Deadlift — intensité montante + première intégration MetCon</div>
+          <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Deadlift</div><div class="p-ex-detail">S7:4×3@110kg · S8:4×3@115kg · S9:4×3@117,5kg · S10:3×4@105kg · S11:3×4@110kg. Récup 3–4 min. À partir de S9 : introduire le format 5RM (règle ATHX).</div><div class="p-ex-tag p-tag-f">Primaire</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Romanian Deadlift</div><div class="p-ex-detail">3×8 @ 80–90 kg. Maintenir tension ischio, ne pas aller en hyperextension lombaire.</div><div class="p-ex-tag p-tag-f">Accessoire</div></div>
+        </div>
+        <div class="p-card">
+          <div class="p-card-title">Finisher MetCon (15 min) — introduire les mouvements ATHX</div>
+          <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">GTOH alterné</div><div class="p-ex-detail">3×10 reps/côté @ 15–17,5 kg. Snatch ou clean &amp; jerk au choix. Progression vers 20 kg dès S9.</div><div class="p-ex-tag p-tag-m">ATHX-spécifique</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">4</div><div class="p-ex-name">Box jump overs 24"</div><div class="p-ex-detail">3×10. Deux pieds simultanés sur la box, descente contrôlée.</div><div class="p-ex-tag p-tag-m">ATHX-spécifique</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">5</div><div class="p-ex-name">Lunges DB suitcase</div><div class="p-ex-detail">3×10m @ 2×15 kg → 2×20 kg en S10–11. Genou arrière au sol, alternance pieds, extension complète. Règle ATHX stricte.</div><div class="p-ex-tag p-tag-m">ATHX-spécifique</div></div>
+        </div>
+      </div>
+      <div id="jeudi-b2d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 12 — Deload</span><div class="p-card"><div class="p-card-body">Deadlift 3×3 @ 70% (98 kg). MetCon supprimé. Fentes légères 2×10. Durée : 35 min.</div></div></div>
+      <div id="jeudi-b3" style="display:none">
+        <span class="p-phase-bar" style="background:#E1F5EE;color:#0F6E56">Bloc 3 — Simulation 5RM Deadlift + MetCon complet</span>
+        <div class="p-card">
+          <div class="p-card-title">Format ATHX : 5RM Deadlift en 8 minutes</div>
+          <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Deadlift 5RM</div><div class="p-ex-detail">S13: tentative 120 kg × 5 · S14: tentative 125 kg × 5 · S15: tentative max 5RM (viser 130–135 kg) · S16: 3×3 @ 85%. Simuler fenêtre 8 min ATHX.</div><div class="p-ex-tag p-tag-f">Simulation comp</div></div>
+        </div>
+        <div class="p-card">
+          <div class="p-card-title">MetCon partiel ATHX — charges de compétition (25 min)</div>
+          <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">GTOH 20 kg alterné</div><div class="p-ex-detail">3 séries de 15 reps (7–8/côté). Récup 2 min. Charges exactes de compétition.</div><div class="p-ex-tag p-tag-m">Comp weight</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Sandbag carry 50 kg</div><div class="p-ex-detail">3×30m (15m AR). Premier contact avec la charge de compétition. Technique : bear hug ou épaule.</div><div class="p-ex-tag p-tag-m">Comp weight</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">4</div><div class="p-ex-name">Box jump overs 24" + lunges DB 20 kg</div><div class="p-ex-detail">Circuit : 10 BJO + 15m lunges 2×20 kg. 3 rounds, récup 90 sec. Simuler l'enchaînement compétition.</div><div class="p-ex-tag p-tag-m">Comp weight</div></div>
+        </div>
+        <div class="p-note green">S15 : séance la plus lourde du cycle. S16 : réduire volumes MetCon de 30%.</div>
+      </div>
+      <div id="jeudi-b3d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 17 — Repos</span><div class="p-card"><div class="p-card-body">Repos complet ou 20 min mobilité uniquement. Aucune charge lourde. C'est la semaine de compétition — les gains sont faits, l'objectif est d'arriver frais.</div></div></div>
+    </div>
+  </div>
+
+  <!-- VENDREDI -->
+  <div id="vendredi" class="prog-tab">
+    <div class="p-section">
+      <div class="p-sec-title">Vendredi — MetCon X / Cardio ATHX</div>
+      <span class="p-time-badge">50 min total · Échauffement B (8 min) + séance (38 min) + retour calme (4 min)</span>
+      <div class="p-week-sel" id="vendrediWeeks">
+        <button class="active" onclick="showWeek('vendredi','b1')">Bloc 1 (S1–5)</button>
+        <button onclick="showWeek('vendredi','b1d')">S6 Deload</button>
+        <button onclick="showWeek('vendredi','b2')">Bloc 2 (S7–11)</button>
+        <button onclick="showWeek('vendredi','b2d')">S12 Deload</button>
+        <button onclick="showWeek('vendredi','b3')">Bloc 3 (S13–16)</button>
+        <button onclick="showWeek('vendredi','b3d')">S17 Repos</button>
+      </div>
+      <div id="vendredi-b1">
+        <span class="p-phase-bar" style="background:#E6F1FB;color:#185FA5">Bloc 1 — Apprentissage mouvements ATHX + base cardio</span>
+        <div class="p-card">
+          <div class="p-card-title">Objectif : maîtriser chaque mouvement MetCon sans pression de temps</div>
+          <div class="p-card-body" style="margin-bottom:6px">Charges réduites, focus technique stricte. Simuler les no-rep rules ATHX dès maintenant.</div>
+          <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Ski-erg</div><div class="p-ex-detail">3×15 cal. Technique : bras hauts, poussée complète jusqu'aux hanches, genoux légèrement fléchis, dos droit. Récup 90 sec.</div><div class="p-ex-tag p-tag-c">Technique</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">GTOH alterné 15 kg</div><div class="p-ex-detail">3×12 (6/côté). Snatch ou C&amp;J. Dumbbell part du sol, verrouillage complet overhead, alternance obligatoire.</div><div class="p-ex-tag p-tag-m">Technique</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Box jump overs 24"</div><div class="p-ex-detail">3×8. Deux pieds simultanés sur la box. NO REP si un pied seulement. Descendre côté opposé. Récup 60 sec.</div><div class="p-ex-tag p-tag-m">Technique</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">4</div><div class="p-ex-name">Burpee broad jumps</div><div class="p-ex-detail">3×10m. Poitrine au sol obligatoire. Saut en avant pieds parallèles, pas de pas intercalaire. Mains à 33 cm max des pieds règle ATHX.</div><div class="p-ex-tag p-tag-m">Technique</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">5</div><div class="p-ex-name">DB walking lunges 15 kg</div><div class="p-ex-detail">3×10m. Suitcase hold. Genou arrière sol. Extension complète. Alterner pied. Poser les DB avant d'avancer (règle ATHX).</div><div class="p-ex-tag p-tag-m">Technique</div></div>
+        </div>
+        <div class="p-note">S1–3 : exercices séparés avec focus technique. S4–5 : enchaîner 2 mouvements sans récup entre eux pour simuler la fatigue de transition.</div>
+      </div>
+      <div id="vendredi-b1d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 6 — Deload actif</span><div class="p-card"><div class="p-card-body">20 min ski-erg léger + 10 min mobilité. Charges nulles. Récupération complète avant Bloc 2.</div></div></div>
+      <div id="vendredi-b2" style="display:none">
+        <span class="p-phase-bar" style="background:#FAEEDA;color:#854F0B">Bloc 2 — Circuits MetCon progressifs aux charges de compétition</span>
+        <div class="p-card">
+          <div class="p-card-title">Format circuit, chrono, charges montant vers la compétition</div>
+          <div class="p-card-body" style="margin-bottom:6px">S7–8 : 60–70% charges comp. S9–11 : charges exactes compétition ATHX.</div>
+          <div class="p-ex-row"><div class="p-ex-num">A</div><div class="p-ex-name">Circuit 1 — 3 rounds chrono</div><div class="p-ex-detail">20 cal ski-erg + 10 GTOH 17,5→20 kg/côté + 15 BJO 24" + 10m lunges 2×17,5→20 kg. Récup 2 min entre rounds. Chronomètre chaque round.</div><div class="p-ex-tag p-tag-m">Comp progressif</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">B</div><div class="p-ex-name">Sandbag carry</div><div class="p-ex-detail">3×30m @ 40 kg (S7–8) → 50 kg (S9–11). Récup 2 min. Priorité à ne jamais lâcher le sac avant la ligne.</div><div class="p-ex-tag p-tag-m">Comp progressif</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">C</div><div class="p-ex-name">Burpee broad jumps</div><div class="p-ex-detail">3×15m. Chrono. Maintenir rythme constant sur les 3 tours.</div><div class="p-ex-tag p-tag-m">Endurance</div></div>
+        </div>
+        <div class="p-note amber">Le vendredi suit le jeudi. Si fatigue musculaire des membres inférieurs persistante : réduire sandbag carry de 10 kg. Ne jamais travailler avec douleur articulaire au genou.</div>
+      </div>
+      <div id="vendredi-b2d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 12 — Deload</span><div class="p-card"><div class="p-card-body">25 min cardio léger (run ou vélo Z2) + 10 min mobilité. Pas de charges.</div></div></div>
+      <div id="vendredi-b3" style="display:none">
+        <span class="p-phase-bar" style="background:#E1F5EE;color:#0F6E56">Bloc 3 — Simulation MetCon X complète</span>
+        <div class="p-card">
+          <div class="p-card-title">Workout ATHX Pairs complet — charges et volumes de compétition</div>
+          <div class="p-card-body" style="margin-bottom:6px">Avec partenaire si possible. Chrono complet. Objectif : finir sous 22–23 min en simulation.</div>
+          <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">60 cal ski-erg (répartis)</div><div class="p-ex-detail">Libre répartition. Stratégie recommandée : 30+30 ou 20+20+20. Rythme : 14–16 cal/min.</div><div class="p-ex-tag p-tag-c">Comp</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">60 GTOH alterné 20 kg</div><div class="p-ex-detail">30+30 ou alternance libre. Viser ~8–10 reps/série avant pause. Ne jamais poser + relâcher le DB.</div><div class="p-ex-tag p-tag-m">Comp</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Sandbag 60m (30+30)</div><div class="p-ex-detail">50 kg. Athlète A : 15m out + 15m back. Athlète B : idem. Pas de passage du sac — règle ATHX.</div><div class="p-ex-tag p-tag-m">Comp</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">4</div><div class="p-ex-name">60 BJO 24"</div><div class="p-ex-detail">Répartition libre. Stratégie : petites séries de 5–8 pour maintenir rythme. Transition immédiate vers lunges.</div><div class="p-ex-tag p-tag-m">Comp</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">5</div><div class="p-ex-name">60m DB lunges 2×20 kg</div><div class="p-ex-detail">30m par athlète (15m AR). Extension complète à chaque rep. Genou sol. Transition vers BBJ.</div><div class="p-ex-tag p-tag-m">Comp</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">6</div><div class="p-ex-name">60m Burpee broad jumps</div><div class="p-ex-detail">30m par athlète. Rythme régulier > rythme rapide qui s'effondre. Viser 4–5 min pour les 30m.</div><div class="p-ex-tag p-tag-m">Comp</div></div>
+          <div class="p-ex-row"><div class="p-ex-num">7</div><div class="p-ex-name">60 cal ski-erg final</div><div class="p-ex-detail">Sprint mental final. Tout donner. Si simulation solo : 30 cal suffisent pour reproduire la fatigue.</div><div class="p-ex-tag p-tag-c">Comp</div></div>
+        </div>
+        <div class="p-note green">S13–14 : simulation complète. S15 : simulation complète avec chrono officiel. S16 : 50% du volume. S17 Taper : repos ou mobilité uniquement.</div>
+      </div>
+      <div id="vendredi-b3d" style="display:none"><span class="p-phase-bar" style="background:#F1EFE8;color:#444441">Semaine 17 — Repos</span><div class="p-card"><div class="p-card-body">Repos complet. Les adaptations sont acquises. Toute séance intense cette semaine ne ferait que dégrader la performance du 5 septembre. Marche légère autorisée.</div></div></div>
+    </div>
+  </div>
+
+</div>
+<div id="doc" class="section-panel">
+
+  <div class="doc-layout">
+
+    <!-- Sommaire latéral -->
+    <nav class="doc-nav">
+      <button class="doc-nav-item active" onclick="showDoc('doc-intro')">Vue d'ensemble</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-tracker')">Tracker</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-progression')">Progression Lafay</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-statut')">Statuts de séance</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-musculaire')">Suivi musculaire</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-rpe')">RPE &amp; métriques</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-export')">Données &amp; export</button>
+    </nav>
+
+    <div class="doc-content">
+
+      <!-- VUE D'ENSEMBLE -->
+      <div id="doc-intro" class="doc-section active">
+        <div class="doc-card">
+          <div class="doc-h1">ATHX Tracker</div>
+          <p class="doc-p" style="color:var(--text3);font-size:12px;margin-bottom:16px">Documentation complète · Version 3</p>
+          <p class="doc-p">Outil de suivi d'entraînement conçu pour préparer la compétition ATHX. Il combine un tracker de charges série par série, un système de recommandation inspiré de la méthode Lafay, un suivi de fatigue musculaire avec modèle de récupération, et le programme complet sur 17 semaines.</p>
+        </div>
+        <div class="doc-card">
+          <div class="doc-h2">Structure de l'application</div>
+          <table class="doc-table">
+            <thead><tr><th>Onglet</th><th>Contenu</th></tr></thead>
+            <tbody>
+              <tr><td>📊 Tracker</td><td>Saisie des séances (charge, reps, RPE par série), analyse en temps réel, recommandations S+1, historique</td></tr>
+              <tr><td>🧬 Suivi musculaire</td><td>Schéma anatomique interactif, charge résiduelle par muscle avec modèle de récupération SRA, bilan global</td></tr>
+              <tr><td>📋 Programme</td><td>Plan complet 17 semaines : nutrition, échauffements, Mercredi force, Jeudi force/MetCon</td></tr>
+              <tr><td>📖 Documentation</td><td>Cette page</td></tr>
+            </tbody>
+          </table>
+          <div class="doc-h2">Exercices suivis</div>
+          <table class="doc-table">
+            <thead><tr><th>Exercice</th><th>Jour</th><th>1RM de référence</th><th>Palier de progression</th></tr></thead>
+            <tbody>
+              <tr><td>Strict Press</td><td>Mercredi</td><td>50 kg</td><td>+1.25 kg</td></tr>
+              <tr><td>Back Squat</td><td>Mercredi</td><td>110 kg</td><td>+2.5 kg</td></tr>
+              <tr><td>Deadlift</td><td>Jeudi</td><td>140 kg</td><td>+2.5 kg</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TRACKER -->
+      <div id="doc-tracker" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">Tracker de charges</div>
+          <div class="doc-h2">Saisie série par série</div>
+          <p class="doc-p">Pour chaque exercice, le plan de la semaine est affiché (charge cible, reps attendues). La grille de saisie affiche autant de lignes que de séries prévues dans le schéma de la semaine. Chaque ligne contient :</p>
+          <table class="doc-table">
+            <thead><tr><th>Champ</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td>Charge (kg)</td><td>Poids utilisé. Saisir la charge de S1 remplit automatiquement les séries suivantes vides.</td></tr>
+              <tr><td>Reps</td><td>Nombre de répétitions réalisées (pas le nombre prévu).</td></tr>
+              <tr><td>RPE</td><td>Rate of Perceived Exertion — effort ressenti de 6 à 10 (voir onglet RPE).</td></tr>
+            </tbody>
+          </table>
+          <p class="doc-p">Une coche verte ✓ apparaît sur chaque série dès que charge + reps sont renseignées. L'analyse et la recommandation S+1 se mettent à jour à l'enregistrement.</p>
+
+          <div class="doc-h2">Onglets du tracker</div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">✏️</div>
+            <div class="doc-rule-body"><strong>Saisie semaine</strong> <span>— formulaire principal. Sélectionner la semaine en haut, saisir les séries, enregistrer par jour.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">📈</div>
+            <div class="doc-rule-body"><strong>Progression</strong> <span>— vue graphique de la meilleure charge atteinte par exercice vs objectif de fin de programme.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">📋</div>
+            <div class="doc-rule-body"><strong>Historique</strong> <span>— tableau de toutes les séances avec charge, reps, RPE, signal d'analyse et recommandation S+1.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESSION LAFAY -->
+      <div id="doc-progression" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">Système de progression</div>
+          <p class="doc-p">La logique de recommandation S+1 s'inspire de la <strong>méthode Lafay</strong>, adaptée au contexte force/RPE. Le principe central : on ne progresse que quand la séance est pleinement validée. Toute séance incomplète entraîne une répétition de la même charge.</p>
+
+          <div class="doc-h2">Règles de décision</div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">✅</div>
+            <div class="doc-rule-body"><strong>Progression (+1 palier)</strong><br><span>Toutes les séries complètes + toutes les reps ≥ 95% du plan + RPE ≤ 8.5. La charge augmente d'un palier la semaine suivante (+2.5 kg squat/deadlift, +1.25 kg press).</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">⏸️</div>
+            <div class="doc-rule-body"><strong>Consolidation (même charge)</strong><br><span>Séries complètes mais RPE entre 8.5 et 9.5 — effort trop élevé pour progresser en sécurité. Ou reps entre 80% et 95% du plan — progression prématurée.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">⏳</div>
+            <div class="doc-rule-body"><strong>Plateau prolongé → recul (-1 palier)</strong><br><span>Après 3 semaines consécutives de consolidation sans progression, la charge recule d'un palier. Règle directement tirée de Lafay. Les semaines sautées et Post-Hyrox ne comptent pas dans le plateau.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">⚠️</div>
+            <div class="doc-rule-body"><strong>Surcharge → recul (-1 palier)</strong><br><span>RPE &gt; 9.5 sur la séance — la charge est excessive. Recul immédiat d'un palier.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">🔴</div>
+            <div class="doc-rule-body"><strong>Effondrement → recul (-2 paliers)</strong><br><span>Reps réalisées &lt; 80% du plan — la charge est franchement trop lourde. Recul de deux paliers (réinitialisation Lafay).</span></div>
+          </div>
+
+          <div class="doc-h2">Compteur de plateau</div>
+          <p class="doc-p">La recommandation affiche le compteur de plateau en temps réel (<strong>Plateau : 2/3 sem.</strong>) pour anticiper la décharge avant qu'elle arrive. À 3/3, la décharge est automatique la semaine suivante.</p>
+
+          <div class="doc-h2">Couleurs de recommandation</div>
+          <table class="doc-table">
+            <thead><tr><th>Couleur</th><th>Signification</th></tr></thead>
+            <tbody>
+              <tr><td><span class="doc-badge green">Vert</span></td><td>Progression — charge augmente</td></tr>
+              <tr><td><span class="doc-badge grey">Neutre</span></td><td>Consolidation — même charge</td></tr>
+              <tr><td><span class="doc-badge amber">Ambre</span></td><td>Recul — charge diminue</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- STATUTS DE SÉANCE -->
+      <div id="doc-statut" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">Statuts de séance</div>
+          <p class="doc-p">Chaque exercice peut recevoir un statut qui modifie l'analyse. Les boutons sont dans le header de chaque exercice.</p>
+
+          <div class="doc-h2">Séance normale</div>
+          <p class="doc-p">Analyse standard : charge vs plan, reps vs plan, RPE, complétude des séries. Recommandation S+1 calculée selon les règles Lafay.</p>
+
+          <div class="doc-h2">⚡ Post-Hyrox / Haute intensité</div>
+          <p class="doc-p">À utiliser quand l'exercice a été réalisé dans le cadre d'une compétition Hyrox, d'une séance cardio haute intensité préalable, ou de tout effort qui a affecté la qualité de la séance sans que ça soit apparent dans le RPE ressenti.</p>
+          <div class="doc-formula">RPE effectif = RPE ressenti + 1.5<br>(fatigue résiduelle non perçue à chaud)</div>
+          <p class="doc-p">En mode Post-Hyrox :</p>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">📊</div>
+            <div class="doc-rule-body"><strong>Analyse vs historique personnel</strong> <span>— la séance est comparée à ta moyenne habituelle (kg, reps, RPE) sur les séances normales passées, pas au plan de la semaine.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">🚫</div>
+            <div class="doc-rule-body"><strong>Aucune recommandation de charge</strong> <span>— la séance n'influence pas le calcul S+1. Le plan de la semaine suivante reste inchangé.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">🧬</div>
+            <div class="doc-rule-body"><strong>Fatigue musculaire comptabilisée</strong> <span>— la charge et les reps alimentent quand même le suivi de fatigue musculaire pour refléter l'effort réel.</span></div>
+          </div>
+
+          <div class="doc-h2">Séance sautée</div>
+          <p class="doc-p">Aucune saisie possible. La semaine ne compte pas dans le compteur de plateau. La recommandation S+1 est identique au plan officiel de la semaine suivante — comme si la séance n'avait pas eu lieu.</p>
+        </div>
+      </div>
+
+      <!-- SUIVI MUSCULAIRE -->
+      <div id="doc-musculaire" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">Suivi musculaire</div>
+          <p class="doc-p">Représentation anatomique interactive de la charge musculaire résiduelle à l'instant présent. Cliquer sur un muscle affiche le détail dans le panneau de droite.</p>
+
+          <div class="doc-h2">Modèle de récupération SRA</div>
+          <p class="doc-p">La charge résiduelle de chaque muscle est calculée avec un modèle de décroissance exponentielle inspiré du modèle <strong>Stimulus → Récupération → Adaptation (SRA)</strong> :</p>
+          <div class="doc-formula">charge_résiduelle = Σ (reps × RPE/10 × facteur_muscle) × 2^(−Δt / demi-vie)</div>
+          <p class="doc-p">Où <strong>Δt</strong> est le nombre d'heures depuis la séance et la <strong>demi-vie</strong> est propre à chaque groupe musculaire.</p>
+
+          <div class="doc-h2">Demi-vies de récupération</div>
+          <table class="doc-table">
+            <thead><tr><th>Muscle</th><th>Demi-vie</th><th>Risque tendineux</th></tr></thead>
+            <tbody>
+              <tr><td>Lombaires, Ischio, Quadriceps</td><td>72h</td><td>Élevé</td></tr>
+              <tr><td>Pectoraux, Fessiers, Dorsaux</td><td>60h</td><td>Faible</td></tr>
+              <tr><td>Trapèzes, Deltoïdes, Biceps, Mollets</td><td>48h</td><td>Moyen</td></tr>
+              <tr><td>Core, Avant-bras</td><td>36h</td><td>Élevé (tendineux)</td></tr>
+            </tbody>
+          </table>
+
+          <div class="doc-h2">Mapping exercice → muscles</div>
+          <table class="doc-table">
+            <thead><tr><th>Exercice</th><th>Primaire (100%)</th><th>Secondaire (40%)</th><th>Stabilisateur (15%)</th></tr></thead>
+            <tbody>
+              <tr><td>Strict Press</td><td>Deltoïde ant., Trapèzes</td><td>Pectoraux, Triceps</td><td>Core, Avant-bras</td></tr>
+              <tr><td>Back Squat</td><td>Quadriceps, Fessiers</td><td>Ischio, Adducteurs</td><td>Core, Lombaires, Mollets</td></tr>
+              <tr><td>Deadlift</td><td>Ischio, Fessiers, Lombaires</td><td>Quadriceps, Dorsaux, Trapèzes</td><td>Core, Avant-bras, Biceps</td></tr>
+            </tbody>
+          </table>
+
+          <div class="doc-h2">Codes couleur</div>
+          <table class="doc-table">
+            <thead><tr><th>Couleur</th><th>% du seuil</th><th>Interprétation</th></tr></thead>
+            <tbody>
+              <tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#d8d3cc;vertical-align:middle"></span> Gris</td><td>0%</td><td>Muscle au repos — récupéré</td></tr>
+              <tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#68c49a;vertical-align:middle"></span> Vert</td><td>1–40%</td><td>En récupération — fenêtre de surcompensation</td></tr>
+              <tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f5a623;vertical-align:middle"></span> Ambre</td><td>40–75%</td><td>Charge modérée — surveiller</td></tr>
+              <tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#e07020;vertical-align:middle"></span> Orange</td><td>75–100%</td><td>Charge élevée — priorité récupération</td></tr>
+              <tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#c0392b;vertical-align:middle"></span> Rouge</td><td>&gt;100%</td><td>Seuil dépassé — risque de sur-entraînement</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RPE -->
+      <div id="doc-rpe" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">RPE &amp; métriques</div>
+
+          <div class="doc-h2">Échelle RPE (Rate of Perceived Exertion)</div>
+          <p class="doc-p">Le RPE mesure l'effort ressenti sur une série, de 6 à 10. Il est plus précis que le pourcentage de 1RM car il tient compte de la fatigue du jour, de la qualité du sommeil et de la nutrition.</p>
+          <table class="doc-table">
+            <thead><tr><th>RPE</th><th>Signification</th><th>Reps en réserve</th></tr></thead>
+            <tbody>
+              <tr><td>6</td><td>Très léger — pas d'effort perceptible</td><td>4+ reps</td></tr>
+              <tr><td>7</td><td>Modéré — travail contrôlé</td><td>3 reps</td></tr>
+              <tr><td>7.5</td><td>Modéré à difficile</td><td>2–3 reps</td></tr>
+              <tr><td>8</td><td>Difficile mais maîtrisé — zone optimale</td><td>2 reps</td></tr>
+              <tr><td>8.5</td><td>Limite de la zone de progression</td><td>1–2 reps</td></tr>
+              <tr><td>9</td><td>Très difficile — 1 rep en réserve</td><td>1 rep</td></tr>
+              <tr><td>9.5</td><td>Quasi-maximal</td><td>0–1 rep</td></tr>
+              <tr><td>10</td><td>Maximum absolu — impossible de faire 1 rep de plus</td><td>0 reps</td></tr>
+            </tbody>
+          </table>
+
+          <div class="doc-h2">Interprétation dans l'analyse</div>
+          <table class="doc-table">
+            <thead><tr><th>RPE moyen</th><th>Signal</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td>≤ 6.5</td><td><span class="doc-badge green">Léger</span></td><td>Progression accélérée possible (+palier supplémentaire)</td></tr>
+              <tr><td>7–7.5</td><td><span class="doc-badge green">Optimal</span></td><td>Progression normale (+1 palier si reps ok)</td></tr>
+              <tr><td>8–8.5</td><td><span class="doc-badge grey">Calibré</span></td><td>Progression possible si séries complètes</td></tr>
+              <tr><td>8.5–9.5</td><td><span class="doc-badge amber">Élevé</span></td><td>Consolidation — même charge S+1</td></tr>
+              <tr><td>&gt; 9.5</td><td><span class="doc-badge red">Surcharge</span></td><td>Recul d'un palier S+1</td></tr>
+            </tbody>
+          </table>
+
+          <div class="doc-h2">RPE Post-Hyrox</div>
+          <p class="doc-p">En mode Post-Hyrox, le RPE ressenti est sous-estimé à cause de la fatigue résiduelle non perçue à chaud. Un coefficient de +1.5 est appliqué automatiquement pour estimer l'effort réel. Ce RPE effectif est utilisé uniquement pour le suivi de fatigue musculaire — il n'influence pas le programme.</p>
+        </div>
+      </div>
+
+      <!-- DONNÉES & EXPORT -->
+      <div id="doc-export" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">Données &amp; export</div>
+
+          <div class="doc-h2">Stockage</div>
+          <p class="doc-p">Toutes les données sont stockées <strong>localement</strong> dans le navigateur (localStorage). Elles ne quittent jamais ton appareil. Le fichier HTML est autonome et peut être utilisé hors ligne.</p>
+
+          <div class="doc-h2">Format des données</div>
+          <div class="doc-formula">clé : "{exercice}_w{semaine}"  ex: "squat_w3"<br>valeur : {"sets": [{"kg":85, "reps":5, "rpe":"8"}, ...], "kg":85, "ts":1780482221140, "sessionStatus":"normal"}</div>
+
+          <div class="doc-h2">Export JSON</div>
+          <p class="doc-p">Exporte toutes les données dans un fichier JSON horodaté. À utiliser régulièrement comme sauvegarde. Le fichier peut être réimporté sur n'importe quel appareil.</p>
+
+          <div class="doc-h2">Import JSON</div>
+          <p class="doc-p">L'import fusionne les données (ne remplace pas). Les clés existantes sont écrasées par les nouvelles. Le fichier est validé avant import : schéma vérifié, valeurs hors plage rejetées, taille limitée à 512 Ko.</p>
+
+          <div class="doc-h2">Export CSV</div>
+          <p class="doc-p">Exporte l'historique complet sous forme tabulaire : exercice, jour, semaine, numéro de série, charge, reps, RPE, plan, delta, date. Compatible Excel et Google Sheets.</p>
+
+          <div class="doc-h2">Sécurité</div>
+          <table class="doc-table">
+            <thead><tr><th>Mesure</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td>Échappement HTML</td><td>Toutes les valeurs affichées sont échappées pour prévenir les injections XSS</td></tr>
+              <tr><td>Validation import</td><td>Schéma, types et plages de valeurs vérifiés avant tout stockage</td></tr>
+              <tr><td>Event delegation SVG</td><td>Les clics sur le schéma anatomique passent par un listener unique avec validation de l'ID muscle</td></tr>
+              <tr><td>Content Security Policy</td><td>En-tête CSP déclarant les sources autorisées (fonts Google uniquement en externe)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /doc-content -->
+  </div><!-- /doc-layout -->
+</div>
+</div>
+
+<script>
+/* ── db.js ── */
+/**
+ * db.js — IndexedDB storage layer
+ * Replaces localStorage for better iOS stability.
+ * Exposes a synchronous-looking API via an in-memory cache
+ * that is flushed to IndexedDB asynchronously.
+ */
+
+const DB_NAME    = 'athx-tracker';
+const DB_VERSION = 1;
+const STORE_NAME = 'records';
+
+let _db   = null;
+let _cache = {};   // in-memory mirror for sync reads
+let _ready = false;
+
+/** Open (or upgrade) the database */
+function dbOpen() {
+  return new Promise((resolve, reject) => {
+    if(_db) { resolve(_db); return; }
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+      }
+    };
+    req.onsuccess = e => { _db = e.target.result; resolve(_db); };
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+/** Load all records into cache at startup */
+async function dbInit() {
+  try {
+    const db = await dbOpen();
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const all = await new Promise((resolve, reject) => {
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror   = () => reject(req.error);
+    });
+    _cache = {};
+    all.forEach(item => { _cache[item.key] = item.value; });
+    _ready = true;
+  } catch(err) {
+    console.warn('[db] IndexedDB unavailable, falling back to localStorage:', err);
+    // Fallback: migrate localStorage → cache
+    try {
+      const raw = localStorage.getItem('athx_charges_v2');
+      if(raw) _cache = JSON.parse(raw);
+    } catch(_) {}
+    _ready = true;
+  }
+}
+
+/** Sync read — always use cache */
+function dbGet(key) {
+  return _cache[key] !== undefined ? _cache[key] : null;
+}
+
+/** Sync read of entire cache */
+function dbGetAll() {
+  return { ..._cache };
+}
+
+/** Write key → cache immediately, persist to IDB async */
+function dbSet(key, value) {
+  _cache[key] = value;
+  _dbPersist(key, value);
+}
+
+/** Delete key */
+function dbDelete(key) {
+  delete _cache[key];
+  _dbPersistDelete(key);
+}
+
+/** Replace entire cache (used for import) */
+function dbSetAll(obj) {
+  _cache = { ...obj };
+  _dbPersistAll();
+}
+
+async function _dbPersist(key, value) {
+  try {
+    const db = await dbOpen();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put({ key, value });
+  } catch(_) {
+    // Fallback: localStorage mirror
+    try { localStorage.setItem('athx_charges_v2', JSON.stringify(_cache)); } catch(_) {}
+  }
+}
+
+async function _dbPersistDelete(key) {
+  try {
+    const db = await dbOpen();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).delete(key);
+  } catch(_) {}
+}
+
+async function _dbPersistAll() {
+  try {
+    const db = await dbOpen();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    store.clear();
+    Object.entries(_cache).forEach(([key, value]) => store.put({ key, value }));
+  } catch(_) {
+    try { localStorage.setItem('athx_charges_v2', JSON.stringify(_cache)); } catch(_) {}
+  }
+}
+
+/** Wipe everything (reset) */
+async function dbClear() {
+  _cache = {};
+  try {
+    const db = await dbOpen();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).clear();
+  } catch(_) {
+    try { localStorage.removeItem('athx_charges_v2'); } catch(_) {}
+  }
+}
+
+
+
+/* ── security.js ── */
+/**
+ * security.js — Input sanitisation & validation
+ * All functions are pure (no side effects).
+ */
+
+/** Escape HTML entities to prevent XSS in innerHTML */
+function esc(str) {
+  if(str == null) return '';
+  return String(str)
+    .replace(/&/g,  '&amp;')
+    .replace(/</g,  '&lt;')
+    .replace(/>/g,  '&gt;')
+    .replace(/"/g,  '&quot;')
+    .replace(/'/g,  '&#39;');
+}
+
+/** Sanitise and validate a single set record before storage */
+function sanitizeRecord(rec) {
+  if(!rec || typeof rec !== 'object') return null;
+  const out = {};
+
+  if(Array.isArray(rec.sets)) {
+    out.sets = rec.sets.map(s => {
+      if(!s || typeof s !== 'object') return { kg: null, reps: null, rpe: null };
+      const kg   = parseFloat(s.kg);
+      const reps = parseInt(s.reps, 10);
+      const rpe  = parseFloat(s.rpe);
+      return {
+        kg:   isFinite(kg)   && kg   >= 0 && kg   < 1000 ? kg   : null,
+        reps: isFinite(reps) && reps >= 0 && reps < 100  ? reps : null,
+        rpe:  isFinite(rpe)  && rpe  >= 0 && rpe  <= 10  ? String(rpe) : null,
+      };
+    });
   }
 
-  loadViews().catch(err => {
-    document.getElementById('view-loading').textContent =
-      'Erreur de chargement. Rechargez la page.';
-    console.error(err);
+  const kg = parseFloat(rec.kg);
+  const ts = parseInt(rec.ts, 10);
+  if(isFinite(kg) && kg >= 0 && kg < 1000) out.kg = kg;
+  if(isFinite(ts) && ts > 0)               out.ts = ts;
+  if(rec.rpe != null)
+    out.rpe = String(rec.rpe).replace(/[^0-9.]/g, '').slice(0, 4);
+  if(['normal','hyrox','skipped'].includes(rec.sessionStatus))
+    out.sessionStatus = rec.sessionStatus;
+
+  if(!out.kg && (!out.sets || !out.sets.some(s => s && s.kg))) return null;
+  return out;
+}
+
+/**
+ * Validate an imported JSON object.
+ * Returns { ok: true, clean: {...} } or { ok: false, error: '...' }
+ */
+function validateImport(obj) {
+  if(typeof obj !== 'object' || obj === null || Array.isArray(obj))
+    return { ok: false, error: 'Format invalide.' };
+
+  const EX_KEY = /^(press|squat|deadlift|gtoh|sandbag|lunges)_w([1-9]|1[0-7])$/;
+  const ST_KEY = /^status_(press|squat|deadlift|gtoh|sandbag|lunges)_w([1-9]|1[0-7])$/;
+  const VALID_STATUS = ['normal','hyrox','skipped'];
+
+  const hasAny = Object.keys(obj).some(k => EX_KEY.test(k));
+  if(!hasAny)
+    return { ok: false, error: 'Aucune donnée d\'exercice reconnue.' };
+
+  const clean = {};
+  for(const [k, v] of Object.entries(obj)) {
+    if(EX_KEY.test(k)) {
+      const s = sanitizeRecord(v);
+      if(s) clean[k] = s;
+    } else if(ST_KEY.test(k) && VALID_STATUS.includes(v)) {
+      clean[k] = v;
+    }
+    // unknown keys silently ignored
+  }
+
+  if(!Object.keys(clean).length)
+    return { ok: false, error: 'Aucune donnée valide après nettoyage.' };
+
+  return { ok: true, clean };
+}
+
+/** Validate a muscle ID (used in SVG click delegation) */
+function isValidMuscleId(id) {
+  return typeof id === 'string' && /^[a-zA-Z]+$/.test(id);
+}
+
+
+/* ── data.js ── */
+/**
+ * data.js — All app constants and exercise definitions
+ * No side effects. Pure data.
+ */
+
+const EXERCISES = [
+  {
+    id: 'press', day: 'Mercredi', name: 'Strict Press', unit: 'kg',
+    sets: [5,5,5,5,5,null,3,3,3,5,5,null,1,1,1,3,null],
+    plan: [35,37.5,40,42.5,45,null,47.5,50,52.5,45,47.5,null,null,null,null,50,null],
+    repScheme: ['5×5','5×5','5×5','5×5','5×5','Deload','5×3','5×3','5×3','4×5','4×5','Deload',
+                '1RM tentative','1RM tentative','1RM max','3×3','Taper'],
+    color: '#1a5fb4', refText: '1RM Press',
+  },
+  {
+    id: 'squat', day: 'Mercredi', name: 'Back Squat', unit: 'kg',
+    sets: [5,5,5,5,5,null,4,4,4,5,5,null,3,3,3,3,null],
+    plan: [77.5,80,82.5,85,87.5,null,90,92.5,95,85,90,null,null,null,null,92.5,null],
+    repScheme: ['4×5','4×5','4×5','4×5','4×5','Deload','4×4','4×4','4×4','3×5','3×5','Deload',
+                '3RM tentative','3RM tentative','3RM max','3×3','Taper'],
+    color: '#7c4a00', refText: '1RM Squat',
+  },
+  {
+    id: 'deadlift', day: 'Jeudi', name: 'Deadlift', unit: 'kg',
+    sets: [4,4,4,4,4,null,3,3,3,4,4,null,1,1,1,3,null],
+    plan: [85,90,95,100,105,null,110,115,117.5,105,110,null,120,125,null,null,null],
+    repScheme: ['4×4','4×4','4×4','4×4','4×4','Deload','4×3','4×3','4×3','3×4','3×4','Deload',
+                '5RM tentative','5RM tentative','5RM max','3×3','Repos'],
+    color: '#1b6b45', refText: '1RM Deadlift',
+  },
+  {
+    id: 'gtoh', day: 'Vendredi', name: 'GTOH DB alterné', unit: 'kg',
+    sets: Array(17).fill(null),
+    plan: [15,15,15,15,15,null,17.5,17.5,20,20,20,null,20,20,20,16,null],
+    repScheme: ['3×12','3×12','3×12','3×12','3×12','Deload','3×10/c','3×10/c','3×10/c',
+                '3×10/c','3×10/c','Deload','3×15','3×15','Simulation','Volume réduit','Repos'],
+    color: '#3b6d11', refText: 'Charge compét : 20 kg',
+  },
+  {
+    id: 'sandbag', day: 'Vendredi', name: 'Sandbag carry', unit: 'kg',
+    sets: Array(17).fill(null),
+    plan: [null,null,null,null,null,null,40,40,50,50,50,null,50,50,50,40,null],
+    repScheme: ['—','—','—','—','—','—','3×30 m','3×30 m','3×30 m','3×30 m','3×30 m','Deload',
+                '3×30 m','3×30 m','Simulation','Volume réduit','Repos'],
+    color: '#633806', refText: 'Charge compét : 50 kg',
+  },
+  {
+    id: 'lunges', day: 'Vendredi', name: 'DB Walking lunges', unit: 'kg/main',
+    sets: Array(17).fill(null),
+    plan: [15,15,15,15,15,null,15,17.5,20,20,20,null,20,20,20,16,null],
+    repScheme: ['3×10 m','3×10 m','3×10 m','3×10 m','3×10 m','Deload','3×10 m','3×10 m',
+                '3×10 m','3×10 m','3×10 m','Deload','Simulation','Simulation','Simulation',
+                'Volume réduit','Repos'],
+    color: '#3c3489', refText: 'Charge compét : 2×20 kg',
+  },
+];
+
+const PHASES = [1,1,1,1,1,0,2,2,2,2,2,0,3,3,3,3,0];
+const PHASE_LABELS = [
+  'Deload',
+  'Bloc 1 — Base technique',
+  'Bloc 2 — Intensité',
+  'Bloc 3 — Simulation compétition',
+];
+const PHASE_STYLE = [
+  { bg:'#e8e6e0', color:'#444441' },
+  { bg:'#e8f0fc', color:'#1a5fb4' },
+  { bg:'#fdf0d8', color:'#7c4a00' },
+  { bg:'#e0f4eb', color:'#1b6b45' },
+];
+
+// ── Muscle data ──────────────────────────────────────────────────────────────
+
+const MUSCLE_LABELS = {
+  trapeze:   'Trapèzes',      deltAnt:   'Deltoïde ant.',  deltPost:  'Deltoïde post.',
+  biceps:    'Biceps',        triceps:   'Triceps',          pec:       'Pectoraux',
+  dorsaux:   'Dorsaux',       core:      'Core / Abdos',    lombaires: 'Lombaires',
+  quad:      'Quadriceps',    ischio:    'Ischio-jambiers', fessiers:  'Fessiers',
+  avantbras: 'Avant-bras',    mollets:   'Mollets',
+};
+
+/** Recovery half-life in hours (SRA model) */
+const RECOVERY_HALFLIFE = {
+  trapeze: 48, deltAnt: 48, deltPost: 48, biceps: 48, triceps: 48,
+  pec: 60,     dorsaux: 60, core: 36,    lombaires: 72,
+  quad: 72,    ischio: 72,  fessiers: 60, avantbras: 36, mollets: 60,
+};
+
+/** exercise id → muscle id → load factor (0–1) */
+const MUSCLE_MAP = {
+  press: {
+    deltAnt: 1.0, trapeze: 0.5, pec: 0.4, triceps: 0.35, core: 0.2, avantbras: 0.15,
+  },
+  squat: {
+    quad: 1.0, fessiers: 0.6, ischio: 0.3, lombaires: 0.3, core: 0.25, mollets: 0.15,
+  },
+  deadlift: {
+    ischio: 1.0, fessiers: 0.8, lombaires: 0.8, quad: 0.4,
+    dorsaux: 0.4, trapeze: 0.35, avantbras: 0.3, biceps: 0.2, core: 0.2,
+  },
+};
+
+/** Maximum weekly volume threshold per muscle */
+const MUSCLE_THRESH = {
+  trapeze: 18, deltAnt: 14, deltPost: 14, biceps: 12, triceps: 14,
+  pec: 16,     dorsaux: 18, core: 20,    lombaires: 12,
+  quad: 20,    ischio: 16,  fessiers: 18, avantbras: 14, mollets: 14,
+};
+
+
+/* ── store.js ── */
+/**
+ * store.js — App-level storage helpers
+ * Wraps db.js with typed accessors for records and session status.
+ */
+
+
+// ── Record accessors ─────────────────────────────────────────────────────────
+
+function getRecord(exId, week) {
+  return dbGet(`${exId}_w${week}`) || null;
+}
+
+function setRecord(exId, week, data) {
+  const clean = sanitizeRecord(data);
+  if(clean) dbSet(`${exId}_w${week}`, clean);
+}
+
+function getExStatus(exId, week) {
+  return dbGet(`status_${exId}_w${week}`) || 'normal';
+}
+
+function setExStatus(exId, week, status) {
+  const VALID = ['normal', 'hyrox', 'skipped'];
+  if(!VALID.includes(status)) return;
+  dbSet(`status_${exId}_w${week}`, status);
+}
+
+function getAllRecords() {
+  return dbGetAll();
+}
+
+function importRecords(cleanObj) {
+  const current = dbGetAll();
+  dbSetAll({ ...current, ...cleanObj });
+}
+
+/** Find the highest week that has any data */
+function getLatestWeek(exercises) {
+  let max = 1;
+  exercises.forEach(ex => {
+    for(let w = 1; w <= 17; w++) {
+      if(getRecord(ex.id, w)) max = Math.max(max, w);
+    }
   });
+  return Math.min(max, 17);
+}
+
+// ── Record normalisation (v1 → v2 compat) ───────────────────────────────────
+
+function normRecord(rec) {
+  if(!rec) return null;
+  if(rec.sets && Array.isArray(rec.sets)) return rec;
+  // v1 format {kg, rpe, ts} → v2
+  return { sets: [{ kg: rec.kg, reps: null, rpe: rec.rpe || '' }], kg: rec.kg, rpe: rec.rpe, ts: rec.ts };
+}
+
+function bestKg(rec) {
+  if(!rec) return null;
+  const nr = normRecord(rec);
+  if(!nr || !nr.sets) return nr?.kg || null;
+  const vals = nr.sets.map(s => s?.kg).filter(v => v != null && v > 0);
+  return vals.length ? Math.max(...vals) : (nr.kg || null);
+}
+
+
+/* ── progression.js ── */
+/**
+ * progression.js — Lafay-inspired progression engine
+ *
+ * Rules:
+ *  SUCCESS   : all sets + reps ≥ 95% plan + RPE ≤ 8.5  → +1 step
+ *  HIGH_RPE  : all sets + reps ok but RPE 8.5–9.5       → hold
+ *  PARTIAL   : incomplete sets or reps 80–95%            → hold
+ *  PLATEAU   : 3 consecutive holds                       → -1 step
+ *  OVERLOAD  : RPE > 9.5                                 → -1 step
+ *  CRUSH     : reps < 80% of plan                        → -2 steps
+ */
+
+
+function parseSets(scheme) {
+  if(!scheme || ['Deload','—','Taper','Repos'].includes(scheme)) return 0;
+  const m = scheme.match(/^(\d+)[×x]/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+function parseReps(scheme) {
+  const m = scheme && scheme.match(/[×x](\d+)/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function palier(ex) {
+  return (ex.id === 'squat' || ex.id === 'deadlift') ? 2.5 : 1.25;
+}
+
+function weekOutcome(ex, week) {
+  const status = getExStatus(ex.id, week);
+  if(status === 'skipped') return 'skipped';
+  if(status === 'hyrox')   return 'hyrox';
+
+  const rec = normRecord(getRecord(ex.id, week));
+  if(!rec || !rec.sets || !rec.sets.some(s => s && s.kg)) return 'nodata';
+
+  const scheme   = ex.repScheme[week - 1];
+  const planReps = parseReps(scheme) || 5;
+  const nSets    = parseSets(scheme) || 4;
+  const sets     = rec.sets.filter(s => s && s.kg);
+  const done     = sets.filter(s => s.reps && s.reps > 0);
+
+  const avgRpe  = done.length ? done.reduce((a, s) => a + (parseFloat(s.rpe) || 7), 0) / done.length : null;
+  const avgReps = done.length ? done.reduce((a, s) => a + (s.reps || 0), 0) / done.length : null;
+  const setPct  = nSets > 0 ? done.length / nSets : 0;
+
+  if(avgReps !== null && planReps > 0 && avgReps / planReps < 0.8) return 'crush';
+  if(avgRpe !== null && avgRpe > 9.5) return 'overload';
+  if(setPct >= 1 && (avgReps === null || avgReps / planReps >= 0.95)) {
+    return (avgRpe !== null && avgRpe > 8.5) ? 'high_rpe' : 'success';
+  }
+  return 'partial';
+}
+
+function consecutivePlateaux(ex, beforeWeek) {
+  let count = 0;
+  for(let w = beforeWeek - 1; w >= 1; w--) {
+    const o = weekOutcome(ex, w);
+    if(['skipped','hyrox','nodata'].includes(o)) continue;
+    if(['partial','high_rpe'].includes(o)) { count++; continue; }
+    break;
+  }
+  return count;
+}
+
+/**
+ * Returns { kg, rule, outcome, plateauCount } or null.
+ */
+function getNextPlan(ex, week) {
+  if(week >= 17) return null;
+
+  const rec       = normRecord(getRecord(ex.id, week));
+  const currentKg = rec ? (Math.max(...(rec.sets || []).map(s => s?.kg || 0).filter(v => v > 0)) || rec.kg) : null;
+  if(!currentKg) return ex.plan[week] ? { kg: ex.plan[week], rule: 'Aucune donnée — plan officiel appliqué.', outcome: 'nodata', plateauCount: 0 } : null;
+
+  const p             = palier(ex);
+  const outcome       = weekOutcome(ex, week);
+  const plateauCount  = consecutivePlateaux(ex, week);
+  const status        = getExStatus(ex.id, week);
+
+  let nextKg, rule;
+
+  if(status === 'skipped') {
+    nextKg = currentKg;
+    rule   = 'Séance sautée — répète la même charge.';
+  } else if(outcome === 'crush') {
+    nextKg = Math.max(currentKg - 2 * p, p);
+    rule   = 'Reps très insuffisantes — recul de 2 paliers (Lafay : réinitialisation).';
+  } else if(outcome === 'overload') {
+    nextKg = Math.max(currentKg - p, p);
+    rule   = 'RPE > 9.5 — charge excessive. Recul d\'un palier.';
+  } else if(plateauCount >= 3) {
+    nextKg = Math.max(currentKg - p, p);
+    rule   = `${plateauCount} semaines de plateau — recul d'un palier (règle Lafay).`;
+  } else if(outcome === 'success') {
+    nextKg = currentKg + p;
+    rule   = 'Toutes séries validées + RPE ≤ 8.5 — progression d\'un palier ✓';
+  } else if(outcome === 'high_rpe') {
+    nextKg = currentKg;
+    rule   = 'Séries complètes mais RPE élevé (8.5–9.5) — consolide à la même charge.';
+  } else {
+    nextKg = currentKg;
+    const remaining = 3 - plateauCount - 1;
+    rule = plateauCount >= 1
+      ? `${plateauCount + 1} semaine(s) de plateau. Encore ${remaining} avant recul.`
+      : 'Séries incomplètes — répète la même charge (règle Lafay).';
+  }
+
+  return { kg: Math.round(nextKg / 1.25) * 1.25, rule, outcome, plateauCount };
+}
+
+/**
+ * Full multi-axis analysis (RPE, reps, sets, kg vs plan).
+ * Returns { type, signals[], hyrox, skipped, avgRpe, avgReps, ... }
+ */
+function calcAdj(ex, week) {
+  const planKg   = ex.plan[week - 1];
+  const scheme   = ex.repScheme[week - 1];
+  const planReps = parseReps(scheme) || 5;
+  const nSets    = parseSets(scheme) || 4;
+  if(!planKg) return null;
+
+  const status   = getExStatus(ex.id, week);
+
+  if(status === 'skipped') {
+    return { type: 'skipped', signals: [], nextBonus: 0, bk: null, avgRpe: null,
+             avgReps: null, repRatio: null, setPct: null, skipped: true, hyrox: false };
+  }
+
+  const rec = normRecord(getRecord(ex.id, week));
+  if(!rec || !rec.sets || !rec.sets.some(s => s && s.kg)) return null;
+
+  const isHyrox       = status === 'hyrox';
+  const sets          = rec.sets.filter(s => s && s.kg);
+  const completedSets = sets.filter(s => s.reps && s.reps > 0);
+  const bk            = Math.max(...sets.map(s => s.kg || 0));
+
+  const rawAvgRpe = completedSets.length
+    ? completedSets.reduce((a, s) => a + (parseFloat(s.rpe) || 7), 0) / completedSets.length
+    : null;
+  const effectiveRpe = (rawAvgRpe != null && isHyrox)
+    ? Math.min(10, rawAvgRpe + 1.5) : rawAvgRpe;
+  const avgRpe  = effectiveRpe;
+  const avgReps = completedSets.length
+    ? completedSets.reduce((a, s) => a + (s.reps || 0), 0) / completedSets.length
+    : null;
+
+  // ── Post-Hyrox: compare vs personal history ──────────────────────────────
+  if(isHyrox) {
+    const baseline = _calcBaseline(ex, week);
+    const signals  = [];
+    if(rawAvgRpe != null) {
+      const msg = rawAvgRpe >= 8.5
+        ? `RPE ressenti ${round1(rawAvgRpe)} (effectif estimé ${round1(effectiveRpe)} avec fatigue Hyrox).`
+        : `RPE ressenti ${round1(rawAvgRpe)} — contexte post-effort élevé.`;
+      signals.push({ type: rawAvgRpe >= 8.5 ? 'warn' : 'neutral', text: msg });
+    }
+    if(avgReps != null) {
+      const d = baseline.avgReps != null ? round1(avgReps - baseline.avgReps) : null;
+      signals.push({ type: d != null && d < -1 ? 'warn' : 'neutral',
+        text: `Reps/série : ${round1(avgReps)}${baseline.avgReps ? ` (moy. habituelle ${baseline.avgReps})` : ''}.` });
+    }
+    if(baseline.avgKg != null) {
+      const dKg = round1(bk - baseline.avgKg);
+      signals.push({ type: dKg < -5 ? 'warn' : 'neutral',
+        text: `Charge : ${bk} ${ex.unit} (moy. habituelle ${baseline.avgKg} ${ex.unit}).` });
+    }
+    signals.push({ type: 'neutral', text: 'Données transmises au suivi musculaire uniquement. Aucun ajustement programme.' });
+    return { type: 'hyrox', signals, nextBonus: 0, bk, avgRpe, rawRpe: rawAvgRpe,
+             avgReps, repRatio: null, setPct: completedSets.length / nSets, skipped: false, hyrox: true };
+  }
+
+  // ── Normal analysis ───────────────────────────────────────────────────────
+  const deltaKg  = round1(bk - planKg);
+  const repRatio = avgReps != null && planReps > 0 ? avgReps / planReps : null;
+  const setPct   = nSets > 0 ? completedSets.length / nSets : null;
+  const signals  = [];
+  let nextBonus  = 0;
+
+  // Axe RPE
+  if(avgRpe != null) {
+    if(avgRpe >= 9.5) {
+      signals.push({ type: 'danger', text: `RPE ${round1(avgRpe)} — intensité maximale.` });
+      nextBonus -= (ex.id === 'squat' || ex.id === 'deadlift') ? 5 : 2.5;
+    } else if(avgRpe >= 9) {
+      signals.push({ type: 'warn', text: `RPE ${round1(avgRpe)} — proche de la limite. Pas de progression.` });
+    } else if(avgRpe <= 6.5) {
+      signals.push({ type: 'good', text: `RPE ${round1(avgRpe)} — effort léger. Progression accélérée.` });
+      nextBonus += (ex.id === 'squat' || ex.id === 'deadlift') ? 5 : 2.5;
+    } else if(avgRpe <= 7.5) {
+      signals.push({ type: 'good', text: `RPE ${round1(avgRpe)} — zone optimale.` });
+    } else {
+      signals.push({ type: 'neutral', text: `RPE ${round1(avgRpe)} — charge bien calibrée.` });
+    }
+  }
+
+  // Axe reps
+  if(repRatio != null) {
+    const r = round1(avgReps);
+    if(repRatio < 0.8) {
+      signals.push({ type: 'danger', text: `${r} reps/série (plan : ${planReps}). Réduis la charge.` });
+      nextBonus -= (ex.id === 'squat' || ex.id === 'deadlift') ? 5 : 2.5;
+    } else if(repRatio < 0.95) {
+      signals.push({ type: 'warn', text: `${r} reps/série (plan : ${planReps}). Consolide avant de progresser.` });
+      nextBonus -= 1.25;
+    } else if(repRatio >= 1.1) {
+      signals.push({ type: 'good', text: `${r} reps/série — objectif dépassé. Augmente la charge.` });
+      nextBonus += 1.25;
+    } else {
+      signals.push({ type: 'good', text: `${r} reps/série — objectif atteint ✓` });
+    }
+  }
+
+  // Axe séries
+  if(setPct != null && completedSets.length > 0) {
+    if(setPct < 0.6) {
+      signals.push({ type: 'danger', text: `${completedSets.length}/${nSets} séries. Vérifie récupération.` });
+      nextBonus -= 1.25;
+    } else if(setPct < 1) {
+      signals.push({ type: 'warn', text: `${completedSets.length}/${nSets} séries complètes.` });
+    } else {
+      signals.push({ type: 'good', text: `Toutes les séries (${nSets}/${nSets}) ✓` });
+    }
+  }
+
+  // Axe charge vs plan
+  if(Math.abs(deltaKg) >= 1.25) {
+    if(deltaKg >= 5) {
+      signals.push({ type: 'good', text: `+${deltaKg} kg sur le plan — en avance.` });
+      nextBonus += (ex.id === 'squat' || ex.id === 'deadlift') ? 2.5 : 1.25;
+    } else if(deltaKg >= 2.5) {
+      signals.push({ type: 'good', text: `+${deltaKg} kg sur le plan — légère avance.` });
+    } else if(deltaKg <= -5) {
+      signals.push({ type: 'danger', text: `${deltaKg} kg sous le plan.` });
+      nextBonus += deltaKg;
+    } else if(deltaKg < -1.25) {
+      signals.push({ type: 'warn', text: `${deltaKg} kg sous le plan.` });
+      nextBonus += Math.round(deltaKg / 2 * 4) / 4;
+    }
+  } else if(completedSets.length > 0) {
+    signals.push({ type: 'neutral', text: `Charge conforme au plan (${planKg} ${ex.unit}).` });
+  }
+
+  // Gel si RPE >= 9
+  if(avgRpe != null && avgRpe >= 9 && nextBonus > 0) nextBonus = 0;
+
+  const hasDanger = signals.some(s => s.type === 'danger');
+  const hasWarn   = signals.some(s => s.type === 'warn');
+  const allGood   = signals.every(s => s.type === 'good' || s.type === 'neutral');
+  const type = hasDanger ? 'behind' : hasWarn ? 'slight_behind' : allGood ? 'ahead' : 'ok';
+
+  return { type, signals, nextBonus, bk, avgRpe, avgReps, repRatio, setPct, skipped: false, hyrox: false };
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function round1(n) { return Math.round(n * 10) / 10; }
+
+function _calcBaseline(ex, upToWeek) {
+  const kgs = [], rpesArr = [], repsArr = [];
+  for(let w = 1; w < upToWeek; w++) {
+    const status = getExStatus(ex.id, w);
+    if(status === 'hyrox' || status === 'skipped') continue;
+    const r = normRecord(getRecord(ex.id, w));
+    if(!r || !r.sets) continue;
+    r.sets.forEach(s => {
+      if(s?.kg)   kgs.push(s.kg);
+      if(s?.reps) repsArr.push(s.reps);
+      if(s?.rpe)  rpesArr.push(parseFloat(s.rpe));
+    });
+  }
+  const avg = arr => arr.length ? round1(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
+  return { avgKg: avg(kgs), avgReps: avg(repsArr), avgRpe: avg(rpesArr) };
+}
+
+
+/* ── tracker.js ── */
+/**
+ * tracker.js — Tracker UI: saisie, progression, historique
+ */
+
+
+// ── Week selector ──────────────────────────────────────────────────────────
+
+function initWeekSel() {
+  const sel = document.getElementById('weekSel');
+  if(!sel) return;
+  sel.innerHTML = '';
+  for(let w = 1; w <= 17; w++) {
+    const o = document.createElement('option');
+    o.value = w;
+    o.textContent = `Semaine ${w}`;
+    sel.appendChild(o);
+  }
+  sel.value = getLatestWeek(EXERCISES);
+}
+
+// ── Saisie ─────────────────────────────────────────────────────────────────
+
+function renderSaisie() {
+  const week = parseInt(document.getElementById('weekSel').value, 10);
+  const ph   = PHASES[week - 1];
+  const badge = document.getElementById('phaseBadge');
+  badge.textContent       = PHASE_LABELS[ph];
+  badge.style.background  = PHASE_STYLE[ph].bg;
+  badge.style.color       = PHASE_STYLE[ph].color;
+
+  const days = ['Mercredi', 'Jeudi'];
+  let html = '';
+
+  days.forEach(day => {
+    const exs = EXERCISES.filter(e => e.day === day);
+    if(!exs.length) return;
+
+    html += `<div class="day-card">
+      <div class="day-header"><span class="day-name">${day}</span></div>
+      <div class="ex-wrap">`;
+
+    exs.forEach(ex => {
+      const plan      = ex.plan[week - 1];
+      const scheme    = ex.repScheme[week - 1];
+      const rec       = normRecord(getRecord(ex.id, week));
+      const nSets     = parseSets(scheme) || 3;
+      const planReps  = parseReps(scheme);
+      const exStatus  = getExStatus(ex.id, week);
+
+      const btnN = exStatus === 'normal'  ? ' active-normal'  : '';
+      const btnH = exStatus === 'hyrox'   ? ' active-hyrox'   : '';
+      const btnS = exStatus === 'skipped' ? ' active-skipped' : '';
+
+      html += `<div class="ex-block">
+        <div class="ex-top">
+          <span class="ex-name-t">${ex.name}</span>
+          <span class="ex-scheme">${scheme}</span>
+          <span class="ex-status-btns">
+            <button class="session-status-btn${btnN}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
+            <button class="session-status-btn${btnH}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-Hyrox</button>
+            <button class="session-status-btn${btnS}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+          </span>
+        </div>`;
+
+      if(plan) {
+        html += `<div class="ex-plan-txt">Plan : <strong>${plan} ${ex.unit}</strong>${planReps ? ` × <strong>${planReps} reps</strong>` : ''} <span class="ex-ref">${ex.refText}</span></div>`;
+
+        const bk = bestKg(rec);
+        if(bk != null || exStatus === 'skipped') {
+          const adj = calcAdj(ex, week);
+          if(adj && adj.signals.length) {
+            const cls = adj.type === 'ok' ? 'adj-ok'
+              : adj.type.includes('ahead') ? 'adj-ahead'
+              : (adj.type.includes('behind') && !adj.type.includes('slight')) ? 'adj-behind'
+              : 'adj-slight';
+            const sigHtml = adj.signals.map(s => {
+              const ic  = s.type === 'good' ? '✓ ' : s.type === 'warn' ? '⚠ ' : s.type === 'danger' ? '✗ ' : '· ';
+              const col = s.type === 'good' ? 'var(--green)' : s.type === 'warn' ? 'var(--amber)' : s.type === 'danger' ? 'var(--red)' : 'var(--text2)';
+              return `<div style="display:flex;gap:6px;margin-bottom:2px"><span style="color:${col};font-weight:600;flex-shrink:0">${ic}</span><span>${esc(s.text)}</span></div>`;
+            }).join('');
+            html += `<div class="adj-box ${cls}" style="padding:8px 12px">${sigHtml}</div>`;
+          }
+
+          if(!adj?.skipped && !adj?.hyrox) {
+            const nxt = getNextPlan(ex, week);
+            if(nxt) {
+              const planNext     = ex.plan[week];
+              const planRepsNext = parseReps(ex.repScheme[week]) || planReps;
+              const delta        = planNext ? Math.round((nxt.kg - planNext) * 10) / 10 : 0;
+              const deltaStr     = delta > 0 ? `+${delta} vs plan` : delta < 0 ? `${delta} vs plan` : 'conforme au plan';
+              const deltaCls     = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--red)' : 'var(--text2)';
+              const rpeTarget    = adj?.avgRpe != null ? (adj.avgRpe > 8.5 ? '≤ 8' : adj.avgRpe < 7 ? '7.5–8.5' : '7–8') : '7–8';
+              const outcomeClass = nxt.outcome === 'success' ? 'next-rec-success' : nxt.outcome === 'high_rpe' || nxt.outcome === 'partial' ? 'next-rec-hold' : 'next-rec-back';
+              html += `<div class="next-rec-block ${outcomeClass}">
+                <div class="rec-line">S${week + 1} recommandé : <strong>${nxt.kg} ${ex.unit}</strong> × <strong>${planRepsNext} reps</strong>
+                  ${planNext ? `<span style="color:${deltaCls};font-size:11px;font-weight:500;margin-left:6px">(${deltaStr})</span>` : ''}
+                </div>
+                <div class="reason">${esc(nxt.rule)}</div>
+                <div class="reason" style="margin-top:2px">RPE cible : <strong>${rpeTarget}</strong>${nxt.plateauCount > 0 ? ` · Plateau : ${nxt.plateauCount}/3 sem.` : ''}</div>
+              </div>`;
+            }
+          }
+        }
+
+        // Sets grid
+        if(exStatus !== 'skipped') {
+          html += `<table class="sets-table">
+            <thead><tr><th>Série</th><th>Charge (${ex.unit})</th><th>Reps</th><th>RPE</th><th></th></tr></thead><tbody>`;
+          for(let s = 0; s < nSets; s++) {
+            const sr  = rec?.sets?.[s] || {};
+            const done = sr.kg && sr.reps ? '✓' : '';
+            const doneCls = done ? 'color:var(--green)' : 'color:var(--border)';
+            html += `<tr>
+              <td class="set-num">S${s + 1}</td>
+              <td><input class="set-inp" type="number" id="kg_${ex.id}_${s}" step="1.25" min="0" value="${sr.kg || ''}" placeholder="${plan}" data-ex="${ex.id}" data-idx="${s}" data-nsets="${nSets}"></td>
+              <td><input class="set-inp reps-inp" type="number" id="reps_${ex.id}_${s}" min="0" max="30" step="1" value="${sr.reps || ''}" placeholder="${planReps || '—'}"></td>
+              <td><select class="set-rpe" id="rpe_${ex.id}_${s}"><option value="">—</option>${_rpeOptions(sr.rpe)}</select></td>
+              <td class="set-status" style="${doneCls}">${done}</td>
+            </tr>`;
+          }
+          html += '</tbody></table>';
+        }
+
+        // Summary if data exists
+        if(rec?.sets?.some(s => s?.kg)) {
+          const done       = (rec.sets || []).filter(s => s?.reps);
+          const avgRpe     = done.length ? Math.round(done.reduce((a, s) => a + (parseFloat(s.rpe) || 0), 0) / done.length * 10) / 10 : null;
+          html += `<div class="sets-summary"><strong>${done.length}</strong> série${done.length > 1 ? 's' : ''} · ${avgRpe ? `RPE moy. <strong>${avgRpe}</strong> · ` : ''}Meilleure charge : <strong>${bestKg(rec)} ${ex.unit}</strong></div>`;
+        }
+      } else {
+        html += `<div class="ex-plan-txt ex-ref">${scheme}</div>`;
+      }
+      html += '</div>'; // ex-block
+    });
+
+    html += `</div></div><!-- day-card end -->
+      <div class="save-row">
+        <button class="save-btn" data-day="${day}" data-week="${week}">Enregistrer ${day}</button>
+        <span class="save-ok" id="ok_${day}">&#x2713; Enregistré</span>
+      </div>`;
+  });
+
+  document.getElementById('saisieContent').innerHTML = html;
+  _bindSaisieEvents(week);
+}
+
+function _rpeOptions(selected) {
+  return [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]
+    .map(r => `<option value="${r}"${String(selected) === String(r) ? ' selected' : ''}>${r}</option>`)
+    .join('');
+}
+
+function _bindSaisieEvents(week) {
+  // Status buttons (event delegation)
+  document.getElementById('saisieContent').addEventListener('click', e => {
+    const btn = e.target.closest('[data-status]');
+    if(!btn) return;
+    const { ex, status } = btn.dataset;
+    setExStatus(ex, week, status);
+    renderSaisie();
+  }, { once: true });
+
+  // Auto-fill charge from S1
+  document.getElementById('saisieContent').addEventListener('input', e => {
+    const inp = e.target.closest('.set-inp[data-idx="0"]');
+    if(!inp) return;
+    const { ex, nsets } = inp.dataset;
+    const n = parseInt(nsets, 10);
+    for(let i = 1; i < n; i++) {
+      const el = document.getElementById(`kg_${ex}_${i}`);
+      if(el && !el.value) el.value = inp.value;
+    }
+  });
+
+  // Save buttons
+  document.getElementById('saisieContent').addEventListener('click', e => {
+    const btn = e.target.closest('.save-btn');
+    if(!btn) return;
+    saveSaisie(parseInt(btn.dataset.week, 10), btn.dataset.day);
+  });
+}
+
+function saveSaisie(week, day) {
+  const exs = EXERCISES.filter(e => e.day === day);
+  exs.forEach(ex => {
+    const scheme = ex.repScheme[week - 1];
+    const nSets  = parseSets(scheme) || 3;
+    const sets   = [];
+    let anyData  = false;
+
+    for(let s = 0; s < nSets; s++) {
+      const kgEl   = document.getElementById(`kg_${ex.id}_${s}`);
+      const repsEl = document.getElementById(`reps_${ex.id}_${s}`);
+      const rpeEl  = document.getElementById(`rpe_${ex.id}_${s}`);
+      const kg     = kgEl?.value  ? parseFloat(kgEl.value)    : null;
+      const reps   = repsEl?.value ? parseInt(repsEl.value, 10) : null;
+      const rpe    = rpeEl?.value  || '';
+      sets.push({ kg, reps, rpe });
+      if(kg || reps) anyData = true;
+    }
+
+    if(!anyData) return;
+
+    const bk           = Math.max(...sets.map(s => s.kg || 0).filter(v => v > 0)) || null;
+    const filledRpe    = sets.find(s => s.rpe);
+    const sessionStatus = getExStatus(ex.id, week);
+
+    setRecord(ex.id, week, {
+      sets, kg: bk, rpe: filledRpe ? filledRpe.rpe : '', ts: Date.now(), sessionStatus,
+    });
+  });
+
+  const ok = document.getElementById(`ok_${day}`);
+  if(ok) { ok.style.display = 'inline'; setTimeout(() => ok.style.display = 'none', 2200); }
+
+  renderSaisie();
+  repaintMuscles();
+}
+
+// ── Progression ────────────────────────────────────────────────────────────
+
+function renderProgression() {
+  let html = '<div class="prog-grid">';
+  EXERCISES.forEach(ex => {
+    let best = null, lastW = null;
+    for(let w = 1; w <= 17; w++) {
+      const bk = bestKg(normRecord(getRecord(ex.id, w)));
+      if(bk) { if(!best || bk > best) best = bk; lastW = w; }
+    }
+    const maxPlan = Math.max(...ex.plan.filter(Boolean));
+    const pct = best ? Math.min(100, Math.round(best / maxPlan * 100)) : 0;
+    html += `<div class="prog-card">
+      <div class="prog-card-name">${ex.name}</div>
+      <div class="prog-card-day">${ex.day} — ${ex.refText}</div>
+      <div class="prog-current">${best ? `${best} ${ex.unit}` : '—'}</div>
+      <div class="prog-pct">${pct}% de l'objectif</div>
+      <div class="prog-bar-wrap"><div class="prog-bar" style="width:${pct}%;background:${ex.color}"></div></div>
+      <div class="prog-nums"><span>0</span><span>${maxPlan} ${ex.unit}</span></div>
+      <div class="prog-last">${lastW ? `Dernière saisie : S${lastW}` : 'Aucune donnée'}</div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('progressionContent').innerHTML = html;
+}
+
+// ── Historique ─────────────────────────────────────────────────────────────
+
+function renderHistorique() {
+  let html = '';
+  let hasData = false;
+
+  EXERCISES.forEach(ex => {
+    const rows = [];
+    for(let w = 1; w <= 17; w++) {
+      const r = normRecord(getRecord(ex.id, w));
+      if(!r) continue;
+      const bk   = bestKg(r);
+      if(!bk) continue;
+      const plan = ex.plan[w - 1];
+      const delta = plan ? Math.round((bk - plan) * 10) / 10 : null;
+      const done  = (r.sets || []).filter(s => s?.reps);
+      const avgRpe  = done.length ? Math.round(done.reduce((a, s) => a + (parseFloat(s.rpe) || 0), 0) / done.length * 10) / 10 : null;
+      const avgReps = done.length ? Math.round(done.reduce((a, s) => a + (s.reps || 0), 0) / done.length * 10) / 10 : null;
+      rows.push({ w, bk, plan, delta, sets: r.sets || [], done, avgRpe, avgReps, ts: r.ts });
+    }
+
+    if(!rows.length) return;
+    hasData = true;
+
+    html += `<div class="hist-block"><div class="hist-title">${ex.name} — ${ex.day}</div>
+      <table><thead><tr><th>Sem.</th><th>Charge</th><th>Plan</th><th>Δkg</th><th>Reps/s</th><th>RPE</th><th>Séries</th><th>Signal</th><th>S+1</th></tr></thead><tbody>`;
+
+    rows.forEach(r => {
+      const dc = r.delta === null ? 'delta-neu' : r.delta > 0 ? 'delta-pos' : r.delta < 0 ? 'delta-neg' : 'delta-neu';
+      const dt = r.delta === null ? '—' : r.delta > 0 ? `+${r.delta}` : r.delta === 0 ? '±0' : `${r.delta}`;
+
+      const adj    = calcAdj(ex, r.w);
+      const topSig = adj?.signals?.length ? (adj.signals.find(s => s.type === 'danger') || adj.signals.find(s => s.type === 'warn') || adj.signals[0]) : null;
+      const sigCol = topSig ? (topSig.type === 'good' ? 'var(--green)' : topSig.type === 'warn' ? 'var(--amber)' : topSig.type === 'danger' ? 'var(--red)' : 'var(--text3)') : 'var(--text3)';
+
+      const nxt      = getNextPlan(ex, r.w);
+      const setsStr  = r.sets.filter(s => s?.kg).map(s => `${esc(String(s.reps || '?'))}×${esc(String(s.kg))}`).join(' | ') || '—';
+
+      html += `<tr>
+        <td>S${r.w}</td>
+        <td><strong>${r.bk}</strong> ${ex.unit}</td>
+        <td>${r.plan || '—'}</td>
+        <td class="${dc}">${dt}</td>
+        <td style="font-family:var(--mono);font-size:11px;text-align:center">${r.avgReps || '—'}</td>
+        <td style="font-family:var(--mono);font-size:11px;text-align:center">${r.avgRpe || '—'}</td>
+        <td style="font-size:10px;color:var(--text2)">${setsStr}</td>
+        <td style="font-size:11px;color:${sigCol}">${topSig ? esc(topSig.text) : '—'}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--blue)">${nxt ? `${nxt.kg} ${ex.unit}` : '—'}</td>
+      </tr>`;
+    });
+
+    html += '</tbody></table></div>';
+  });
+
+  if(!hasData) html = '<div class="empty">Aucune donnée saisie.</div>';
+  else html += `<button class="reset-btn" id="resetDataBtn">Effacer toutes les données</button>`;
+
+  document.getElementById('historiqueContent').innerHTML = html;
+
+  document.getElementById('resetDataBtn')?.addEventListener('click', () => {
+    if(confirm('Effacer toutes les données ?')) {
+      Promise.resolve().then(() => {
+        dbClear().then(() => { renderHistorique(); renderProgression(); });
+      });
+    }
+  });
+}
+
+
+/* ── musculaire.js ── */
+/**
+ * musculaire.js — Muscle fatigue tracking & SVG body painting
+ */
+
+
+let _currentLoad      = {};
+let _selectedMuscleId = null;
+let _currentBodyView  = 'front';
+
+// ── Load calculation ────────────────────────────────────────────────────────
+
+/**
+ * Compute residual muscle load across all sessions using SRA decay:
+ *   load = Σ (reps × RPE/10 × factor) × 2^(-Δt / halflife)
+ */
+function calcGlobalMuscleLoad() {
+  const now  = Date.now();
+  const load = {};
+  Object.keys(MUSCLE_LABELS).forEach(m => { load[m] = 0; });
+
+  EXERCISES.filter(e => ['press','squat','deadlift'].includes(e.id)).forEach(ex => {
+    const factors = MUSCLE_MAP[ex.id];
+    if(!factors) return;
+
+    for(let w = 1; w <= 17; w++) {
+      const rec = normRecord(getRecord(ex.id, w));
+      if(!rec || !rec.sets) continue;
+
+      const ts = rec.ts || 0;
+      if(!ts) continue;
+
+      const hoursAgo = (now - ts) / 3_600_000;
+
+      rec.sets.forEach(s => {
+        if(!s?.kg || !s?.reps) return;
+        const rpe = parseFloat(s.rpe) || 7;
+        const vol = s.reps * (rpe / 10);
+        Object.entries(factors).forEach(([mid, factor]) => {
+          const hl = RECOVERY_HALFLIFE[mid] || 48;
+          load[mid] = (load[mid] || 0) + vol * factor * Math.pow(2, -hoursAgo / hl);
+        });
+      });
+    }
+  });
+  return load;
+}
+
+function calcRawContribsByMuscle() {
+  const contrib = {};
+  Object.keys(MUSCLE_LABELS).forEach(m => { contrib[m] = []; });
+
+  EXERCISES.filter(e => ['press','squat','deadlift'].includes(e.id)).forEach(ex => {
+    const factors = MUSCLE_MAP[ex.id];
+    if(!factors) return;
+    let totalRaw = 0;
+
+    for(let w = 1; w <= 17; w++) {
+      const rec = normRecord(getRecord(ex.id, w));
+      if(!rec?.sets) continue;
+      rec.sets.forEach(s => {
+        if(s?.kg && s?.reps) {
+          const rpe = parseFloat(s.rpe) || 7;
+          totalRaw += s.reps * (rpe / 10);
+        }
+      });
+    }
+    if(!totalRaw) return;
+
+    Object.entries(factors).forEach(([mid, factor]) => {
+      if(factor >= 0.2) contrib[mid].push({ name: ex.name, factor, raw: Math.round(totalRaw * factor * 10) / 10 });
+    });
+  });
+  return contrib;
+}
+
+// ── Colour helpers ──────────────────────────────────────────────────────────
+
+function musclePercent(mid, load) {
+  const thresh = MUSCLE_THRESH[mid] || 15;
+  return Math.min(130, Math.round((load[mid] || 0) / thresh * 100));
+}
+
+function muscleColor(mid, load) {
+  const thresh = MUSCLE_THRESH[mid] || 15;
+  const raw    = load[mid] || 0;
+  if(raw < 0.001) return '#d8d3cc';
+  const pct = raw / thresh;
+  if(pct < 0.4)  return _lerp('#d8d3cc', '#52b888', pct / 0.4);
+  if(pct < 0.75) return _lerp('#52b888', '#f09820', (pct - 0.4) / 0.35);
+  if(pct < 1.0)  return _lerp('#f09820', '#d4530a', (pct - 0.75) / 0.25);
+  return _lerp('#c0392b', '#7b0000', Math.min((pct - 1.0) / 0.3, 1));
+}
+
+function _lerp(hex1, hex2, t) {
+  const r1 = parseInt(hex1.slice(1,3),16), g1 = parseInt(hex1.slice(3,5),16), b1 = parseInt(hex1.slice(5,7),16);
+  const r2 = parseInt(hex2.slice(1,3),16), g2 = parseInt(hex2.slice(3,5),16), b2 = parseInt(hex2.slice(5,7),16);
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+
+function _darken(hex, amount) {
+  if(!hex || hex.length < 7) return '#c8c4bc';
+  const r = Math.max(0, parseInt(hex.slice(1,3),16) - Math.round(255 * amount));
+  const g = Math.max(0, parseInt(hex.slice(3,5),16) - Math.round(255 * amount));
+  const b = Math.max(0, parseInt(hex.slice(5,7),16) - Math.round(255 * amount));
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+
+// ── SVG painting ─────────────────────────────────────────────────────────────
+
+function paintAllViews(load) {
+  _currentLoad = load;
+  document.querySelectorAll('polygon.fm-group').forEach(p => {
+    const mid = p.getAttribute('data-muscle');
+    if(!mid) return;
+    const color      = muscleColor(mid, load);
+    const pct        = musclePercent(mid, load);
+    const label      = MUSCLE_LABELS[mid] || mid;
+    const isSelected = mid === _selectedMuscleId;
+
+    p.setAttribute('fill',         color);
+    p.setAttribute('stroke',       isSelected ? '#1a1a18' : _darken(color, 0.18));
+    p.setAttribute('stroke-width', isSelected ? '1' : '0.4');
+    p.style.opacity = _selectedMuscleId && !isSelected ? '0.72' : '1';
+
+    // Native SVG tooltip
+    let title = p.querySelector('title');
+    if(!title) { title = document.createElementNS('http://www.w3.org/2000/svg','title'); p.appendChild(title); }
+    title.textContent = `${label} — ${pct > 0 ? pct + '% charge résiduelle' : 'Au repos'}`;
+  });
+}
+
+/** Called from outside to repaint after a save/import */
+function repaintMuscles() {
+  const load = calcGlobalMuscleLoad();
+  paintAllViews(load);
+  renderMusculaireSummary(load);
+}
+
+// ── Interaction ─────────────────────────────────────────────────────────────
+
+function initBodyDelegation() {
+  ['svg-front','svg-back'].forEach(id => {
+    const svg = document.getElementById(id);
+    if(!svg) return;
+    svg.addEventListener('click', e => {
+      const poly = e.target.closest('polygon.fm-group');
+      if(!poly) return;
+      const mid = poly.getAttribute('data-muscle');
+      if(!mid || !/^[a-zA-Z]+$/.test(mid)) return;
+      _selectedMuscleId = mid;
+      paintAllViews(_currentLoad);
+      renderMuscleDetail(mid, _currentLoad);
+    });
+  });
+}
+
+function switchBodyView(view) {
+  _currentBodyView = view;
+  document.getElementById('btnFront').classList.toggle('active', view === 'front');
+  document.getElementById('btnBack').classList.toggle('active',  view === 'back');
+  document.getElementById('body-front').classList.toggle('active-view', view === 'front');
+  document.getElementById('body-back').classList.toggle('active-view',  view === 'back');
+  paintAllViews(_currentLoad);
+}
+
+// ── Render ──────────────────────────────────────────────────────────────────
+
+function renderMusculaire() {
+  const load = calcGlobalMuscleLoad();
+  paintAllViews(load);
+  renderMusculaireSummary(load);
+  if(_selectedMuscleId) renderMuscleDetail(_selectedMuscleId, load);
+}
+
+function renderMuscleDetail(mid, load) {
+  const label    = MUSCLE_LABELS[mid] || mid;
+  const pct      = musclePercent(mid, load);
+  const hl       = RECOVERY_HALFLIFE[mid] || 48;
+  const residual = load[mid] || 0;
+  const thresh   = MUSCLE_THRESH[mid] || 15;
+  const barColor = muscleColor(mid, load);
+
+  let recoverMsg = '';
+  if(residual > 0) {
+    const target = thresh * 0.05;
+    const hours  = residual > target ? Math.round(hl * Math.log2(residual / target)) : 0;
+    if(hours > 0) {
+      const d = Math.floor(hours / 24);
+      const h = hours % 24;
+      recoverMsg = `Récup. estimée : ${d > 0 ? d + 'j ' : ''}${h > 0 ? h + 'h' : ''}`;
+    } else {
+      recoverMsg = 'Récupéré';
+    }
+  }
+
+  let alertHtml;
+  if(pct === 0 || residual < thresh * 0.05) {
+    alertHtml = '<div class="musc-alert ok">Muscle récupéré — prêt pour une nouvelle stimulation.</div>';
+  } else if(pct >= 100) {
+    alertHtml = '<div class="musc-alert danger">Charge résiduelle élevée. Évite de sur-solliciter ce muscle.</div>';
+  } else if(pct >= 75) {
+    alertHtml = '<div class="musc-alert warn">Fatigue encore présente. Priorité récupération.</div>';
+  } else {
+    alertHtml = '<div class="musc-alert ok">Dans la fenêtre de surcompensation — bon moment pour restimuler.</div>';
+  }
+
+  const contribs = (calcRawContribsByMuscle()[mid] || []).sort((a, b) => b.raw - a.raw);
+  const roleLabel = { 1.0: 'Primaire', 0.8: 'Primaire', 0.6: 'Secondaire', 0.4: 'Secondaire', 0.35: 'Secondaire', 0.3: 'Secondaire', 0.2: 'Secondaire', 0.15: 'Stabilisateur' };
+  const roleBg    = f => f >= 0.5 ? '#e8f0fc' : f >= 0.25 ? '#fdf0d8' : '#f1efe8';
+  const roleClr   = f => f >= 0.5 ? '#1a5fb4' : f >= 0.25 ? '#7c4a00' : '#444441';
+
+  const exRows = contribs.map(c =>
+    `<div class="musc-ex-row">
+      <span class="musc-ex-name">${c.name}</span>
+      <span class="musc-ex-role" style="background:${roleBg(c.factor)};color:${roleClr(c.factor)}">${roleLabel[c.factor] || 'Secondaire'}</span>
+      <span class="musc-ex-vol">${c.raw} vol.</span>
+    </div>`
+  ).join('');
+
+  document.getElementById('muscDetailPanel').innerHTML =
+    `<div class="musc-detail">
+      <div class="musc-detail-title">${label}</div>
+      <div class="musc-bar-row">
+        <span class="musc-bar-label">Charge résiduelle</span>
+        <div class="musc-bar-track"><div class="musc-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
+        <span class="musc-bar-val">${pct}%</span>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Demi-vie : <strong>${hl}h</strong>${recoverMsg ? ' · ' + recoverMsg : ''}</div>
+      ${alertHtml}
+      ${exRows ? `<div class="musc-ex-label">Exercices contributeurs</div>${exRows}` : ''}
+    </div>`;
+}
+
+function renderMusculaireSummary(load) {
+  const entries = Object.keys(MUSCLE_LABELS)
+    .map(mid => ({ mid, label: MUSCLE_LABELS[mid], pct: musclePercent(mid, load) }))
+    .filter(e => e.pct > 0)
+    .sort((a, b) => b.pct - a.pct);
+
+  const fatigued   = entries.filter(e => e.pct >= 75);
+  const recovering = entries.filter(e => e.pct > 0 && e.pct < 75);
+
+  let html = '<div class="musc-summary"><div class="musc-summary-title">Bilan global</div>';
+
+  if(!entries.length) {
+    html += '<div class="empty" style="padding:16px 0">Saisis tes séances dans le Tracker.</div>';
+  } else {
+    if(fatigued.length) {
+      html += '<div class="musc-group-label musc-group-red">En fatigue</div>';
+      fatigued.forEach(e => {
+        const col = e.pct >= 100 ? 'var(--red)' : 'var(--amber)';
+        html += _summaryRow(e, col);
+      });
+    }
+    if(recovering.length) {
+      html += '<div class="musc-group-label musc-group-green" style="margin-top:10px">En récupération</div>';
+      recovering.forEach(e => html += _summaryRow(e, '#52b888'));
+    }
+  }
+  html += '</div>';
+  document.getElementById('muscSummaryPanel').innerHTML = html;
+}
+
+function _summaryRow(e, col) {
+  return `<div class="musc-ex-row" style="cursor:pointer" onclick="window._selectMuscle('${e.mid}')">
+    <span class="musc-ex-name">${e.label}</span>
+    <div class="musc-bar-track" style="flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin:0 6px">
+      <div style="height:6px;border-radius:3px;background:${col};width:${Math.min(e.pct,100)}%"></div>
+    </div>
+    <span class="musc-ex-vol" style="color:${col}">${e.pct}%</span>
+  </div>`;
+}
+
+// Expose for inline onclick in summary (can't use module import there)
+window._selectMuscle = (mid) => {
+  _selectedMuscleId = mid;
+  paintAllViews(_currentLoad);
+  renderMuscleDetail(mid, _currentLoad);
+};
+
+
+/* ── io.js ── */
+/**
+ * io.js — JSON and CSV import/export
+ */
+
+
+function exportJSON() {
+  const payload = { version: 3, exported: new Date().toISOString(), data: getAllRecords() };
+  _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
+}
+
+function exportCSV() {
+  const rows = [['Exercice','Jour','Semaine','Série','Charge','Unité','Reps','RPE','Plan','Delta','Date']];
+
+  EXERCISES.forEach(ex => {
+    for(let w = 1; w <= 17; w++) {
+      const r    = normRecord(getAllRecords()[`${ex.id}_w${w}`]);
+      if(!r) continue;
+      const plan = ex.plan[w - 1] || '';
+      const date = r.ts ? new Date(r.ts).toLocaleDateString('fr-FR') : '';
+      (r.sets || []).forEach((s, i) => {
+        if(!s?.kg && !s?.reps) return;
+        const delta = plan && s?.kg ? Math.round((s.kg - plan) * 10) / 10 : '';
+        rows.push([ex.name, ex.day, `S${w}`, `S${i+1}`, s?.kg || '', ex.unit, s?.reps || '', s?.rpe || '', plan, delta, date]);
+      });
+    }
+  });
+
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  _download('\uFEFF' + csv, `athx_${_dateStr()}.csv`, 'text/csv;charset=utf-8');
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+
+  if(file.size > 524_288) {
+    alert('Fichier trop volumineux (max 512 Ko).');
+    event.target.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const parsed   = JSON.parse(e.target.result);
+      const incoming = parsed.data || parsed;
+      const result   = validateImport(incoming);
+
+      if(!result.ok) throw new Error(result.error);
+
+      importRecords(result.clean);
+
+      const fb = document.getElementById('importFeedback');
+      if(fb) { fb.style.display = 'inline'; setTimeout(() => fb.style.display = 'none', 3000); }
+
+      // Refresh all views
+      renderSaisie();
+      repaintMuscles();
+
+    } catch(err) {
+      alert(`Import échoué : ${err.message}`);
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function _download(content, filename, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function _dateStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+
+/* ── app.js ── */
+/**
+ * app.js — Entry point
+ * Handles routing between sections, PWA registration, and app init.
+ */
+
+
+// ── Routing ──────────────────────────────────────────────────────────────────
+
+const SECTIONS   = ['tracker','musculaire','programme','doc'];
+const PROG_TABS  = ['nutrition','warmup','mardi','mercredi','jeudi','vendredi'];
+const TRACK_TABS = ['saisie','progression','historique'];
+const DOC_TABS   = ['doc-intro','doc-tracker','doc-progression','doc-statut','doc-musculaire','doc-rpe','doc-export'];
+
+function showSection(id) {
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.top-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+  const idx = SECTIONS.indexOf(id);
+  if(idx >= 0) document.querySelectorAll('.top-nav-btn')[idx]?.classList.add('active');
+  if(id === 'musculaire') renderMusculaire();
+}
+
+function showTracker(id) {
+  document.querySelectorAll('.tracker-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`t-${id}`)?.classList.add('active');
+  const idx = TRACK_TABS.indexOf(id);
+  if(idx >= 0) document.querySelectorAll('.tab-btn')[idx]?.classList.add('active');
+  if(id === 'progression') renderProgression();
+  if(id === 'historique')  renderHistorique();
+}
+
+function showProg(id) {
+  document.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#progNav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+  const idx = PROG_TABS.indexOf(id);
+  if(idx >= 0) document.querySelectorAll('#progNav button')[idx]?.classList.add('active');
+}
+
+function showWeek(day, bloc) {
+  ['b1','b1d','b2','b2d','b3','b3d'].forEach(b => {
+    const el = document.getElementById(`${day}-${b}`);
+    if(el) el.style.display = 'none';
+  });
+  const el = document.getElementById(`${day}-${bloc}`);
+  if(el) el.style.display = 'block';
+  const nav = document.getElementById(`${day}Weeks`);
+  if(nav) {
+    ['b1','b1d','b2','b2d','b3','b3d'].forEach((b, i) =>
+      nav.querySelectorAll('button')[i]?.classList.toggle('active', b === bloc)
+    );
+  }
+}
+
+function showDoc(id) {
+  document.querySelectorAll('.doc-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.doc-nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+  const idx = DOC_TABS.indexOf(id);
+  if(idx >= 0) document.querySelectorAll('.doc-nav-item')[idx]?.classList.add('active');
+}
+
+// ── Expose to inline HTML handlers ───────────────────────────────────────────
+// (HTML onclick attributes can't import modules directly)
+
+window.showSection  = showSection;
+window.showTracker  = showTracker;
+window.showProg     = showProg;
+window.showWeek     = showWeek;
+window.showDoc      = showDoc;
+window.exportJSON   = exportJSON;
+window.exportCSV    = exportCSV;
+window.importJSON   = importJSON;
+
+// switchBodyView exposed by musculaire module
+window.switchBodyView = switchBodyView;
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+async function init() {
+  // 1. Boot IndexedDB (loads all data into cache)
+  await dbInit();
+
+  // 2. Init tracker
+  initWeekSel();
+  renderSaisie();
+
+  // 3. Init body SVG delegation
+  initBodyDelegation();
+
+  // 4. Initial muscle paint (runs even before user visits musculaire tab)
+  repaintMuscles();
+
+  // 5. Bind data toolbar buttons
+  document.getElementById('btnExportJSON')?.addEventListener('click', exportJSON);
+  document.getElementById('btnExportCSV')?.addEventListener('click',  exportCSV);
+  document.getElementById('fileImport')?.addEventListener('change',   importJSON);
+
+  // 6. Register Service Worker + notify on update
+  if('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      console.log('[SW] registered:', reg.scope);
+
+      // Detect when a new SW is waiting (new version available)
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if(newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            _showUpdateBanner();
+          }
+        });
+      });
+
+      // Check for updates every time the app gains focus
+      document.addEventListener('visibilitychange', () => {
+        if(document.visibilityState === 'visible') reg.update();
+      });
+
+    } catch(err) {
+      console.warn('[SW] registration failed:', err);
+    }
+  }
+
+  console.log('[ATHX] App ready');
+}
+
+function _showUpdateBanner() {
+  const banner = document.createElement('div');
+  banner.style.cssText = [
+    'position:fixed','bottom:16px','left:50%','transform:translateX(-50%)',
+    'background:#1a1a18','color:#fff','padding:10px 18px','border-radius:24px',
+    'font-size:13px','font-weight:500','display:flex','gap:12px','align-items:center',
+    'box-shadow:0 4px 20px rgba(0,0,0,.3)','z-index:9999','white-space:nowrap',
+  ].join(';');
+  banner.innerHTML = '⬆ Nouvelle version disponible <button style="background:#fff;color:#1a1a18;border:none;border-radius:12px;padding:3px 12px;font-size:12px;font-weight:600;cursor:pointer" onclick="window.location.reload()">Mettre à jour</button>';
+  document.body.appendChild(banner);
+  setTimeout(() => banner.remove(), 30000); // auto-dismiss after 30s
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
 </script>
 
 </body>
