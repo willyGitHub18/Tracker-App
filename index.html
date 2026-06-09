@@ -8,9 +8,11 @@
   <meta name="apple-mobile-web-app-title" content="ATHX">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1a1a18">
+  <link rel="canonical" href="https://willygithub18.github.io/Tracker-App/">
   <title>ATHX Tracker</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-startup-image" href="icons/icon-512.png">
   <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 
@@ -1052,6 +1054,15 @@ tr:last-child td{border-bottom:none}
 </div>
 </div>
 <script>
+
+// Redirect guard: si on est sur la racine GitHub, redirige vers l'app
+(function() {
+  var path = window.location.pathname;
+  if (path === '/' || path === '/willygithub18.github.io/') {
+    window.location.replace('https://willygithub18.github.io/Tracker-App/');
+  }
+})();
+
 /* ── db.js ── */
 /**
  * db.js — IndexedDB storage layer
