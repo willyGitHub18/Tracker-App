@@ -163,8 +163,10 @@ tr:last-child td{border-bottom:none}
   .musc-layout{grid-template-columns:1fr;gap:16px}
   .musc-left{position:static}
   .musc-right{position:static;margin-top:0}
+  #bodyChartContainer{max-height:70vh;overflow:hidden}
+  #bodyChartContainer svg{max-height:68vh;width:auto;margin:0 auto}
 }
-.musc-left{position:sticky;top:44px;display:flex;flex-direction:column;align-items:stretch;gap:0}
+.musc-left{position:static;display:flex;flex-direction:column;align-items:stretch;gap:0}
 .musc-week-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:0;padding:12px 14px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:none}
 .musc-legend-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;width:100%}
 .musc-leg{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;color:#fff}
@@ -182,7 +184,7 @@ tr:last-child td{border-bottom:none}
 .fm-group polygon{transition:fill .2s,stroke .15s}
 .fm-group:hover polygon{opacity:0.72}
 /* right panel */
-.musc-right{display:flex;flex-direction:column;gap:14px;min-width:0;position:relative;z-index:1}
+.musc-right{display:flex;flex-direction:column;gap:14px;min-width:0;position:relative;z-index:10;background:var(--bg)}
 .musc-detail{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
 .musc-detail-title{font-size:14px;font-weight:600;margin-bottom:10px}
 .musc-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
@@ -206,7 +208,7 @@ tr:last-child td{border-bottom:none}
 /* ── PROGRAMME STYLES ── */
 .prog-top-nav{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:1.5rem;padding-bottom:4px;scrollbar-width:none}
 .prog-top-nav::-webkit-scrollbar{display:none}
-.prog-top-nav button{font-size:12px;padding:5px 12px;background:transparent;border:1px solid var(--border-md);border-radius:var(--radius);cursor:pointer;color:var(--text2);font-family:var(--sans);transition:background .15s}
+.prog-top-nav button{font-size:12px;padding:5px 12px;background:transparent;border:1px solid var(--border-md);border-radius:var(--radius);cursor:pointer;color:var(--text2);font-family:var(--sans);transition:background .15s;white-space:nowrap;flex-shrink:0;height:34px;line-height:1}
 .prog-top-nav button.active{background:var(--surface2);border-color:rgba(0,0,0,.25);color:var(--text);font-weight:500}
 .prog-tab{display:none}.prog-tab.active{display:block}
 .p-section{margin-bottom:1.5rem}
@@ -2508,8 +2510,9 @@ async function init() {
   document.getElementById('btnExportCSV')?.addEventListener('click',  exportCSV);
   document.getElementById('fileImport')?.addEventListener('change',   importJSON);
 
-  // 6. Register Service Worker + notify on update
-  if('serviceWorker' in navigator) {
+  // 6. Register Service Worker — only on the real deployment domain
+  const isDeployed = location.hostname.includes('github.io') || location.protocol === 'https:' && !location.hostname.includes('claudeusercontent');
+  if('serviceWorker' in navigator && isDeployed) {
     try {
       const reg = await navigator.serviceWorker.register('./sw.js');
       console.log('[SW] registered:', reg.scope);
