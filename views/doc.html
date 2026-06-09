@@ -1,0 +1,273 @@
+<div id="doc" class="section-panel">
+
+  <div class="doc-layout">
+
+    <!-- Sommaire latéral -->
+    <nav class="doc-nav">
+      <button class="doc-nav-item active" onclick="showDoc('doc-intro')">Vue d'ensemble</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-tracker')">Tracker</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-progression')">Progression Lafay</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-statut')">Statuts de séance</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-musculaire')">Suivi musculaire</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-rpe')">RPE &amp; métriques</button>
+      <button class="doc-nav-item" onclick="showDoc('doc-export')">Données &amp; export</button>
+    </nav>
+
+    <div class="doc-content">
+
+      <!-- VUE D'ENSEMBLE -->
+      <div id="doc-intro" class="doc-section active">
+        <div class="doc-card">
+          <div class="doc-h1">ATHX Tracker</div>
+          <p class="doc-p" style="color:var(--text3);font-size:12px;margin-bottom:16px">Documentation complète · Version 3</p>
+          <p class="doc-p">Outil de suivi d'entraînement conçu pour préparer la compétition ATHX. Il combine un tracker de charges série par série, un système de recommandation inspiré de la méthode Lafay, un suivi de fatigue musculaire avec modèle de récupération, et le programme complet sur 17 semaines.</p>
+        </div>
+        <div class="doc-card">
+          <div class="doc-h2">Structure de l'application</div>
+          <table class="doc-table">
+            <thead><tr><th>Onglet</th><th>Contenu</th></tr></thead>
+            <tbody>
+              <tr><td>📊 Tracker</td><td>Saisie des séances (charge, reps, RPE par série), analyse en temps réel, recommandations S+1, historique</td></tr>
+              <tr><td>🧬 Suivi musculaire</td><td>Schéma anatomique interactif, charge résiduelle par muscle avec modèle de récupération SRA, bilan global</td></tr>
+              <tr><td>📋 Programme</td><td>Plan complet 17 semaines : nutrition, échauffements, Mercredi force, Jeudi force/MetCon</td></tr>
+              <tr><td>📖 Documentation</td><td>Cette page</td></tr>
+            </tbody>
+          </table>
+          <div class="doc-h2">Exercices suivis</div>
+          <table class="doc-table">
+            <thead><tr><th>Exercice</th><th>Jour</th><th>1RM de référence</th><th>Palier de progression</th></tr></thead>
+            <tbody>
+              <tr><td>Strict Press</td><td>Mercredi</td><td>50 kg</td><td>+1.25 kg</td></tr>
+              <tr><td>Back Squat</td><td>Mercredi</td><td>110 kg</td><td>+2.5 kg</td></tr>
+              <tr><td>Deadlift</td><td>Jeudi</td><td>140 kg</td><td>+2.5 kg</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TRACKER -->
+      <div id="doc-tracker" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">Tracker de charges</div>
+          <div class="doc-h2">Saisie série par série</div>
+          <p class="doc-p">Pour chaque exercice, le plan de la semaine est affiché (charge cible, reps attendues). La grille de saisie affiche autant de lignes que de séries prévues dans le schéma de la semaine. Chaque ligne contient :</p>
+          <table class="doc-table">
+            <thead><tr><th>Champ</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td>Charge (kg)</td><td>Poids utilisé. Saisir la charge de S1 remplit automatiquement les séries suivantes vides.</td></tr>
+              <tr><td>Reps</td><td>Nombre de répétitions réalisées (pas le nombre prévu).</td></tr>
+              <tr><td>RPE</td><td>Rate of Perceived Exertion — effort ressenti de 6 à 10 (voir onglet RPE).</td></tr>
+            </tbody>
+          </table>
+          <p class="doc-p">Une coche verte ✓ apparaît sur chaque série dès que charge + reps sont renseignées. L'analyse et la recommandation S+1 se mettent à jour à l'enregistrement.</p>
+
+          <div class="doc-h2">Onglets du tracker</div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">✏️</div>
+            <div class="doc-rule-body"><strong>Saisie semaine</strong> <span>— formulaire principal. Sélectionner la semaine en haut, saisir les séries, enregistrer par jour.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">📈</div>
+            <div class="doc-rule-body"><strong>Progression</strong> <span>— vue graphique de la meilleure charge atteinte par exercice vs objectif de fin de programme.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">📋</div>
+            <div class="doc-rule-body"><strong>Historique</strong> <span>— tableau de toutes les séances avec charge, reps, RPE, signal d'analyse et recommandation S+1.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESSION LAFAY -->
+      <div id="doc-progression" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">Système de progression</div>
+          <p class="doc-p">La logique de recommandation S+1 s'inspire de la <strong>méthode Lafay</strong>, adaptée au contexte force/RPE. Le principe central : on ne progresse que quand la séance est pleinement validée. Toute séance incomplète entraîne une répétition de la même charge.</p>
+
+          <div class="doc-h2">Règles de décision</div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">✅</div>
+            <div class="doc-rule-body"><strong>Progression (+1 palier)</strong><br><span>Toutes les séries complètes + toutes les reps ≥ 95% du plan + RPE ≤ 8.5. La charge augmente d'un palier la semaine suivante (+2.5 kg squat/deadlift, +1.25 kg press).</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">⏸️</div>
+            <div class="doc-rule-body"><strong>Consolidation (même charge)</strong><br><span>Séries complètes mais RPE entre 8.5 et 9.5 — effort trop élevé pour progresser en sécurité. Ou reps entre 80% et 95% du plan — progression prématurée.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">⏳</div>
+            <div class="doc-rule-body"><strong>Plateau prolongé → recul (-1 palier)</strong><br><span>Après 3 semaines consécutives de consolidation sans progression, la charge recule d'un palier. Règle directement tirée de Lafay. Les semaines sautées et Post-Hyrox ne comptent pas dans le plateau.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">⚠️</div>
+            <div class="doc-rule-body"><strong>Surcharge → recul (-1 palier)</strong><br><span>RPE &gt; 9.5 sur la séance — la charge est excessive. Recul immédiat d'un palier.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">🔴</div>
+            <div class="doc-rule-body"><strong>Effondrement → recul (-2 paliers)</strong><br><span>Reps réalisées &lt; 80% du plan — la charge est franchement trop lourde. Recul de deux paliers (réinitialisation Lafay).</span></div>
+          </div>
+
+          <div class="doc-h2">Compteur de plateau</div>
+          <p class="doc-p">La recommandation affiche le compteur de plateau en temps réel (<strong>Plateau : 2/3 sem.</strong>) pour anticiper la décharge avant qu'elle arrive. À 3/3, la décharge est automatique la semaine suivante.</p>
+
+          <div class="doc-h2">Couleurs de recommandation</div>
+          <table class="doc-table">
+            <thead><tr><th>Couleur</th><th>Signification</th></tr></thead>
+            <tbody>
+              <tr><td><span class="doc-badge green">Vert</span></td><td>Progression — charge augmente</td></tr>
+              <tr><td><span class="doc-badge grey">Neutre</span></td><td>Consolidation — même charge</td></tr>
+              <tr><td><span class="doc-badge amber">Ambre</span></td><td>Recul — charge diminue</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- STATUTS DE SÉANCE -->
+      <div id="doc-statut" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">Statuts de séance</div>
+          <p class="doc-p">Chaque exercice peut recevoir un statut qui modifie l'analyse. Les boutons sont dans le header de chaque exercice.</p>
+
+          <div class="doc-h2">Séance normale</div>
+          <p class="doc-p">Analyse standard : charge vs plan, reps vs plan, RPE, complétude des séries. Recommandation S+1 calculée selon les règles Lafay.</p>
+
+          <div class="doc-h2">⚡ Post-Hyrox / Haute intensité</div>
+          <p class="doc-p">À utiliser quand l'exercice a été réalisé dans le cadre d'une compétition Hyrox, d'une séance cardio haute intensité préalable, ou de tout effort qui a affecté la qualité de la séance sans que ça soit apparent dans le RPE ressenti.</p>
+          <div class="doc-formula">RPE effectif = RPE ressenti + 1.5<br>(fatigue résiduelle non perçue à chaud)</div>
+          <p class="doc-p">En mode Post-Hyrox :</p>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">📊</div>
+            <div class="doc-rule-body"><strong>Analyse vs historique personnel</strong> <span>— la séance est comparée à ta moyenne habituelle (kg, reps, RPE) sur les séances normales passées, pas au plan de la semaine.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">🚫</div>
+            <div class="doc-rule-body"><strong>Aucune recommandation de charge</strong> <span>— la séance n'influence pas le calcul S+1. Le plan de la semaine suivante reste inchangé.</span></div>
+          </div>
+          <div class="doc-rule">
+            <div class="doc-rule-icon">🧬</div>
+            <div class="doc-rule-body"><strong>Fatigue musculaire comptabilisée</strong> <span>— la charge et les reps alimentent quand même le suivi de fatigue musculaire pour refléter l'effort réel.</span></div>
+          </div>
+
+          <div class="doc-h2">Séance sautée</div>
+          <p class="doc-p">Aucune saisie possible. La semaine ne compte pas dans le compteur de plateau. La recommandation S+1 est identique au plan officiel de la semaine suivante — comme si la séance n'avait pas eu lieu.</p>
+        </div>
+      </div>
+
+      <!-- SUIVI MUSCULAIRE -->
+      <div id="doc-musculaire" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">Suivi musculaire</div>
+          <p class="doc-p">Représentation anatomique interactive de la charge musculaire résiduelle à l'instant présent. Cliquer sur un muscle affiche le détail dans le panneau de droite.</p>
+
+          <div class="doc-h2">Modèle de récupération SRA</div>
+          <p class="doc-p">La charge résiduelle de chaque muscle est calculée avec un modèle de décroissance exponentielle inspiré du modèle <strong>Stimulus → Récupération → Adaptation (SRA)</strong> :</p>
+          <div class="doc-formula">charge_résiduelle = Σ (reps × RPE/10 × facteur_muscle) × 2^(−Δt / demi-vie)</div>
+          <p class="doc-p">Où <strong>Δt</strong> est le nombre d'heures depuis la séance et la <strong>demi-vie</strong> est propre à chaque groupe musculaire.</p>
+
+          <div class="doc-h2">Demi-vies de récupération</div>
+          <table class="doc-table">
+            <thead><tr><th>Muscle</th><th>Demi-vie</th><th>Risque tendineux</th></tr></thead>
+            <tbody>
+              <tr><td>Lombaires, Ischio, Quadriceps</td><td>72h</td><td>Élevé</td></tr>
+              <tr><td>Pectoraux, Fessiers, Dorsaux</td><td>60h</td><td>Faible</td></tr>
+              <tr><td>Trapèzes, Deltoïdes, Biceps, Mollets</td><td>48h</td><td>Moyen</td></tr>
+              <tr><td>Core, Avant-bras</td><td>36h</td><td>Élevé (tendineux)</td></tr>
+            </tbody>
+          </table>
+
+          <div class="doc-h2">Mapping exercice → muscles</div>
+          <table class="doc-table">
+            <thead><tr><th>Exercice</th><th>Primaire (100%)</th><th>Secondaire (40%)</th><th>Stabilisateur (15%)</th></tr></thead>
+            <tbody>
+              <tr><td>Strict Press</td><td>Deltoïde ant., Trapèzes</td><td>Pectoraux, Triceps</td><td>Core, Avant-bras</td></tr>
+              <tr><td>Back Squat</td><td>Quadriceps, Fessiers</td><td>Ischio, Adducteurs</td><td>Core, Lombaires, Mollets</td></tr>
+              <tr><td>Deadlift</td><td>Ischio, Fessiers, Lombaires</td><td>Quadriceps, Dorsaux, Trapèzes</td><td>Core, Avant-bras, Biceps</td></tr>
+            </tbody>
+          </table>
+
+          <div class="doc-h2">Codes couleur</div>
+          <table class="doc-table">
+            <thead><tr><th>Couleur</th><th>% du seuil</th><th>Interprétation</th></tr></thead>
+            <tbody>
+              <tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#d8d3cc;vertical-align:middle"></span> Gris</td><td>0%</td><td>Muscle au repos — récupéré</td></tr>
+              <tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#68c49a;vertical-align:middle"></span> Vert</td><td>1–40%</td><td>En récupération — fenêtre de surcompensation</td></tr>
+              <tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f5a623;vertical-align:middle"></span> Ambre</td><td>40–75%</td><td>Charge modérée — surveiller</td></tr>
+              <tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#e07020;vertical-align:middle"></span> Orange</td><td>75–100%</td><td>Charge élevée — priorité récupération</td></tr>
+              <tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#c0392b;vertical-align:middle"></span> Rouge</td><td>&gt;100%</td><td>Seuil dépassé — risque de sur-entraînement</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RPE -->
+      <div id="doc-rpe" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">RPE &amp; métriques</div>
+
+          <div class="doc-h2">Échelle RPE (Rate of Perceived Exertion)</div>
+          <p class="doc-p">Le RPE mesure l'effort ressenti sur une série, de 6 à 10. Il est plus précis que le pourcentage de 1RM car il tient compte de la fatigue du jour, de la qualité du sommeil et de la nutrition.</p>
+          <table class="doc-table">
+            <thead><tr><th>RPE</th><th>Signification</th><th>Reps en réserve</th></tr></thead>
+            <tbody>
+              <tr><td>6</td><td>Très léger — pas d'effort perceptible</td><td>4+ reps</td></tr>
+              <tr><td>7</td><td>Modéré — travail contrôlé</td><td>3 reps</td></tr>
+              <tr><td>7.5</td><td>Modéré à difficile</td><td>2–3 reps</td></tr>
+              <tr><td>8</td><td>Difficile mais maîtrisé — zone optimale</td><td>2 reps</td></tr>
+              <tr><td>8.5</td><td>Limite de la zone de progression</td><td>1–2 reps</td></tr>
+              <tr><td>9</td><td>Très difficile — 1 rep en réserve</td><td>1 rep</td></tr>
+              <tr><td>9.5</td><td>Quasi-maximal</td><td>0–1 rep</td></tr>
+              <tr><td>10</td><td>Maximum absolu — impossible de faire 1 rep de plus</td><td>0 reps</td></tr>
+            </tbody>
+          </table>
+
+          <div class="doc-h2">Interprétation dans l'analyse</div>
+          <table class="doc-table">
+            <thead><tr><th>RPE moyen</th><th>Signal</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td>≤ 6.5</td><td><span class="doc-badge green">Léger</span></td><td>Progression accélérée possible (+palier supplémentaire)</td></tr>
+              <tr><td>7–7.5</td><td><span class="doc-badge green">Optimal</span></td><td>Progression normale (+1 palier si reps ok)</td></tr>
+              <tr><td>8–8.5</td><td><span class="doc-badge grey">Calibré</span></td><td>Progression possible si séries complètes</td></tr>
+              <tr><td>8.5–9.5</td><td><span class="doc-badge amber">Élevé</span></td><td>Consolidation — même charge S+1</td></tr>
+              <tr><td>&gt; 9.5</td><td><span class="doc-badge red">Surcharge</span></td><td>Recul d'un palier S+1</td></tr>
+            </tbody>
+          </table>
+
+          <div class="doc-h2">RPE Post-Hyrox</div>
+          <p class="doc-p">En mode Post-Hyrox, le RPE ressenti est sous-estimé à cause de la fatigue résiduelle non perçue à chaud. Un coefficient de +1.5 est appliqué automatiquement pour estimer l'effort réel. Ce RPE effectif est utilisé uniquement pour le suivi de fatigue musculaire — il n'influence pas le programme.</p>
+        </div>
+      </div>
+
+      <!-- DONNÉES & EXPORT -->
+      <div id="doc-export" class="doc-section">
+        <div class="doc-card">
+          <div class="doc-h1">Données &amp; export</div>
+
+          <div class="doc-h2">Stockage</div>
+          <p class="doc-p">Toutes les données sont stockées <strong>localement</strong> dans le navigateur (localStorage). Elles ne quittent jamais ton appareil. Le fichier HTML est autonome et peut être utilisé hors ligne.</p>
+
+          <div class="doc-h2">Format des données</div>
+          <div class="doc-formula">clé : "{exercice}_w{semaine}"  ex: "squat_w3"<br>valeur : {"sets": [{"kg":85, "reps":5, "rpe":"8"}, ...], "kg":85, "ts":1780482221140, "sessionStatus":"normal"}</div>
+
+          <div class="doc-h2">Export JSON</div>
+          <p class="doc-p">Exporte toutes les données dans un fichier JSON horodaté. À utiliser régulièrement comme sauvegarde. Le fichier peut être réimporté sur n'importe quel appareil.</p>
+
+          <div class="doc-h2">Import JSON</div>
+          <p class="doc-p">L'import fusionne les données (ne remplace pas). Les clés existantes sont écrasées par les nouvelles. Le fichier est validé avant import : schéma vérifié, valeurs hors plage rejetées, taille limitée à 512 Ko.</p>
+
+          <div class="doc-h2">Export CSV</div>
+          <p class="doc-p">Exporte l'historique complet sous forme tabulaire : exercice, jour, semaine, numéro de série, charge, reps, RPE, plan, delta, date. Compatible Excel et Google Sheets.</p>
+
+          <div class="doc-h2">Sécurité</div>
+          <table class="doc-table">
+            <thead><tr><th>Mesure</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td>Échappement HTML</td><td>Toutes les valeurs affichées sont échappées pour prévenir les injections XSS</td></tr>
+              <tr><td>Validation import</td><td>Schéma, types et plages de valeurs vérifiés avant tout stockage</td></tr>
+              <tr><td>Event delegation SVG</td><td>Les clics sur le schéma anatomique passent par un listener unique avec validation de l'ID muscle</td></tr>
+              <tr><td>Content Security Policy</td><td>En-tête CSP déclarant les sources autorisées (fonts Google uniquement en externe)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /doc-content -->
+  </div><!-- /doc-layout -->
+</div>

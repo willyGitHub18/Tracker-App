@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
+
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f6f5f0;--surface:#ffffff;--surface2:#f0ede6;
+  --border:rgba(0,0,0,0.08);--border-md:rgba(0,0,0,0.14);
+  --text:#1a1a18;--text2:#6b6b65;--text3:#9b9b94;
+  --blue:#1a5fb4;--blue-bg:#e8f0fc;
+  --green:#1b6b45;--green-bg:#e0f4eb;
+  --amber:#7c4a00;--amber-bg:#fdf0d8;
+  --red:#9c2222;--red-bg:#fdeaea;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --radius:10px;--radius-lg:14px;
+  --max-w:900px;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* HEADER */
+header{background:var(--text);color:#fff;padding:16px 24px 14px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+header h1{font-family:var(--mono);font-size:17px;font-weight:500;letter-spacing:-.02em}
+header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono)}
+
+/* TOP NAV */
+.top-nav{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.top-nav-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:11px 16px;border:none;background:transparent;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-align:center}
+.top-nav-btn.active{color:var(--text);border-bottom-color:var(--text)}
+.top-nav-btn:hover:not(.active){color:var(--text);background:var(--surface2)}
+
+/* MAIN */
+.main{max-width:var(--max-w);margin:0 auto;padding:24px 20px 60px}
+.section-panel{display:none}.section-panel.active{display:block}
+
+/* musculaire s'étend à toute la largeur disponible dans .main */
+#musculaire{padding:0}
+

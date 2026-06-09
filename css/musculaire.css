@@ -1,0 +1,42 @@
+/* ── SUIVI MUSCULAIRE ── */
+.musc-layout{display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:flex-start}
+@media(max-width:860px){.musc-layout{grid-template-columns:260px 1fr;gap:18px}}
+@media(max-width:700px){.musc-layout{grid-template-columns:1fr}}
+.musc-left{position:sticky;top:44px;display:flex;flex-direction:column;align-items:stretch;gap:0}
+.musc-week-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:0;padding:12px 14px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:none}
+.musc-legend-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;width:100%}
+.musc-leg{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;color:#fff}
+/* view toggle */
+.musc-view-btns{display:flex;gap:4px;width:100%}
+.musc-view-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 0;border:1px solid var(--border-md);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.musc-view-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
+/* body views */
+.body-view{display:none}
+.body-view.active-view{display:block}
+/* body chart container — seamless avec la toolbar */
+#bodyChartContainer{background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:16px 0 24px;overflow:hidden}
+#bodyChartContainer svg{display:block;margin:0 auto;max-width:100%;width:100%}
+.fm-group{cursor:pointer}
+.fm-group polygon{transition:fill .2s,stroke .15s}
+.fm-group:hover polygon{opacity:0.72}
+/* right panel */
+.musc-right{display:flex;flex-direction:column;gap:14px;min-width:0}
+.musc-detail{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+.musc-detail-title{font-size:14px;font-weight:600;margin-bottom:10px}
+.musc-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.musc-bar-label{font-size:12px;color:var(--text2);min-width:90px}
+.musc-bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.musc-bar-fill{height:8px;border-radius:4px;transition:width .4s}
+.musc-bar-val{font-family:var(--mono);font-size:11px;color:var(--text2);min-width:36px;text-align:right}
+.musc-summary{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+.musc-summary-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px}
+.musc-ex-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.musc-ex-row:last-child{border-bottom:none}
+.musc-ex-name{font-weight:500;color:var(--text);flex:1}
+.musc-ex-role{font-size:10px;padding:1px 6px;border-radius:8px;font-weight:500;flex-shrink:0}
+.musc-ex-vol{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.musc-alert{padding:8px 12px;border-radius:var(--radius);font-size:11px;line-height:1.5;margin-top:4px}
+.musc-alert.warn{background:#fdf0d8;color:#7c4a00}
+.musc-alert.danger{background:#fdeaea;color:#9c2222}
+.musc-alert.ok{background:#e0f4eb;color:#1b6b45}
+

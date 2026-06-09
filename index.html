@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ATHX">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1a1a18">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' 'unsafe-inline' fonts.googleapis.com fonts.gstatic.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com;">
+
+  <title>ATHX Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/tracker.css">
+  <link rel="stylesheet" href="/css/musculaire.css">
+  <link rel="stylesheet" href="/css/programme.css">
+</head>
+<body>
+
+<header>
+  <h1>ATHX // Plan complet</h1>
+  <span class="sub">73 kg · 176 cm · Compétition 5 sept. 2026</span>
+</header>
+
+<div class="top-nav">
+  <button class="top-nav-btn active" onclick="showSection('tracker')">📊 Tracker</button>
+  <button class="top-nav-btn" onclick="showSection('musculaire');renderMusculaire()">🧬 Muscles</button>
+  <button class="top-nav-btn" onclick="showSection('programme')">📋 Programme</button>
+  <button class="top-nav-btn" onclick="showSection('doc')">📖 Docs</button>
+</div>
+
+<div class="main" id="app-root">
+  <!-- Sections injected by loadViews() -->
+  <div id="view-loading" style="padding:60px 20px;text-align:center;color:var(--text3)">
+    Chargement…
+  </div>
+</div>
+
+<script type="module">
+  import { showSection, showTracker, showProg, showWeek, showDoc } from '/js/app.js';
+
+  /**
+   * Load all view fragments into the DOM, then boot the app.
+   * Using fetch() keeps index.html small and makes each view
+   * independently cacheable by the Service Worker.
+   */
+  async function loadViews() {
+    const views  = ['tracker','musculaire','programme','doc'];
+    const root   = document.getElementById('app-root');
+    const loader = document.getElementById('view-loading');
+
+    const htmlFragments = await Promise.all(
+      views.map(v => fetch(`views/${v}.html`).then(r => r.text()))
+    );
+
+    root.innerHTML = htmlFragments.join('\n');
+
+    // Boot the app once DOM is populated
+    const { default: initApp } = await import('/js/app.js');
+  }
+
+  loadViews().catch(err => {
+    document.getElementById('view-loading').textContent =
+      'Erreur de chargement. Rechargez la page.';
+    console.error(err);
+  });
+</script>
+
+</body>
+</html>
