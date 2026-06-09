@@ -10,7 +10,7 @@ export const EXERCISES = [
     plan: [35,37.5,40,42.5,45,null,47.5,50,52.5,45,47.5,null,null,null,null,50,null],
     repScheme: ['5×5','5×5','5×5','5×5','5×5','Deload','5×3','5×3','5×3','4×5','4×5','Deload',
                 '1RM tentative','1RM tentative','1RM max','3×3','Taper'],
-    color: '#1a5fb4', refText: '1RM actuel : 50 kg',
+    color: '#1a5fb4', refText: '1RM Press',
   },
   {
     id: 'squat', day: 'Mercredi', name: 'Back Squat', unit: 'kg',
@@ -18,7 +18,7 @@ export const EXERCISES = [
     plan: [77.5,80,82.5,85,87.5,null,90,92.5,95,85,90,null,null,null,null,92.5,null],
     repScheme: ['4×5','4×5','4×5','4×5','4×5','Deload','4×4','4×4','4×4','3×5','3×5','Deload',
                 '3RM tentative','3RM tentative','3RM max','3×3','Taper'],
-    color: '#7c4a00', refText: '1RM actuel : 110 kg',
+    color: '#7c4a00', refText: '1RM Squat',
   },
   {
     id: 'deadlift', day: 'Jeudi', name: 'Deadlift', unit: 'kg',
@@ -26,7 +26,7 @@ export const EXERCISES = [
     plan: [85,90,95,100,105,null,110,115,117.5,105,110,null,120,125,null,null,null],
     repScheme: ['4×4','4×4','4×4','4×4','4×4','Deload','4×3','4×3','4×3','3×4','3×4','Deload',
                 '5RM tentative','5RM tentative','5RM max','3×3','Repos'],
-    color: '#1b6b45', refText: '1RM actuel : 140 kg',
+    color: '#1b6b45', refText: '1RM Deadlift',
   },
   {
     id: 'gtoh', day: 'Vendredi', name: 'GTOH DB alterné', unit: 'kg',
