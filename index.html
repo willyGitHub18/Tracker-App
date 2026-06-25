@@ -208,7 +208,11 @@ tr:last-child td{border-bottom:none}
 /* ── SUIVI MUSCULAIRE ── */
 .musc-layout{display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:flex-start}
 @media(max-width:860px){.musc-layout{grid-template-columns:260px 1fr;gap:18px}}
-@media(max-width:700px){.musc-layout{grid-template-columns:1fr}}
+@media(max-width:700px){
+  .musc-layout{grid-template-columns:1fr;display:flex;flex-direction:column}
+  .musc-left{position:static!important}
+  .musc-right{position:relative;z-index:10}
+}
 .musc-left{position:sticky;top:44px;display:flex;flex-direction:column;align-items:stretch;gap:0}
 .musc-week-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:0;padding:12px 14px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:none}
 .musc-legend-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;width:100%}
@@ -221,7 +225,7 @@ tr:last-child td{border-bottom:none}
 .body-view{display:none}
 .body-view.active-view{display:block}
 /* body chart container — seamless avec la toolbar */
-#bodyChartContainer{background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:16px 0 24px;overflow:hidden}
+#bodyChartContainer{background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:16px 0 24px;overflow:hidden;position:relative;z-index:0}
 #bodyChartContainer svg{display:block;margin:0 auto;max-width:100%;width:100%}
 .fm-group{cursor:pointer}
 .fm-group polygon{transition:fill .2s,stroke .15s}
