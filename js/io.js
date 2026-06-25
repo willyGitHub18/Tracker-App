@@ -2,14 +2,19 @@
  * io.js — JSON and CSV import/export
  */
 
-import { getAllRecords, importRecords } from './store.js';
+import { getAllRecords, importRecords, getVacancesList, addVacances } from './store.js';
 import { validateImport }               from './security.js';
 import { EXERCISES }                    from './data.js';
 import { normRecord }                   from './store.js';
 import { repaintMuscles }               from './musculaire.js';
 
 export function exportJSON() {
-  const payload = { version: 3, exported: new Date().toISOString(), data: getAllRecords() };
+  const payload = {
+    version: 3,
+    exported: new Date().toISOString(),
+    data: getAllRecords(),
+    vacances: getVacancesList(),
+  };
   _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
 }
 
@@ -54,6 +59,13 @@ export function importJSON(event) {
       if(!result.ok) throw new Error(result.error);
 
       importRecords(result.clean);
+
+      // Restore vacances periods if present
+      if(Array.isArray(parsed.vacances)) {
+        parsed.vacances.forEach(v => {
+          if(v?.debut && v?.fin) addVacances(v.debut, v.fin, v.activite || 'sedentaire');
+        });
+      }
 
       const fb = document.getElementById('importFeedback');
       if(fb) { fb.style.display = 'inline'; setTimeout(() => fb.style.display = 'none', 3000); }

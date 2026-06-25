@@ -39,7 +39,7 @@ export function sanitizeRecord(rec) {
   if(isFinite(ts) && ts > 0)               out.ts = ts;
   if(rec.rpe != null)
     out.rpe = String(rec.rpe).replace(/[^0-9.]/g, '').slice(0, 4);
-  if(['normal','hyrox','skipped'].includes(rec.sessionStatus))
+  if(['normal','hyrox','skipped','deload'].includes(rec.sessionStatus))
     out.sessionStatus = rec.sessionStatus;
 
   if(!out.kg && (!out.sets || !out.sets.some(s => s && s.kg))) return null;
@@ -56,7 +56,7 @@ export function validateImport(obj) {
 
   const EX_KEY = /^(press|squat|deadlift|gtoh|sandbag|lunges)_w([1-9]|1[0-7])$/;
   const ST_KEY = /^status_(press|squat|deadlift|gtoh|sandbag|lunges)_w([1-9]|1[0-7])$/;
-  const VALID_STATUS = ['normal','hyrox','skipped'];
+  const VALID_STATUS = ['normal','hyrox','skipped','deload'];
 
   const hasAny = Object.keys(obj).some(k => EX_KEY.test(k));
   if(!hasAny)

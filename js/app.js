@@ -11,7 +11,7 @@ import { exportJSON, exportCSV, importJSON }                              from '
 // ── Routing ──────────────────────────────────────────────────────────────────
 
 const SECTIONS   = ['tracker','musculaire','programme','doc'];
-const PROG_TABS  = ['nutrition','warmup','mardi','mercredi','jeudi','vendredi'];
+const PROG_TABS  = ['nutrition','warmup','mardi','mercredi','jeudi','vendredi','vacances'];
 const TRACK_TABS = ['saisie','progression','historique'];
 const DOC_TABS   = ['doc-intro','doc-tracker','doc-progression','doc-statut','doc-musculaire','doc-rpe','doc-export'];
 
@@ -80,6 +80,30 @@ window.importJSON   = importJSON;
 // switchBodyView exposed by musculaire module
 import { switchBodyView } from './musculaire.js';
 window.switchBodyView = switchBodyView;
+
+// Vacances helpers exposed for inline onclick
+import { addVacances, removeVacances, clearAllVacances } from './store.js';
+window._saveVacances = function() {
+  const d = document.getElementById('vacDebut')?.value;
+  const f = document.getElementById('vacFin')?.value;
+  const a = document.getElementById('vacActivite')?.value || 'sedentaire';
+  if(d && f && new Date(f) >= new Date(d)) {
+    addVacances(d, f, a);
+    renderSaisie();
+  } else {
+    alert('Dates invalides — la fin doit être après le début.');
+  }
+};
+window._removeVacances = function(idx) {
+  removeVacances(idx);
+  renderSaisie();
+};
+window._clearVacances = function() {
+  if(confirm('Effacer toutes les périodes de vacances ?')) {
+    clearAllVacances();
+    renderSaisie();
+  }
+};
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 

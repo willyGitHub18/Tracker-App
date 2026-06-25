@@ -4,7 +4,7 @@
 
 import { esc }                       from './security.js';
 import { EXERCISES, PHASES, PHASE_LABELS, PHASE_STYLE } from './data.js';
-import { getRecord, setRecord, getExStatus, setExStatus, normRecord, bestKg, getLatestWeek } from './store.js';
+import { getRecord, setRecord, getExStatus, setExStatus, normRecord, bestKg, getLatestWeek, getVacancesList, addVacances, removeVacances, clearAllVacances, repriseCoeff, vacancesStatus, ACTIVITE_LABELS } from './store.js';
 import { parseSets, parseReps, calcAdj, getNextPlan } from './progression.js';
 import { repaintMuscles }            from './musculaire.js';
 
@@ -36,6 +36,75 @@ export function renderSaisie() {
   const days = ['Mercredi', 'Jeudi'];
   let html = '';
 
+  /* ── Vacances / Congés — liste de périodes ── */
+  const _rc   = repriseCoeff();
+  const _stat = vacancesStatus();
+  const _list = getVacancesList();
+  const _fmt  = d => d ? new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
+  const _dur  = (d1,d2) => Math.max(0, Math.round((new Date(d2)-new Date(d1))/86400000));
+
+  if(_stat?.reprise) {
+    // Calcul des charges de reprise par exercice
+    const recoRows = EXERCISES
+      .filter(ex => ['press','squat','deadlift'].includes(ex.id))
+      .map(ex => {
+        let lastKg = null;
+        for(let w = 17; w >= 1; w--) {
+          const bk = bestKg(normRecord(getRecord(ex.id, w)));
+          if(bk) { lastKg = bk; break; }
+        }
+        if(!lastKg) return '';
+        const reprise = Math.round(lastKg * _stat.coeff / 1.25) * 1.25;
+        const delta   = Math.round((reprise - lastKg) * 10) / 10;
+        return `<div class="reprise-ex-row">
+          <span class="reprise-ex-name">${esc(ex.name)}</span>
+          <span class="reprise-ex-val">${lastKg} ${ex.unit}</span>
+          <span class="reprise-ex-arrow">→</span>
+          <span class="reprise-ex-rec">${reprise} ${ex.unit}</span>
+          <span class="reprise-ex-delta" style="color:var(--amber)">${delta} kg</span>
+        </div>`;
+      }).join('');
+
+    html += `<div class="reprise-panel">
+      <div class="reprise-panel-title">⚡ ${esc(_stat.label)}</div>
+      <div class="reprise-panel-coeff">
+        Coefficient : <strong>${Math.round(_stat.coeff * 100)}%</strong>
+        ${_stat.actBonus > 0 ? `<span class="reprise-bonus">+${_stat.actBonus}% activité</span>` : ''}
+        · RPE cible : <strong>${_stat.rpeTarget}</strong>
+      </div>
+      ${recoRows ? `<div class="reprise-ex-list">${recoRows}</div>` : ''}
+      <div class="reprise-note">Les recommandations S+1 sont automatiquement ajustées dans la saisie.</div>
+    </div>`;
+  } else if(_stat?.en_cours) {
+    html += `<div class="reprise-banner" style="background:#f0e8fc;border-color:#c0a0e8;color:#5a0090">🏖 Vacances en cours — retour dans ${_stat.joursRestants} jour${_stat.joursRestants > 1 ? 's' : ''}</div>`;
+  }
+
+  html += `<div class="vacances-setup">
+    <div class="vacances-setup-title">🏖 Vacances / Congés</div>
+    ${_list.length ? `<div class="vac-list">${_list.map((v,i)=>
+      `<div class="vac-list-item">
+        <span class="vac-list-dates">${_fmt(v.debut)} → ${_fmt(v.fin)}</span>
+        <span class="vac-list-dur">${_dur(v.debut,v.fin)}j</span>
+        <span class="vac-list-act">${(ACTIVITE_LABELS[v.activite]||ACTIVITE_LABELS.sedentaire).label.split(' ')[0]}</span>
+        <button class="vac-remove-btn" onclick="window._removeVacances(${i})">✕</button>
+      </div>`
+    ).join('')}</div>` : ''}
+    <div class="vacances-row">
+      <label>Début</label>
+      <input type="date" id="vacDebut">
+      <label>Fin</label>
+      <input type="date" id="vacFin">
+    </div>
+    <div class="vacances-row" style="margin-top:6px">
+      <label>Activité</label>
+      <select id="vacActivite" style="font-size:12px;padding:5px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+        ${Object.entries(ACTIVITE_LABELS).map(([k,v])=>`<option value="${k}">${v.label}${v.bonus>0?' (+'+Math.round(v.bonus*100)+'%)':''}</option>`).join('')}
+      </select>
+      <button class="save-btn" style="padding:5px 14px;font-size:12px" onclick="window._saveVacances()">+ Ajouter</button>
+      ${_list.length ? `<button class="vac-clear-btn" onclick="window._clearVacances()">Tout effacer</button>` : ''}
+    </div>
+  </div>`;
+
   days.forEach(day => {
     const exs = EXERCISES.filter(e => e.day === day);
     if(!exs.length) return;
@@ -54,6 +123,7 @@ export function renderSaisie() {
 
       const btnN = exStatus === 'normal'  ? ' active-normal'  : '';
       const btnH = exStatus === 'hyrox'   ? ' active-hyrox'   : '';
+      const btnD = exStatus === 'deload'  ? ' active-deload'  : '';
       const btnS = exStatus === 'skipped' ? ' active-skipped' : '';
 
       html += `<div class="ex-block">
@@ -63,6 +133,7 @@ export function renderSaisie() {
           <span class="ex-status-btns">
             <button class="session-status-btn${btnN}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
             <button class="session-status-btn${btnH}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-Hyrox</button>
+            <button class="session-status-btn${btnD}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
             <button class="session-status-btn${btnS}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
           </span>
         </div>`;
@@ -71,7 +142,7 @@ export function renderSaisie() {
         html += `<div class="ex-plan-txt">Plan : <strong>${plan} ${ex.unit}</strong>${planReps ? ` × <strong>${planReps} reps</strong>` : ''} <span class="ex-ref">${ex.refText}</span></div>`;
 
         const bk = bestKg(rec);
-        if(bk != null || exStatus === 'skipped') {
+        if(bk != null || exStatus === 'skipped' || exStatus === 'deload') {
           const adj = calcAdj(ex, week);
           if(adj && adj.signals.length) {
             const cls = adj.type === 'ok' ? 'adj-ok'
@@ -86,7 +157,7 @@ export function renderSaisie() {
             html += `<div class="adj-box ${cls}" style="padding:8px 12px">${sigHtml}</div>`;
           }
 
-          if(!adj?.skipped && !adj?.hyrox) {
+          if(!adj?.skipped && !adj?.hyrox && !adj?.deload) {
             const nxt = getNextPlan(ex, week);
             if(nxt) {
               const planNext     = ex.plan[week];
@@ -108,7 +179,7 @@ export function renderSaisie() {
         }
 
         // Sets grid
-        if(exStatus !== 'skipped') {
+        if(exStatus !== 'skipped' && exStatus !== 'deload') {
           html += `<table class="sets-table">
             <thead><tr><th>Série</th><th>Charge (${ex.unit})</th><th>Reps</th><th>RPE</th><th></th></tr></thead><tbody>`;
           for(let s = 0; s < nSets; s++) {

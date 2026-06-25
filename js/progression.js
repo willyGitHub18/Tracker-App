@@ -11,7 +11,7 @@
  */
 
 import { EXERCISES } from './data.js';
-import { getRecord, getExStatus, normRecord } from './store.js';
+import { getRecord, getExStatus, normRecord, repriseCoeff } from './store.js';
 
 export function parseSets(scheme) {
   if(!scheme || ['Deload','—','Taper','Repos'].includes(scheme)) return 0;
@@ -32,6 +32,7 @@ export function weekOutcome(ex, week) {
   const status = getExStatus(ex.id, week);
   if(status === 'skipped') return 'skipped';
   if(status === 'hyrox')   return 'hyrox';
+  if(status === 'deload')  return 'deload';
 
   const rec = normRecord(getRecord(ex.id, week));
   if(!rec || !rec.sets || !rec.sets.some(s => s && s.kg)) return 'nodata';
@@ -58,7 +59,7 @@ export function consecutivePlateaux(ex, beforeWeek) {
   let count = 0;
   for(let w = beforeWeek - 1; w >= 1; w--) {
     const o = weekOutcome(ex, w);
-    if(['skipped','hyrox','nodata'].includes(o)) continue;
+    if(['skipped','hyrox','nodata','deload'].includes(o)) continue;
     if(['partial','high_rpe'].includes(o)) { count++; continue; }
     break;
   }
@@ -80,11 +81,21 @@ export function getNextPlan(ex, week) {
   const plateauCount  = consecutivePlateaux(ex, week);
   const status        = getExStatus(ex.id, week);
 
+  /* ── Vacances : ajuster la charge de reprise ── */
+  const rc = repriseCoeff();
+  if(rc) {
+    const repriseKg = Math.round(currentKg * rc.coeff / 1.25) * 1.25;
+    return { kg: repriseKg, rule: `${rc.label} · charge réduite à ${Math.round(rc.coeff*100)}% · RPE cible ${rc.rpeTarget}`, outcome: 'vacances', plateauCount: 0 };
+  }
+
   let nextKg, rule;
 
   if(status === 'skipped') {
     nextKg = currentKg;
     rule   = 'Séance sautée — répète la même charge.';
+  } else if(status === 'deload') {
+    const planNext = ex.plan[week] || currentKg;
+    return { kg: Math.round(planNext / 1.25) * 1.25, rule: 'Séance deload — retour au plan officiel S+1.', outcome: 'deload', plateauCount };
   } else if(outcome === 'crush') {
     nextKg = Math.max(currentKg - 2 * p, p);
     rule   = 'Reps très insuffisantes — recul de 2 paliers (Lafay : réinitialisation).';
@@ -126,7 +137,12 @@ export function calcAdj(ex, week) {
 
   if(status === 'skipped') {
     return { type: 'skipped', signals: [], nextBonus: 0, bk: null, avgRpe: null,
-             avgReps: null, repRatio: null, setPct: null, skipped: true, hyrox: false };
+             avgReps: null, repRatio: null, setPct: null, skipped: true, hyrox: false, deload: false };
+  }
+  if(status === 'deload') {
+    return { type: 'deload', signals: [{ type: 'neutral', text: 'Séance deload — aucune analyse de performance.' }],
+             nextBonus: 0, bk: null, avgRpe: null, avgReps: null, repRatio: null, setPct: null,
+             skipped: false, hyrox: false, deload: true };
   }
 
   const rec = normRecord(getRecord(ex.id, week));

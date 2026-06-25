@@ -117,25 +117,8 @@ header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono)}
 .save-btn{font-family:var(--sans);font-size:13px;font-weight:500;padding:7px 18px;border:1px solid var(--border-md);border-radius:var(--radius);background:transparent;color:var(--text);cursor:pointer;transition:background .15s}
 .save-btn:hover{background:var(--surface2)}
 .save-ok{font-size:12px;color:var(--green);font-weight:500;display:none}
-.prog-filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg)}
-.prog-filter-note{font-size:11px;color:var(--text3);margin-left:auto}
-.prog-filter-group{display:flex;align-items:center;gap:8px}
-.prog-filter-group label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
-.prog-filter-group select{font-size:12px;padding:5px 10px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);cursor:pointer}
-.prog-pct-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-.pct-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px}
-.pct-dot{width:28px;height:3px;border-radius:2px;margin-bottom:8px}
-.pct-name{font-size:10px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
-.pct-val{font-size:16px;font-weight:600;font-family:var(--mono);margin-bottom:3px}
-.pct-sub{font-size:10px;color:var(--text3);font-family:var(--mono)}
-.prog-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px}
-.prog-chart-label{font-size:13px;font-weight:600;margin-bottom:2px}
-.prog-chart-sub{font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.4}
-.prog-legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px;font-size:11px;color:var(--text2);align-items:center}
-.prog-legend span{display:flex;align-items:center;gap:5px}
-.pleg-line{display:inline-block;width:18px;height:3px;border-radius:2px;flex-shrink:0;vertical-align:middle}
-.pleg-dash{display:inline-block;width:18px;height:0;border-top:2.5px dashed #888;flex-shrink:0;vertical-align:middle}
-.pleg-box{display:inline-block;width:10px;height:10px;border-radius:2px;flex-shrink:0;vertical-align:middle}
+.prog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:700px){.prog-grid{grid-template-columns:1fr 1fr}} @media(max-width:480px){.prog-grid{grid-template-columns:1fr}}
 .prog-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
 .prog-card-name{font-size:13px;font-weight:600;margin-bottom:2px}
 .prog-card-day{font-size:11px;color:var(--text3);margin-bottom:12px}
@@ -174,16 +157,59 @@ tr:last-child td{border-bottom:none}
 
 
 
+/* ── Deload + Vacances ── */
+.session-status-btn.active-deload{background:#e8f0fc;border-color:#1a5fb4;color:#1a5fb4}
+.vacances-setup{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:14px}
+.vacances-setup-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px}
+.vacances-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.vacances-row label{font-size:12px;color:var(--text2)}
+.vacances-row input[type=date]{font-size:12px;padding:5px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text)}
+.vacances-info{font-size:11px;color:#5a0090;background:#f4eafc;border-radius:var(--radius);padding:5px 10px;margin-top:8px;display:inline-block}
+.vac-clear-btn{font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px}
+.reprise-banner{background:#fdf0d8;border:1px solid rgba(212,134,10,.3);border-radius:var(--radius);padding:8px 14px;font-size:12px;color:#7c4a00;margin-bottom:12px;font-weight:500}
+/* Vacances programme */
+.vacances-prog{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px}
+.vacances-prog-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.vacances-prog-sub{font-size:11px;color:var(--text3);margin-bottom:12px}
+.vacances-day{margin-bottom:16px}
+.vacances-day-name{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.vac-ex-row{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start;font-size:12px}
+.vac-ex-row:last-child{border-bottom:none}
+.vac-ex-name{font-weight:500;color:var(--text);min-width:160px}
+.vac-ex-detail{color:var(--text2);flex:1;line-height:1.5}
+.vac-ex-tag{font-size:10px;font-weight:500;padding:2px 7px;border-radius:8px;flex-shrink:0}
+
+/* ── Vacances liste ── */
+.vac-list{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.vac-list-item{display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:var(--radius);padding:5px 10px;font-size:12px}
+.vac-list-dates{font-family:var(--mono);font-weight:500;color:var(--text);flex:1}
+.vac-list-dur{font-size:11px;color:var(--text3);font-family:var(--mono);min-width:30px}
+.vac-remove-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0 2px;line-height:1}
+.vac-remove-btn:hover{color:var(--red)}
+
+.vac-list-act{font-size:10px;color:var(--text3);background:var(--surface2);border-radius:8px;padding:1px 6px;flex-shrink:0}
+
+/* ── Reprise panel ── */
+.reprise-panel{background:#fdf0d8;border:1px solid rgba(212,134,10,.3);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:14px}
+.reprise-panel-title{font-size:13px;font-weight:600;color:#7c4a00;margin-bottom:6px}
+.reprise-panel-coeff{font-size:12px;color:#7c4a00;margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.reprise-panel-coeff strong{font-family:var(--mono)}
+.reprise-bonus{font-size:11px;background:rgba(212,134,10,.15);border-radius:20px;padding:1px 8px;color:#7c4a00}
+.reprise-ex-list{background:rgba(255,255,255,.6);border-radius:var(--radius);padding:8px 12px;margin-bottom:8px}
+.reprise-ex-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(212,134,10,.15);font-size:12px}
+.reprise-ex-row:last-child{border-bottom:none}
+.reprise-ex-name{font-weight:500;color:var(--text);flex:1}
+.reprise-ex-val{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.reprise-ex-arrow{color:var(--text3)}
+.reprise-ex-rec{font-family:var(--mono);font-size:12px;font-weight:600;color:#7c4a00}
+.reprise-ex-delta{font-family:var(--mono);font-size:11px;min-width:40px;text-align:right}
+.reprise-note{font-size:11px;color:#7c4a00;font-style:italic;opacity:.8}
+
 /* ── SUIVI MUSCULAIRE ── */
-.musc-layout{display:flex;flex-direction:column;gap:16px}
-@media(min-width:700px){.musc-layout{display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:flex-start}}
-.musc-left{display:flex;flex-direction:column;align-items:stretch;gap:0}
-@media(min-width:700px){.musc-left{position:sticky;top:44px}}
-  .musc-right{position:static;margin-top:0}
-  #bodyChartContainer{max-height:70vh;overflow:hidden}
-  #bodyChartContainer svg{max-height:68vh;width:auto;margin:0 auto}
-}
-.musc-left{position:static;display:flex;flex-direction:column;align-items:stretch;gap:0}
+.musc-layout{display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:flex-start}
+@media(max-width:860px){.musc-layout{grid-template-columns:260px 1fr;gap:18px}}
+@media(max-width:700px){.musc-layout{grid-template-columns:1fr}}
+.musc-left{position:sticky;top:44px;display:flex;flex-direction:column;align-items:stretch;gap:0}
 .musc-week-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:0;padding:12px 14px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:none}
 .musc-legend-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;width:100%}
 .musc-leg{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;color:#fff}
@@ -195,13 +221,13 @@ tr:last-child td{border-bottom:none}
 .body-view{display:none}
 .body-view.active-view{display:block}
 /* body chart container — seamless avec la toolbar */
-#bodyChartContainer{background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:16px 0 24px;overflow:visible;position:relative;z-index:0}
+#bodyChartContainer{background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:16px 0 24px;overflow:hidden}
 #bodyChartContainer svg{display:block;margin:0 auto;max-width:100%;width:100%}
 .fm-group{cursor:pointer}
 .fm-group polygon{transition:fill .2s,stroke .15s}
 .fm-group:hover polygon{opacity:0.72}
 /* right panel */
-.musc-right{display:flex;flex-direction:column;gap:14px;min-width:0;position:relative;z-index:10;background:var(--bg)}
+.musc-right{display:flex;flex-direction:column;gap:14px;min-width:0}
 .musc-detail{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
 .musc-detail-title{font-size:14px;font-weight:600;margin-bottom:10px}
 .musc-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
@@ -223,10 +249,8 @@ tr:last-child td{border-bottom:none}
 
 
 /* ── PROGRAMME STYLES ── */
-.prog-top-nav{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:1.5rem;padding-bottom:6px;scrollbar-width:none}
-.prog-top-nav::-webkit-scrollbar{display:none}
-.prog-top-nav button{flex-shrink:0}
-.prog-top-nav button{font-size:12px;padding:5px 12px;background:transparent;border:1px solid var(--border-md);border-radius:var(--radius);cursor:pointer;color:var(--text2);font-family:var(--sans);transition:background .15s;white-space:nowrap;flex-shrink:0;height:34px;line-height:1}
+.prog-top-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.5rem}
+.prog-top-nav button{font-size:12px;padding:5px 12px;background:transparent;border:1px solid var(--border-md);border-radius:var(--radius);cursor:pointer;color:var(--text2);font-family:var(--sans);transition:background .15s}
 .prog-top-nav button.active{background:var(--surface2);border-color:rgba(0,0,0,.25);color:var(--text);font-weight:500}
 .prog-tab{display:none}.prog-tab.active{display:block}
 .p-section{margin-bottom:1.5rem}
@@ -466,6 +490,7 @@ tr:last-child td{border-bottom:none}
     <button onclick="showProg('mercredi')">Mercredi — Force</button>
     <button onclick="showProg('jeudi')">Jeudi — Force/MetCon</button>
     <button onclick="showProg('vendredi')">Vendredi — MetCon</button>
+    <button onclick="showProg('vacances')">🏖 Vacances</button>
   </div>
 
   <!-- NUTRITION -->
@@ -795,6 +820,155 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 
+
+  <!-- VACANCES -->
+  <div id="vacances" class="prog-tab">
+    <div class="p-section">
+      <div class="p-sec-title">Programme Vacances — Maintien sans charges lourdes</div>
+      <div class="p-card">
+        <div class="p-card-title">Objectif</div>
+        <div class="p-card-body">Maintenir les adaptations neuromusculaires et la mobilité sans accès à une salle ou à des charges lourdes. Basé sur le poids du corps, les élastiques et la plyométrie légère.</div>
+      </div>
+      <div class="p-note amber">Après les vacances, reprendre à 75–95% des charges habituelles selon la durée (voir le tracker — section Vacances/Congés pour le calcul automatique).</div>
+    </div>
+
+    <div class="p-section">
+      <div class="p-sec-title">Fréquence recommandée</div>
+      <div class="p-card">
+        <div class="p-card-body">
+          <strong>2 à 3 séances / semaine</strong> suffisent pour maintenir la force.<br>
+          Espacer d'au moins 1 jour de repos entre les séances.<br>
+          Durée : 30–45 min · Intensité : RPE 6–7 maximum.
+        </div>
+      </div>
+    </div>
+
+    <div class="p-section">
+      <div class="p-sec-title">Séance A — Force membres inférieurs</div>
+      <div class="p-card">
+        <div class="p-time-badge">~35 min</div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">1</div>
+          <div class="p-ex-name">Squat poids du corps</div>
+          <div class="p-ex-detail">4 × 20 reps · Tempo 3-1-1 · Pause 60 s</div>
+          <div class="p-ex-tag p-tag-f">Quads / Fessiers</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">2</div>
+          <div class="p-ex-name">Pistol squat assisté</div>
+          <div class="p-ex-detail">3 × 8/jambe · Tenir une chaise ou mur · Pause 90 s</div>
+          <div class="p-ex-tag p-tag-f">Quad unilatéral</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">3</div>
+          <div class="p-ex-name">Hip hinge / Good morning</div>
+          <div class="p-ex-detail">4 × 15 reps · Poids du corps ou sac lesté · Pause 60 s</div>
+          <div class="p-ex-tag p-tag-c">Ischio / Lombaires</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">4</div>
+          <div class="p-ex-name">Fentes marchées</div>
+          <div class="p-ex-detail">3 × 12/jambe · Avec ou sans sac à dos lesté</div>
+          <div class="p-ex-tag p-tag-f">Quads / Fessiers</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">5</div>
+          <div class="p-ex-name">Jump squat</div>
+          <div class="p-ex-detail">3 × 8 reps · Intention maximale · Pause 90 s</div>
+          <div class="p-ex-tag p-tag-m">Explosivité</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-section">
+      <div class="p-sec-title">Séance B — Force membres supérieurs + Core</div>
+      <div class="p-card">
+        <div class="p-time-badge">~35 min</div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">1</div>
+          <div class="p-ex-name">Push-up</div>
+          <div class="p-ex-detail">4 × max · Variantes : large / serré / décliné · Pause 60 s</div>
+          <div class="p-ex-tag p-tag-f">Pec / Triceps / Épaules</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">2</div>
+          <div class="p-ex-name">Pike push-up</div>
+          <div class="p-ex-detail">4 × 10 reps · Hanches hautes, charge sur épaules · Pause 60 s</div>
+          <div class="p-ex-tag p-tag-f">Deltoïdes</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">3</div>
+          <div class="p-ex-name">Traction / Australian pull-up</div>
+          <div class="p-ex-detail">4 × max · Table basse ou barre parc · Pause 90 s</div>
+          <div class="p-ex-tag p-tag-c">Dorsaux / Biceps</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">4</div>
+          <div class="p-ex-name">Planche</div>
+          <div class="p-ex-detail">4 × 45 s · Variante latérale 30 s / côté</div>
+          <div class="p-ex-tag p-tag-r">Core</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">5</div>
+          <div class="p-ex-name">Superman hold</div>
+          <div class="p-ex-detail">3 × 15 reps · 2 s de contraction · Lombaires / fessiers</div>
+          <div class="p-ex-tag p-tag-c">Lombaires</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-section">
+      <div class="p-sec-title">Séance C — Full body cardio / MetCon léger</div>
+      <div class="p-card">
+        <div class="p-time-badge">~30 min</div>
+        <div class="p-note">Circuit 4 tours · Repos 2 min entre tours · RPE cible ≤ 7</div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">1</div>
+          <div class="p-ex-name">Burpee</div>
+          <div class="p-ex-detail">10 reps</div>
+          <div class="p-ex-tag p-tag-m">Full body</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">2</div>
+          <div class="p-ex-name">Mountain climber</div>
+          <div class="p-ex-detail">20 reps / jambe</div>
+          <div class="p-ex-tag p-tag-r">Core / Cardio</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">3</div>
+          <div class="p-ex-name">Jump lunge</div>
+          <div class="p-ex-detail">10 reps / jambe</div>
+          <div class="p-ex-tag p-tag-m">Explosivité</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">4</div>
+          <div class="p-ex-name">Push-up + rotation</div>
+          <div class="p-ex-detail">10 reps · rotation épaule à chaque rep</div>
+          <div class="p-ex-tag p-tag-f">Pec / Core</div>
+        </div>
+        <div class="p-ex-row">
+          <div class="p-ex-num">5</div>
+          <div class="p-ex-name">Squat jump</div>
+          <div class="p-ex-detail">10 reps · Intention maximale</div>
+          <div class="p-ex-tag p-tag-m">Puissance</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-section">
+      <div class="p-sec-title">Mobilité quotidienne (10 min)</div>
+      <div class="p-card">
+        <div class="p-card-body">À faire tous les jours, même sans séance :<br><br>
+          <strong>Hip flexor stretch</strong> · 90 s / côté<br>
+          <strong>World's greatest stretch</strong> · 8 reps / côté<br>
+          <strong>Thoracic rotation</strong> · 10 reps / côté<br>
+          <strong>Deep squat hold</strong> · 90 s<br>
+          <strong>Shoulder pass-through</strong> (serviette ou élastique) · 10 reps
+        </div>
+      </div>
+      <div class="p-note green">La mobilité maintenue pendant les vacances accélère la reprise post-congés et réduit le risque de blessure au retour des charges lourdes.</div>
+    </div>
+  </div>
 </div><div id="doc" class="section-panel">
 
   <div class="doc-layout">
@@ -1243,7 +1417,7 @@ function sanitizeRecord(rec) {
   if(isFinite(ts) && ts > 0)               out.ts = ts;
   if(rec.rpe != null)
     out.rpe = String(rec.rpe).replace(/[^0-9.]/g, '').slice(0, 4);
-  if(['normal','hyrox','skipped'].includes(rec.sessionStatus))
+  if(['normal','hyrox','skipped','deload'].includes(rec.sessionStatus))
     out.sessionStatus = rec.sessionStatus;
 
   if(!out.kg && (!out.sets || !out.sets.some(s => s && s.kg))) return null;
@@ -1260,7 +1434,7 @@ function validateImport(obj) {
 
   const EX_KEY = /^(press|squat|deadlift|gtoh|sandbag|lunges)_w([1-9]|1[0-7])$/;
   const ST_KEY = /^status_(press|squat|deadlift|gtoh|sandbag|lunges)_w([1-9]|1[0-7])$/;
-  const VALID_STATUS = ['normal','hyrox','skipped'];
+  const VALID_STATUS = ['normal','hyrox','skipped','deload'];
 
   const hasAny = Object.keys(obj).some(k => EX_KEY.test(k));
   if(!hasAny)
@@ -1423,7 +1597,7 @@ function getExStatus(exId, week) {
 }
 
 function setExStatus(exId, week, status) {
-  const VALID = ['normal', 'hyrox', 'skipped'];
+  const VALID = ['normal', 'hyrox', 'skipped', 'deload'];
   if(!VALID.includes(status)) return;
   dbSet(`status_${exId}_w${week}`, status);
 }
@@ -1465,6 +1639,162 @@ function bestKg(rec) {
   return vals.length ? Math.max(...vals) : (nr.kg || null);
 }
 
+// ── Vacances — liste de périodes ─────────────────────────────────────────────
+
+function getVacancesList() {
+  return dbGet('vacances_list') || [];
+}
+
+// Niveaux d'activité et leurs corrections sur le déconditionnement
+const ACTIVITE_LABELS = {
+  sedentaire:  { label: 'Sédentaire',               bonus: 0    },
+  leger:       { label: 'Activité légère (marche…)', bonus: 0.03 },
+  vacances:    { label: 'Programme vacances (PdC)',  bonus: 0.07 },
+  sport:       { label: 'Sport régulier (cardio…)',  bonus: 0.05 },
+  muscu:       { label: 'Musculation légère',        bonus: 0.08 },
+};
+
+function addVacances(debut, fin, activite='sedentaire') {
+  if(!debut || !fin || new Date(fin) < new Date(debut)) return;
+  if(!(activite in ACTIVITE_LABELS)) activite = 'sedentaire';
+  const list = getVacancesList();
+  if(list.some(v => v.debut === debut && v.fin === fin)) return;
+  list.push({ debut, fin, activite });
+  list.sort((a,b) => new Date(a.debut) - new Date(b.debut));
+  dbSet('vacances_list', list);
+}
+
+function removeVacances(idx) {
+  const list = getVacancesList();
+  list.splice(idx, 1);
+  dbSet('vacances_list', list);
+}
+
+function clearAllVacances() {
+  dbSet('vacances_list', []);
+}
+
+// Compat legacy (single period)
+function getVacances() { return null; }
+function vacancesDuree() { return 0; }
+
+/**
+ * Retourne le coefficient de reprise basé sur la DERNIÈRE période terminée.
+ * - Période en cours → null (pas encore de reprise)
+ * - Période terminée il y a moins de 7 jours → coefficient actif
+ * - Période terminée il y a plus de 7 jours → null (déjà repris)
+ * - Périodes consécutives ou proches (< 7 jours d'écart) → cumulées
+ */
+function repriseCoeff() {
+  const list = getVacancesList();
+  if(!list.length) return null;
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // Fusionner les périodes qui se chevauchent ou sont proches (< 7 jours d'écart)
+  const merged = _mergePeriods(list, 7);
+
+  // Trouver la dernière période pertinente pour la reprise
+  // = période terminée ET fin dans les 14 derniers jours (fenêtre de reprise)
+  let repriseTarget = null;
+  for(const p of merged) {
+    const fin = new Date(p.fin);
+    fin.setHours(0,0,0,0);
+    const debut = new Date(p.debut);
+    debut.setHours(0,0,0,0);
+
+    if(fin < today) {
+      // Période passée — dans la fenêtre de reprise de 14 jours ?
+      const joursSinceFin = Math.round((today - fin) / 86400000);
+      if(joursSinceFin <= 14) {
+        repriseTarget = { ...p, joursSinceFin };
+      }
+    }
+    // Si période en cours → afficher info mais pas de coeff
+  }
+
+  if(!repriseTarget) return null;
+
+  const jours = Math.round((new Date(repriseTarget.fin) - new Date(repriseTarget.debut)) / 86400000);
+
+  // Coefficient de base selon durée
+  let baseCoeff, rpeTarget, labelBase;
+  if(jours <= 14) { baseCoeff = 0.95; rpeTarget = '≤ 7.5'; labelBase = 'Reprise légère'; }
+  else if(jours <= 28) { baseCoeff = 0.85; rpeTarget = '≤ 7'; labelBase = 'Reprise progressive'; }
+  else { baseCoeff = 0.75; rpeTarget = '≤ 6.5'; labelBase = 'Reprise prudente'; }
+
+  // Bonus activité — moyenne pondérée sur les périodes fusionnées (selon leur durée)
+  const srcPeriods = list.filter(p => {
+    const d = new Date(p.debut), f = new Date(p.fin);
+    return f >= new Date(repriseTarget.debut) && d <= new Date(repriseTarget.fin);
+  });
+  let totalDays = 0, weightedBonus = 0;
+  srcPeriods.forEach(p => {
+    const dur = Math.max(1, Math.round((new Date(p.fin) - new Date(p.debut)) / 86400000));
+    const bonus = (ACTIVITE_LABELS[p.activite] || ACTIVITE_LABELS.sedentaire).bonus;
+    weightedBonus += bonus * dur;
+    totalDays += dur;
+  });
+  const actBonus = totalDays > 0 ? weightedBonus / totalDays : 0;
+  const actLabel = srcPeriods.length === 1
+    ? (ACTIVITE_LABELS[srcPeriods[0].activite] || ACTIVITE_LABELS.sedentaire).label
+    : 'Activité mixte';
+
+  const finalCoeff = Math.min(1, Math.round((baseCoeff + actBonus) * 100) / 100);
+  // Ajuster RPE cible si le bonus remonte le coeff
+  const rpe = finalCoeff >= 0.95 ? '≤ 7.5' : finalCoeff >= 0.88 ? '≤ 7' : '≤ 6.5';
+
+  return {
+    coeff: finalCoeff,
+    rpeTarget: rpe,
+    label: `${labelBase} (${jours}j · ${actLabel})`,
+    jours,
+    actBonus: Math.round(actBonus * 100),
+  };
+}
+
+/** Statut de la période en cours (pour affichage dans le tracker) */
+function vacancesStatus() {
+  const list = getVacancesList();
+  if(!list.length) return null;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const merged = _mergePeriods(list, 7);
+
+  for(const p of merged) {
+    const debut = new Date(p.debut); debut.setHours(0,0,0,0);
+    const fin   = new Date(p.fin);   fin.setHours(0,0,0,0);
+    if(debut <= today && today <= fin) {
+      const joursRestants = Math.round((fin - today) / 86400000);
+      return { en_cours: true, joursRestants, debut: p.debut, fin: p.fin };
+    }
+  }
+
+  const rc = repriseCoeff();
+  if(rc) return { reprise: true, ...rc };
+
+  return null;
+}
+
+function _mergePeriods(list, gapDays) {
+  if(!list.length) return [];
+  const sorted = [...list].sort((a,b) => new Date(a.debut) - new Date(b.debut));
+  const merged = [{ ...sorted[0] }];
+  for(let i = 1; i < sorted.length; i++) {
+    const prev = merged[merged.length - 1];
+    const cur  = sorted[i];
+    const gap  = Math.round((new Date(cur.debut) - new Date(prev.fin)) / 86400000);
+    if(gap <= gapDays) {
+      // Fusionner : étendre la période précédente
+      if(new Date(cur.fin) > new Date(prev.fin)) prev.fin = cur.fin;
+    } else {
+      merged.push({ ...cur });
+    }
+  }
+  return merged;
+}
+
 
 /* ── progression.js ── */
 /**
@@ -1499,6 +1829,7 @@ function weekOutcome(ex, week) {
   const status = getExStatus(ex.id, week);
   if(status === 'skipped') return 'skipped';
   if(status === 'hyrox')   return 'hyrox';
+  if(status === 'deload')  return 'deload';
 
   const rec = normRecord(getRecord(ex.id, week));
   if(!rec || !rec.sets || !rec.sets.some(s => s && s.kg)) return 'nodata';
@@ -1525,7 +1856,7 @@ function consecutivePlateaux(ex, beforeWeek) {
   let count = 0;
   for(let w = beforeWeek - 1; w >= 1; w--) {
     const o = weekOutcome(ex, w);
-    if(['skipped','hyrox','nodata'].includes(o)) continue;
+    if(['skipped','hyrox','nodata','deload'].includes(o)) continue;
     if(['partial','high_rpe'].includes(o)) { count++; continue; }
     break;
   }
@@ -1547,11 +1878,21 @@ function getNextPlan(ex, week) {
   const plateauCount  = consecutivePlateaux(ex, week);
   const status        = getExStatus(ex.id, week);
 
+  /* ── Vacances : ajuster la charge de reprise ── */
+  const rc = repriseCoeff();
+  if(rc) {
+    const repriseKg = Math.round(currentKg * rc.coeff / 1.25) * 1.25;
+    return { kg: repriseKg, rule: `${rc.label} · charge réduite à ${Math.round(rc.coeff*100)}% · RPE cible ${rc.rpeTarget}`, outcome: 'vacances', plateauCount: 0 };
+  }
+
   let nextKg, rule;
 
   if(status === 'skipped') {
     nextKg = currentKg;
     rule   = 'Séance sautée — répète la même charge.';
+  } else if(status === 'deload') {
+    const planNext = ex.plan[week] || currentKg;
+    return { kg: Math.round(planNext / 1.25) * 1.25, rule: 'Séance deload — retour au plan officiel S+1.', outcome: 'deload', plateauCount };
   } else if(outcome === 'crush') {
     nextKg = Math.max(currentKg - 2 * p, p);
     rule   = 'Reps très insuffisantes — recul de 2 paliers (Lafay : réinitialisation).';
@@ -1593,7 +1934,12 @@ function calcAdj(ex, week) {
 
   if(status === 'skipped') {
     return { type: 'skipped', signals: [], nextBonus: 0, bk: null, avgRpe: null,
-             avgReps: null, repRatio: null, setPct: null, skipped: true, hyrox: false };
+             avgReps: null, repRatio: null, setPct: null, skipped: true, hyrox: false, deload: false };
+  }
+  if(status === 'deload') {
+    return { type: 'deload', signals: [{ type: 'neutral', text: 'Séance deload — aucune analyse de performance.' }],
+             nextBonus: 0, bk: null, avgRpe: null, avgReps: null, repRatio: null, setPct: null,
+             skipped: false, hyrox: false, deload: true };
   }
 
   const rec = normRecord(getRecord(ex.id, week));
@@ -1777,6 +2123,75 @@ function renderSaisie() {
   const days = ['Mercredi', 'Jeudi'];
   let html = '';
 
+  /* ── Vacances / Congés — liste de périodes ── */
+  const _rc   = repriseCoeff();
+  const _stat = vacancesStatus();
+  const _list = getVacancesList();
+  const _fmt  = d => d ? new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
+  const _dur  = (d1,d2) => Math.max(0, Math.round((new Date(d2)-new Date(d1))/86400000));
+
+  if(_stat?.reprise) {
+    // Calcul des charges de reprise par exercice
+    const recoRows = EXERCISES
+      .filter(ex => ['press','squat','deadlift'].includes(ex.id))
+      .map(ex => {
+        let lastKg = null;
+        for(let w = 17; w >= 1; w--) {
+          const bk = bestKg(normRecord(getRecord(ex.id, w)));
+          if(bk) { lastKg = bk; break; }
+        }
+        if(!lastKg) return '';
+        const reprise = Math.round(lastKg * _stat.coeff / 1.25) * 1.25;
+        const delta   = Math.round((reprise - lastKg) * 10) / 10;
+        return `<div class="reprise-ex-row">
+          <span class="reprise-ex-name">${esc(ex.name)}</span>
+          <span class="reprise-ex-val">${lastKg} ${ex.unit}</span>
+          <span class="reprise-ex-arrow">→</span>
+          <span class="reprise-ex-rec">${reprise} ${ex.unit}</span>
+          <span class="reprise-ex-delta" style="color:var(--amber)">${delta} kg</span>
+        </div>`;
+      }).join('');
+
+    html += `<div class="reprise-panel">
+      <div class="reprise-panel-title">⚡ ${esc(_stat.label)}</div>
+      <div class="reprise-panel-coeff">
+        Coefficient : <strong>${Math.round(_stat.coeff * 100)}%</strong>
+        ${_stat.actBonus > 0 ? `<span class="reprise-bonus">+${_stat.actBonus}% activité</span>` : ''}
+        · RPE cible : <strong>${_stat.rpeTarget}</strong>
+      </div>
+      ${recoRows ? `<div class="reprise-ex-list">${recoRows}</div>` : ''}
+      <div class="reprise-note">Les recommandations S+1 sont automatiquement ajustées dans la saisie.</div>
+    </div>`;
+  } else if(_stat?.en_cours) {
+    html += `<div class="reprise-banner" style="background:#f0e8fc;border-color:#c0a0e8;color:#5a0090">🏖 Vacances en cours — retour dans ${_stat.joursRestants} jour${_stat.joursRestants > 1 ? 's' : ''}</div>`;
+  }
+
+  html += `<div class="vacances-setup">
+    <div class="vacances-setup-title">🏖 Vacances / Congés</div>
+    ${_list.length ? `<div class="vac-list">${_list.map((v,i)=>
+      `<div class="vac-list-item">
+        <span class="vac-list-dates">${_fmt(v.debut)} → ${_fmt(v.fin)}</span>
+        <span class="vac-list-dur">${_dur(v.debut,v.fin)}j</span>
+        <span class="vac-list-act">${(ACTIVITE_LABELS[v.activite]||ACTIVITE_LABELS.sedentaire).label.split(' ')[0]}</span>
+        <button class="vac-remove-btn" onclick="window._removeVacances(${i})">✕</button>
+      </div>`
+    ).join('')}</div>` : ''}
+    <div class="vacances-row">
+      <label>Début</label>
+      <input type="date" id="vacDebut">
+      <label>Fin</label>
+      <input type="date" id="vacFin">
+    </div>
+    <div class="vacances-row" style="margin-top:6px">
+      <label>Activité</label>
+      <select id="vacActivite" style="font-size:12px;padding:5px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+        ${Object.entries(ACTIVITE_LABELS).map(([k,v])=>`<option value="${k}">${v.label}${v.bonus>0?' (+'+Math.round(v.bonus*100)+'%)':''}</option>`).join('')}
+      </select>
+      <button class="save-btn" style="padding:5px 14px;font-size:12px" onclick="window._saveVacances()">+ Ajouter</button>
+      ${_list.length ? `<button class="vac-clear-btn" onclick="window._clearVacances()">Tout effacer</button>` : ''}
+    </div>
+  </div>`;
+
   days.forEach(day => {
     const exs = EXERCISES.filter(e => e.day === day);
     if(!exs.length) return;
@@ -1795,6 +2210,7 @@ function renderSaisie() {
 
       const btnN = exStatus === 'normal'  ? ' active-normal'  : '';
       const btnH = exStatus === 'hyrox'   ? ' active-hyrox'   : '';
+      const btnD = exStatus === 'deload'  ? ' active-deload'  : '';
       const btnS = exStatus === 'skipped' ? ' active-skipped' : '';
 
       html += `<div class="ex-block">
@@ -1804,6 +2220,7 @@ function renderSaisie() {
           <span class="ex-status-btns">
             <button class="session-status-btn${btnN}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
             <button class="session-status-btn${btnH}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-Hyrox</button>
+            <button class="session-status-btn${btnD}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
             <button class="session-status-btn${btnS}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
           </span>
         </div>`;
@@ -1812,7 +2229,7 @@ function renderSaisie() {
         html += `<div class="ex-plan-txt">Plan : <strong>${plan} ${ex.unit}</strong>${planReps ? ` × <strong>${planReps} reps</strong>` : ''} <span class="ex-ref">${ex.refText}</span></div>`;
 
         const bk = bestKg(rec);
-        if(bk != null || exStatus === 'skipped') {
+        if(bk != null || exStatus === 'skipped' || exStatus === 'deload') {
           const adj = calcAdj(ex, week);
           if(adj && adj.signals.length) {
             const cls = adj.type === 'ok' ? 'adj-ok'
@@ -1827,7 +2244,7 @@ function renderSaisie() {
             html += `<div class="adj-box ${cls}" style="padding:8px 12px">${sigHtml}</div>`;
           }
 
-          if(!adj?.skipped && !adj?.hyrox) {
+          if(!adj?.skipped && !adj?.hyrox && !adj?.deload) {
             const nxt = getNextPlan(ex, week);
             if(nxt) {
               const planNext     = ex.plan[week];
@@ -1849,7 +2266,7 @@ function renderSaisie() {
         }
 
         // Sets grid
-        if(exStatus !== 'skipped') {
+        if(exStatus !== 'skipped' && exStatus !== 'deload') {
           html += `<table class="sets-table">
             <thead><tr><th>Série</th><th>Charge (${ex.unit})</th><th>Reps</th><th>RPE</th><th></th></tr></thead><tbody>`;
           for(let s = 0; s < nSets; s++) {
@@ -1963,270 +2380,31 @@ function saveSaisie(week, day) {
   repaintMuscles();
 }
 
-// ── Progression ─────────────────────────────────────────────────────────────
-
-const MAIN_LIFTS = ['press','squat','deadlift'];
-let _progChart  = null;
-let _benchChart = null;
-
-// Benchmarks Strength Level — population générale entraînée
-// Ratios [P25, P50, P75, P90] × BW — source : strengthlevel.com
-const BENCH_DATA = {
-  M: { press:[0.62,0.80,1.00,1.22], squat:[1.05,1.32,1.62,1.95], deadlift:[1.32,1.65,2.00,2.40] },
-  F: { press:[0.30,0.40,0.52,0.66], squat:[0.68,0.88,1.10,1.34], deadlift:[0.80,1.02,1.26,1.52] }
-};
-
-const EX_COLORS = { press:'#1a5fb4', squat:'#7c4a00', deadlift:'#1b6b45' };
-const EX_NAMES  = { press:'Strict Press', squat:'Back Squat', deadlift:'Deadlift' };
-const BW = 73;
+// ── Progression ────────────────────────────────────────────────────────────
 
 function renderProgression() {
-  const el = document.getElementById('progressionContent');
-  el.innerHTML = `
-    <div class="prog-filters">
-      <div class="prog-filter-group">
-        <label>Sexe</label>
-        <select id="benchSex">
-          <option value="M" selected>Homme</option>
-          <option value="F">Femme</option>
-        </select>
-      </div>
-      <div class="prog-filter-note">Source : Strength Level · population générale entraînée</div>
-    </div>
-
-    <div class="prog-pct-row" id="progPctRow"></div>
-
-    <div class="prog-chart-card">
-      <div class="prog-chart-label">Courbe de progression</div>
-      <div class="prog-chart-sub">Charge max réalisée par semaine · ligne pleine = réalisé · pointillé = plan</div>
-      <div class="prog-legend">
-        <span><i class="pleg-line" style="background:#1a5fb4"></i>Press</span>
-        <span><i class="pleg-line" style="background:#7c4a00"></i>Squat</span>
-        <span><i class="pleg-line" style="background:#1b6b45"></i>Deadlift</span>
-        <span><i class="pleg-dash"></i>Plan</span>
-      </div>
-      <div style="position:relative;width:100%;height:260px">
-        <canvas id="progChartCanvas" role="img" aria-label="Courbes de progression">Données de progression.</canvas>
-      </div>
-    </div>
-
-    <div class="prog-chart-card">
-      <div class="prog-chart-label">Benchmark population</div>
-      <div class="prog-chart-sub">Percentiles de force par rapport à la population (même âge / sexe)</div>
-      <div class="prog-legend">
-        <span><i class="pleg-box" style="background:rgba(160,160,160,0.35)"></i>Population P25→P90</span>
-        <span><i class="pleg-box" style="background:#1a5fb4cc"></i>Press</span>
-        <span><i class="pleg-box" style="background:#7c4a00cc"></i>Squat</span>
-        <span><i class="pleg-box" style="background:#1b6b45cc"></i>Deadlift</span>
-      </div>
-      <div style="position:relative;width:100%;height:300px">
-        <canvas id="benchChartCanvas" role="img" aria-label="Benchmark force population">Données benchmark.</canvas>
-      </div>
-    </div>
-  `;
-
-  document.getElementById('benchSex').addEventListener('change', _refreshBench);
-
-  _buildProgChart();
-  _refreshBench();
-}
-
-function _buildProgChart() {
-  const labels   = Array.from({length:17}, (_, i) => `S${i+1}`);
-  const datasets = [];
-
-  MAIN_LIFTS.forEach(id => {
-    const ex  = EXERCISES.find(e => e.id === id);
-    const kgs = [];
+  let html = '<div class="prog-grid">';
+  EXERCISES.forEach(ex => {
+    let best = null, lastW = null;
     for(let w = 1; w <= 17; w++) {
-      const bk = bestKg(normRecord(getRecord(id, w)));
-      kgs.push(bk || null);
+      const bk = bestKg(normRecord(getRecord(ex.id, w)));
+      if(bk) { if(!best || bk > best) best = bk; lastW = w; }
     }
-    // Realized line
-    datasets.push({
-      label: EX_NAMES[id],
-      data: kgs,
-      borderColor: EX_COLORS[id],
-      borderWidth: 2.5,
-      pointBackgroundColor: EX_COLORS[id],
-      pointRadius: kgs.map(v => v ? 4 : 0),
-      pointHoverRadius: 6,
-      tension: 0.35,
-      fill: false,
-      spanGaps: true,
-    });
-    // Plan line
-    datasets.push({
-      label: '_plan_' + id,
-      data: ex.plan,
-      borderColor: EX_COLORS[id],
-      borderWidth: 1.5,
-      borderDash: [5, 4],
-      pointRadius: 0,
-      fill: false,
-      spanGaps: true,
-    });
-  });
-
-  if(_progChart) _progChart.destroy();
-  _progChart = new Chart(document.getElementById('progChartCanvas'), {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { filter: item => !item.dataset.label.startsWith('_plan_'),
-          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y ?? '—'} kg` }
-        }
-      },
-      scales: {
-        x: { grid: { display:false }, ticks: { font:{size:11}, maxRotation:0 } },
-        y: { grid: { display:false }, ticks: { font:{size:11}, callback: v => v+'kg' } }
-      }
-    }
-  });
-}
-
-function _refreshBench() {
-  const sex = document.getElementById('benchSex').value;
-  const b   = BENCH_DATA[sex];
-
-  // User best
-  const userBest = {};
-  MAIN_LIFTS.forEach(id => {
-    let best = null;
-    for(let w = 1; w <= 17; w++) {
-      const bk = bestKg(normRecord(getRecord(id, w)));
-      if(bk && (!best || bk > best)) best = bk;
-    }
-    userBest[id] = best;
-  });
-
-  // Percentile cards
-  document.getElementById('progPctRow').innerHTML = MAIN_LIFTS.map(id => {
-    const u  = userBest[id];
-    if(!u) return `<div class="pct-card">
-      <div class="pct-name">${EX_NAMES[id]}</div>
-      <div class="pct-val" style="color:#9b9b94">—</div>
-      <div class="pct-sub">Aucune donnée</div>
+    const maxPlan = Math.max(...ex.plan.filter(Boolean));
+    const pct = best ? Math.min(100, Math.round(best / maxPlan * 100)) : 0;
+    html += `<div class="prog-card">
+      <div class="prog-card-name">${ex.name}</div>
+      <div class="prog-card-day">${ex.day} — ${ex.refText}</div>
+      <div class="prog-current">${best ? `${best} ${ex.unit}` : '—'}</div>
+      <div class="prog-pct">${pct}% de l'objectif</div>
+      <div class="prog-bar-wrap"><div class="prog-bar" style="width:${pct}%;background:${ex.color}"></div></div>
+      <div class="prog-nums"><span>0</span><span>${maxPlan} ${ex.unit}</span></div>
+      <div class="prog-last">${lastW ? `Dernière saisie : S${lastW}` : 'Aucune donnée'}</div>
     </div>`;
-    const pts = b[id].map(r => Math.round(r * BW * 10) / 10);
-    let pct, col;
-    if(u < pts[0])      { pct = '< P25';    col = '#9b9b94'; }
-    else if(u < pts[1]) { pct = 'P25–50';   col = '#7c4a00'; }
-    else if(u < pts[2]) { pct = 'P50–75';   col = '#1b6b45'; }
-    else if(u < pts[3]) { pct = 'P75–90';   col = '#1a5fb4'; }
-    else                { pct = 'Top 10%';  col = '#6b00c2'; }
-    return `<div class="pct-card">
-      <div class="pct-dot" style="background:${col}"></div>
-      <div class="pct-name">${EX_NAMES[id]}</div>
-      <div class="pct-val" style="color:${col}">${pct}</div>
-      <div class="pct-sub">${u} kg · ×${(u/BW).toFixed(2)} BW</div>
-    </div>`;
-  }).join('');
-
-  // Benchmark — barres empilées population + barre "Toi" groupée
-  // Population: segments empilés représentant chaque tranche (P0→P25, P25→P50, P50→P75, P75→P90)
-  // "Toi" : barre colorée fine sur stack séparé, alignée sur l'axe Y commun
-  const labels = MAIN_LIFTS.map(id => EX_NAMES[id]);
-
-  // Segments empilés = deltas entre percentiles
-  const seg1 = MAIN_LIFTS.map(id => Math.round(b[id][0]*BW));                            // 0→P25
-  const seg2 = MAIN_LIFTS.map(id => Math.round((b[id][1]-b[id][0])*BW));                 // P25→P50
-  const seg3 = MAIN_LIFTS.map(id => Math.round((b[id][2]-b[id][1])*BW));                 // P50→P75
-  const seg4 = MAIN_LIFTS.map(id => Math.round((b[id][3]-b[id][2])*BW));                 // P75→P90
-
-  // Position du trait "Toi" — valeur absolue sur l'axe Y
-  const userVals = MAIN_LIFTS.map(id => userBest[id] || null);
-
-  // Couleur du segment selon où se situe l'utilisateur
-  const userPercent = MAIN_LIFTS.map((id,i) => {
-    const u = userBest[id]; if(!u) return null;
-    const [p25,p50,p75,p90] = b[id].map(r=>r*BW);
-    if(u>=p90) return 'top10';
-    if(u>=p75) return 'p75';
-    if(u>=p50) return 'p50';
-    if(u>=p25) return 'p25';
-    return 'below';
   });
-
-  // Plugin custom pour dessiner la barre "Toi" par-dessus le stack population
-  // Cela évite le problème de centrage de label lié aux stacks multiples
-  const toiPlugin = {
-    id: 'toiBar',
-    afterDatasetsDraw(chart) {
-      const { ctx, scales: {x, y} } = chart;
-      MAIN_LIFTS.forEach((id, i) => {
-        const u = userBest[id];
-        if(!u) return;
-        const barWidth  = x.getPixelForValue(1) - x.getPixelForValue(0);
-        const cx        = x.getPixelForValue(i);
-        const bw        = barWidth * 0.14;
-        const top       = y.getPixelForValue(u);
-        const bottom    = y.getPixelForValue(0);
-        ctx.save();
-        ctx.fillStyle   = EX_COLORS[id] + 'dd';
-        ctx.strokeStyle = EX_COLORS[id];
-        ctx.lineWidth   = 1.5;
-        const r = 3;
-        ctx.beginPath();
-        ctx.moveTo(cx - bw + r, top);
-        ctx.lineTo(cx + bw - r, top);
-        ctx.quadraticCurveTo(cx + bw, top, cx + bw, top + r);
-        ctx.lineTo(cx + bw, bottom);
-        ctx.lineTo(cx - bw, bottom);
-        ctx.lineTo(cx - bw, top + r);
-        ctx.quadraticCurveTo(cx - bw, top, cx - bw + r, top);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-      });
-    }
-  };
-
-  if(_benchChart) _benchChart.destroy();
-  _benchChart = new Chart(document.getElementById('benchChartCanvas'), {
-    type: 'bar',
-    plugins: [toiPlugin],
-    data: {
-      labels,
-      datasets: [
-        { label:'< P25',  data:seg1, backgroundColor:'rgba(200,198,192,0.45)', borderWidth:0, stack:'pop', borderRadius:0 },
-        { label:'P25–50', data:seg2, backgroundColor:'rgba(168,165,155,0.55)', borderWidth:0, stack:'pop' },
-        { label:'P50–75', data:seg3, backgroundColor:'rgba(138,135,125,0.60)', borderWidth:0, stack:'pop' },
-        { label:'P75–90', data:seg4, backgroundColor:'rgba(108,105,95,0.40)',  borderWidth:0, stack:'pop',
-          borderRadius:{topLeft:3,topRight:3} },
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: items => EX_NAMES[MAIN_LIFTS[items[0].dataIndex]],
-            label: ctx => {
-              const id = MAIN_LIFTS[ctx.dataIndex];
-              const [p25,p50,p75,p90] = b[id].map(r=>Math.round(r*BW));
-              const u = userBest[id];
-              const ranges = {'< P25':`0–${p25} kg`,'P25–50':`${p25}–${p50} kg`,'P50–75':`${p50}–${p75} kg`,'P75–90':`${p75}–${p90} kg`};
-              const userLine = u ? `
-Toi : ${u} kg` : '';
-              return (ranges[ctx.dataset.label]||'') + userLine;
-            }
-          }
-        }
-      },
-      scales: {
-        x: { stacked:true, grid:{display:false}, ticks:{font:{size:12}} },
-        y: { stacked:true, grid:{color:'rgba(0,0,0,0.05)'}, ticks:{font:{size:11}, callback: v=>v+'kg'}, beginAtZero:true }
-      }
-    }
-  });
+  html += '</div>';
+  document.getElementById('progressionContent').innerHTML = html;
 }
-
 
 // ── Historique ─────────────────────────────────────────────────────────────
 
@@ -2589,7 +2767,12 @@ window._selectMuscle = (mid) => {
 
 
 function exportJSON() {
-  const payload = { version: 3, exported: new Date().toISOString(), data: getAllRecords() };
+  const payload = {
+    version: 3,
+    exported: new Date().toISOString(),
+    data: getAllRecords(),
+    vacances: getVacancesList(),
+  };
   _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
 }
 
@@ -2635,6 +2818,13 @@ function importJSON(event) {
 
       importRecords(result.clean);
 
+      // Restore vacances periods if present
+      if(Array.isArray(parsed.vacances)) {
+        parsed.vacances.forEach(v => {
+          if(v?.debut && v?.fin) addVacances(v.debut, v.fin, v.activite || 'sedentaire');
+        });
+      }
+
       const fb = document.getElementById('importFeedback');
       if(fb) { fb.style.display = 'inline'; setTimeout(() => fb.style.display = 'none', 3000); }
 
@@ -2675,7 +2865,7 @@ function _dateStr() {
 // ── Routing ──────────────────────────────────────────────────────────────────
 
 const SECTIONS   = ['tracker','musculaire','programme','doc'];
-const PROG_TABS  = ['nutrition','warmup','mardi','mercredi','jeudi','vendredi'];
+const PROG_TABS  = ['nutrition','warmup','mardi','mercredi','jeudi','vendredi','vacances'];
 const TRACK_TABS = ['saisie','progression','historique'];
 const DOC_TABS   = ['doc-intro','doc-tracker','doc-progression','doc-statut','doc-musculaire','doc-rpe','doc-export'];
 
@@ -2744,6 +2934,29 @@ window.importJSON   = importJSON;
 // switchBodyView exposed by musculaire module
 window.switchBodyView = switchBodyView;
 
+// Vacances helpers exposed for inline onclick
+window._saveVacances = function() {
+  const d = document.getElementById('vacDebut')?.value;
+  const f = document.getElementById('vacFin')?.value;
+  const a = document.getElementById('vacActivite')?.value || 'sedentaire';
+  if(d && f && new Date(f) >= new Date(d)) {
+    addVacances(d, f, a);
+    renderSaisie();
+  } else {
+    alert('Dates invalides — la fin doit être après le début.');
+  }
+};
+window._removeVacances = function(idx) {
+  removeVacances(idx);
+  renderSaisie();
+};
+window._clearVacances = function() {
+  if(confirm('Effacer toutes les périodes de vacances ?')) {
+    clearAllVacances();
+    renderSaisie();
+  }
+};
+
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
@@ -2765,9 +2978,8 @@ async function init() {
   document.getElementById('btnExportCSV')?.addEventListener('click',  exportCSV);
   document.getElementById('fileImport')?.addEventListener('change',   importJSON);
 
-  // 6. Register Service Worker — only on the real deployment domain
-  const isDeployed = location.hostname.includes('github.io') || location.protocol === 'https:' && !location.hostname.includes('claudeusercontent');
-  if('serviceWorker' in navigator && isDeployed) {
+  // 6. Register Service Worker + notify on update
+  if('serviceWorker' in navigator) {
     try {
       const reg = await navigator.serviceWorker.register('./sw.js');
       console.log('[SW] registered:', reg.scope);
