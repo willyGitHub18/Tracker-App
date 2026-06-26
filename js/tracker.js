@@ -222,7 +222,7 @@ function _renderProgSaisie(prog) {
         html += `<table class="sets-table">
           <thead><tr><th>Série</th><th>Charge (${ex.unit||'kg'})</th><th>Reps</th><th>RPE</th><th></th></tr></thead>
           <tbody>`;
-        for(let s = 0; s < Math.max(nSets, 3); s++) {
+        for(let s = 0; s < Math.max(nSets, 4); s++) {
           const sr  = rec?.sets?.[s] || {};
           const chk = sr.kg && sr.reps ? '✓' : '';
           html += `<tr>
@@ -322,8 +322,7 @@ function _saveProgSaisie(prog, week, dayName) {
     });
   });
 
-  const ok = document.getElementById(`pok_${dayName}`);
-  if(ok) { ok.style.display='inline'; setTimeout(()=>ok.style.display='none', 2200); }
+  _showSaveToast(`✓ ${dayName} enregistré`);
   renderSaisie();
   repaintMuscles();
 }
@@ -432,7 +431,9 @@ function _renderLegacySaisie() {
       const plan     = ex.plan[week - 1];
       const scheme   = ex.repScheme[week - 1];
       const rec      = normRecord(getRecord(ex.id, week));
-      const nSets    = parseSets(scheme) || 3;
+      const nSets    = (scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos')
+        ? (ex.sets?.[week-1] || 4)
+        : (parseSets(scheme) || 4);
       const planReps = parseReps(scheme);
       const exStatus = getExStatus(ex.id, week);
 
@@ -590,8 +591,7 @@ export function saveSaisie(week, day) {
     setRecord(ex.id, week, { sets, kg:bk, rpe:filled?.rpe||'', ts:Date.now(), sessionStatus:getExStatus(ex.id,week) });
   });
 
-  const ok = document.getElementById(`ok_${day}`);
-  if(ok) { ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2200); }
+  _showSaveToast(`✓ ${day} enregistré`);
   renderSaisie();
   repaintMuscles();
 }
@@ -886,7 +886,27 @@ function _rpeOptions(selected) {
 }
 
 function _parseSetsGeneric(scheme) {
-  if(!scheme||['Deload','—','Taper','Repos'].includes(scheme)) return 3;
+  if(!scheme || scheme === '—' || scheme === 'Repos') return 3;
+  // Deload/Taper: use scheme's set count but allow override
   const m = scheme.match(/^(\d+)[×x]/);
   return m ? parseInt(m[1],10) : 3;
+}
+
+// ── Save toast ────────────────────────────────────────────────────────────────
+function _showSaveToast(msg) {
+  let toast = document.getElementById('saveToast');
+  if(!toast) {
+    toast = document.createElement('div');
+    toast.id = 'saveToast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1b6b45;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(20px)';
+  }, 2500);
 }

@@ -11,8 +11,8 @@ import { initWizard, renderStep, wizNext, wizBack, wizGenerate, wizSearchEx } fr
 import { getPrograms, getActivePrograms, getArchivedPrograms, getProgram,
          getActiveProgram, getAllActivePrograms, getActiveProgramId,
          setActiveProgram, addActiveProgram, removeActiveProgram, setPrimaryProgram,
-         deleteProgram, closeProgram, newProgramId, saveProgram,
-         exportProgramJSON, exportAllPrograms, importAllPrograms } from './programs.js';
+         deleteProgram, archiveProgram, closeProgram, newProgramId, saveProgram,
+         exportProgramJSON, exportProgramMD, exportAllPrograms, importAllPrograms } from './programs.js';
 import { buildAthxProgram } from './data.js';
 import { setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
 
@@ -153,11 +153,28 @@ window.closeProg = function(id, reason) {
   }
 };
 
+window.archiveProg = function(id) {
+  archiveProgram(id);
+  renderPrograms();
+};
+
 window.deleteProg = function(id) {
-  if(confirm('Supprimer définitivement ce programme et toutes ses données ?')) {
+  if(confirm('Supprimer définitivement ? Cette action est irréversible.')) {
     deleteProgram(id);
     renderPrograms();
   }
+};
+
+window.exportProgMD = function(id) {
+  const md = exportProgramMD(id);
+  if(!md) return;
+  const prog = getProgram(id);
+  const name = (prog?.name || 'programme').replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([md], {type:'text/markdown'}));
+  a.download = 'just2train_' + name + '_' + new Date().toISOString().slice(0,10) + '.md';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 };
 
 window.exportProgJSON = function(id) {
@@ -511,14 +528,15 @@ function _renderProgramsList(showArchived = false) {
         </div>
         <div class="prog-card-actions" onclick="event.stopPropagation()">
           ${p.status === 'active' ? `
-            <button class="prog-action-btn primary" onclick="event.stopPropagation();window._viewProg('${p.id}')">📋 Programme</button>
+            <button class="prog-action-btn primary" onclick="event.stopPropagation();window._viewProg('${p.id}')">📋 Voir</button>
             <button class="prog-action-btn" onclick="event.stopPropagation();activateProgram('${p.id}')">${isActive ? '✓ Actif' : '+ Activer'}</button>
             ${isActive && activeIds.size > 1 ? `<button class="prog-action-btn" onclick="event.stopPropagation();setPrimaryProg('${p.id}')">⭐</button>` : ''}
-            <button class="prog-action-btn" onclick="event.stopPropagation();closeProg('${p.id}','completed')">Terminer</button>
-            <button class="prog-action-btn danger" onclick="event.stopPropagation();deleteProg('${p.id}')">✕</button>
+            <button class="prog-action-btn" onclick="event.stopPropagation();closeProg('${p.id}','completed')">✓ Terminer</button>
+            <button class="prog-action-btn" onclick="event.stopPropagation();archiveProg('${p.id}')">📦 Archiver</button>
           ` : `
             <button class="prog-action-btn primary" onclick="event.stopPropagation();exportProgJSON('${p.id}')">⬇ JSON</button>
-            <button class="prog-action-btn danger" onclick="event.stopPropagation();deleteProg('${p.id}')">✕</button>
+            <button class="prog-action-btn" onclick="event.stopPropagation();exportProgMD('${p.id}')">⬇ MD</button>
+            <button class="prog-action-btn danger" onclick="event.stopPropagation();deleteProg('${p.id}')">🗑 Supprimer</button>
           `}
         </div>
       </div>`;

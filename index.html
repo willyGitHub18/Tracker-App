@@ -33,9 +33,9 @@
 body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
 
 /* HEADER */
-header{background:var(--text);color:#fff;padding:16px 24px 14px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
-header h1{font-family:var(--mono);font-size:17px;font-weight:500;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono)}
+header{background:var(--text);color:#fff;padding:12px 16px;text-align:center;box-sizing:border-box;width:100%;overflow:hidden}
+header h1{font-family:var(--mono);font-size:17px;font-weight:500;letter-spacing:-.02em;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono);display:block}
 
 /* TOP NAV */
 .top-nav{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -2996,7 +2996,7 @@ function _renderProgSaisie(prog) {
         html += `<table class="sets-table">
           <thead><tr><th>Série</th><th>Charge (${ex.unit||'kg'})</th><th>Reps</th><th>RPE</th><th></th></tr></thead>
           <tbody>`;
-        for(let s = 0; s < Math.max(nSets, 3); s++) {
+        for(let s = 0; s < Math.max(nSets, 4); s++) {
           const sr  = rec?.sets?.[s] || {};
           const chk = sr.kg && sr.reps ? '✓' : '';
           html += `<tr>
@@ -3096,8 +3096,7 @@ function _saveProgSaisie(prog, week, dayName) {
     });
   });
 
-  const ok = document.getElementById(`pok_${dayName}`);
-  if(ok) { ok.style.display='inline'; setTimeout(()=>ok.style.display='none', 2200); }
+  _showSaveToast(`✓ ${dayName} enregistré`);
   renderSaisie();
   repaintMuscles();
 }
@@ -3206,7 +3205,9 @@ function _renderLegacySaisie() {
       const plan     = ex.plan[week - 1];
       const scheme   = ex.repScheme[week - 1];
       const rec      = normRecord(getRecord(ex.id, week));
-      const nSets    = parseSets(scheme) || 3;
+      const nSets    = (scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos')
+        ? (ex.sets?.[week-1] || 4)
+        : (parseSets(scheme) || 4);
       const planReps = parseReps(scheme);
       const exStatus = getExStatus(ex.id, week);
 
@@ -3364,8 +3365,7 @@ function saveSaisie(week, day) {
     setRecord(ex.id, week, { sets, kg:bk, rpe:filled?.rpe||'', ts:Date.now(), sessionStatus:getExStatus(ex.id,week) });
   });
 
-  const ok = document.getElementById(`ok_${day}`);
-  if(ok) { ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2200); }
+  _showSaveToast(`✓ ${day} enregistré`);
   renderSaisie();
   repaintMuscles();
 }
@@ -3660,9 +3660,29 @@ function _rpeOptions(selected) {
 }
 
 function _parseSetsGeneric(scheme) {
-  if(!scheme||['Deload','—','Taper','Repos'].includes(scheme)) return 3;
+  if(!scheme || scheme === '—' || scheme === 'Repos') return 3;
+  // Deload/Taper: use scheme's set count but allow override
   const m = scheme.match(/^(\d+)[×x]/);
   return m ? parseInt(m[1],10) : 3;
+}
+
+// ── Save toast ────────────────────────────────────────────────────────────────
+function _showSaveToast(msg) {
+  let toast = document.getElementById('saveToast');
+  if(!toast) {
+    toast = document.createElement('div');
+    toast.id = 'saveToast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1b6b45;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(20px)';
+  }, 2500);
 }
 
 
@@ -4343,6 +4363,10 @@ function getArchivedPrograms() {
   return getPrograms().filter(p => p.status !== 'active');
 }
 
+function getTrulyArchivedPrograms() {
+  return getPrograms().filter(p => p.status === 'archived');
+}
+
 function getProgram(id) {
   return getPrograms().find(p => p.id === id) || null;
 }
@@ -4360,9 +4384,24 @@ function saveProgram(program) {
 }
 
 function deleteProgram(id) {
+  // Hard delete — permanent
   const list = getPrograms().filter(p => p.id !== id);
   dbSet(KEY_LIST, list);
-  if(getActiveProgramId() === id) setActiveProgram(null);
+  // Also remove tracking data
+  const tracking = dbGet('programs_tracking') || {};
+  delete tracking[id];
+  dbSet('programs_tracking', tracking);
+  removeActiveProgram(id);
+}
+
+function archiveProgram(id) {
+  // Soft delete — keeps data, marks as archived
+  const prog = getProgram(id);
+  if(!prog) return;
+  prog.status = 'archived';
+  prog.archivedAt = Date.now();
+  saveProgram(prog);
+  removeActiveProgram(id);
 }
 
 // ── Active program ────────────────────────────────────────────────────────────
@@ -4552,6 +4591,67 @@ function importAllPrograms(data) {
     const existing_tracking = dbGet('programs_tracking') || {};
     dbSet('programs_tracking', { ...existing_tracking, ...data.programs_tracking });
   }
+}
+
+// ── Export program as Markdown ────────────────────────────────────────────────
+
+function exportProgramMD(id) {
+  const prog = getProgram(id);
+  if(!prog) return null;
+
+  const tracking = (dbGet('programs_tracking') || {})[id] || {};
+  const DOMAINES = { hyrox:'🏟 Hyrox', force:'🏋 Force', gym:'💪 Gym', cardio:'🏃 Cardio', mobilite:'🧘 Mobilité', mixte:'⚡ Mixte', grossesse:'🤰 Grossesse' };
+  const created  = prog.createdAt ? new Date(prog.createdAt).toLocaleDateString('fr-FR') : '—';
+  const closed   = prog.closedAt ? new Date(prog.closedAt).toLocaleDateString('fr-FR') : prog.archivedAt ? new Date(prog.archivedAt).toLocaleDateString('fr-FR') : null;
+
+  let md = `# ${prog.name}\n\n`;
+  md += `**Domaine :** ${DOMAINES[prog.config?.domaine] || prog.config?.domaine || '—'}  \n`;
+  md += `**Niveau :** ${prog.config?.niveau || '—'}  \n`;
+  md += `**Fréquence :** ${prog.config?.seancesParSemaine || '?'}×/sem · ${prog.config?.dureeSeance || '?'} min  \n`;
+  md += `**Durée :** ${prog.totalWeeks || '?'} semaines  \n`;
+  md += `**Créé le :** ${created}  \n`;
+  if(closed) md += `**Clôturé le :** ${closed}  \n`;
+  if(prog.config?.competition?.date) md += `**Compétition :** ${prog.config.competition.type || ''} · ${prog.config.competition.date}  \n`;
+  md += `\n---\n\n`;
+
+  // Phases
+  if(prog.phases?.length) {
+    md += `## Phases\n\n| Phase | Semaines | Intensité |\n|---|---|---|\n`;
+    prog.phases.forEach(p => { md += `| ${p.nom} | S${p.debut}–S${p.fin} | ${Math.round(p.intensite*100)}% |\n`; });
+    md += `\n`;
+  }
+
+  // Semaines avec données
+  md += `## Suivi des séances\n\n`;
+  prog.semaines?.forEach(sem => {
+    const hasData = sem.jours?.some(day =>
+      day.exercices?.some(ex => tracking[ex.id + '_w' + sem.num])
+    );
+    if(!hasData) return;
+
+    md += `### Semaine ${sem.num} — ${sem.phase}${sem.isDeload ? ' (Deload)' : ''}\n\n`;
+    sem.jours?.forEach(day => {
+      day.exercices?.forEach(ex => {
+        const rec = tracking[ex.id + '_w' + sem.num];
+        if(!rec?.sets) return;
+        const sets = rec.sets.filter(s => s?.kg);
+        if(!sets.length) return;
+        md += `**${day.nom} · ${ex.nom || ex.id}**  \n`;
+        sets.forEach((s, i) => {
+          md += `  S${i+1}: ${s.kg} kg × ${s.reps || '?'} reps${s.rpe ? ' · RPE ' + s.rpe : ''}  \n`;
+        });
+        md += `\n`;
+      });
+    });
+  });
+
+  // ORM snapshot
+  if(prog.orm && Object.keys(prog.orm).length) {
+    md += `## 1RM à la création\n\n`;
+    Object.entries(prog.orm).forEach(([k,v]) => { md += `- **${k}** : ${v} kg\n`; });
+  }
+
+  return md;
 }
 
 
@@ -5861,7 +5961,7 @@ function _validateStep() {
     if(_config.grossesse_type === 'postnatal' && !_config.postnatal_phase) { _showError('Sélectionne ta phase post-natale.'); return false; }
     return true;
   }
-  if(_step === 4 && _config.materiel.length === 0) {
+  if(_step === 5 && _config.materiel.length === 0) {
     _showError('Sélectionne au moins un type de matériel.');
     return false;
   }
@@ -6122,11 +6222,28 @@ window.closeProg = function(id, reason) {
   }
 };
 
+window.archiveProg = function(id) {
+  archiveProgram(id);
+  renderPrograms();
+};
+
 window.deleteProg = function(id) {
-  if(confirm('Supprimer définitivement ce programme et toutes ses données ?')) {
+  if(confirm('Supprimer définitivement ? Cette action est irréversible.')) {
     deleteProgram(id);
     renderPrograms();
   }
+};
+
+window.exportProgMD = function(id) {
+  const md = exportProgramMD(id);
+  if(!md) return;
+  const prog = getProgram(id);
+  const name = (prog?.name || 'programme').replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([md], {type:'text/markdown'}));
+  a.download = 'just2train_' + name + '_' + new Date().toISOString().slice(0,10) + '.md';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 };
 
 window.exportProgJSON = function(id) {
@@ -6480,14 +6597,15 @@ function _renderProgramsList(showArchived = false) {
         </div>
         <div class="prog-card-actions" onclick="event.stopPropagation()">
           ${p.status === 'active' ? `
-            <button class="prog-action-btn primary" onclick="event.stopPropagation();window._viewProg('${p.id}')">📋 Programme</button>
+            <button class="prog-action-btn primary" onclick="event.stopPropagation();window._viewProg('${p.id}')">📋 Voir</button>
             <button class="prog-action-btn" onclick="event.stopPropagation();activateProgram('${p.id}')">${isActive ? '✓ Actif' : '+ Activer'}</button>
             ${isActive && activeIds.size > 1 ? `<button class="prog-action-btn" onclick="event.stopPropagation();setPrimaryProg('${p.id}')">⭐</button>` : ''}
-            <button class="prog-action-btn" onclick="event.stopPropagation();closeProg('${p.id}','completed')">Terminer</button>
-            <button class="prog-action-btn danger" onclick="event.stopPropagation();deleteProg('${p.id}')">✕</button>
+            <button class="prog-action-btn" onclick="event.stopPropagation();closeProg('${p.id}','completed')">✓ Terminer</button>
+            <button class="prog-action-btn" onclick="event.stopPropagation();archiveProg('${p.id}')">📦 Archiver</button>
           ` : `
             <button class="prog-action-btn primary" onclick="event.stopPropagation();exportProgJSON('${p.id}')">⬇ JSON</button>
-            <button class="prog-action-btn danger" onclick="event.stopPropagation();deleteProg('${p.id}')">✕</button>
+            <button class="prog-action-btn" onclick="event.stopPropagation();exportProgMD('${p.id}')">⬇ MD</button>
+            <button class="prog-action-btn danger" onclick="event.stopPropagation();deleteProg('${p.id}')">🗑 Supprimer</button>
           `}
         </div>
       </div>`;

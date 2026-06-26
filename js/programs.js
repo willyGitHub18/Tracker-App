@@ -24,6 +24,10 @@ export function getArchivedPrograms() {
   return getPrograms().filter(p => p.status !== 'active');
 }
 
+export function getTrulyArchivedPrograms() {
+  return getPrograms().filter(p => p.status === 'archived');
+}
+
 export function getProgram(id) {
   return getPrograms().find(p => p.id === id) || null;
 }
@@ -41,9 +45,24 @@ export function saveProgram(program) {
 }
 
 export function deleteProgram(id) {
+  // Hard delete — permanent
   const list = getPrograms().filter(p => p.id !== id);
   dbSet(KEY_LIST, list);
-  if(getActiveProgramId() === id) setActiveProgram(null);
+  // Also remove tracking data
+  const tracking = dbGet('programs_tracking') || {};
+  delete tracking[id];
+  dbSet('programs_tracking', tracking);
+  removeActiveProgram(id);
+}
+
+export function archiveProgram(id) {
+  // Soft delete — keeps data, marks as archived
+  const prog = getProgram(id);
+  if(!prog) return;
+  prog.status = 'archived';
+  prog.archivedAt = Date.now();
+  saveProgram(prog);
+  removeActiveProgram(id);
 }
 
 // ── Active program ────────────────────────────────────────────────────────────
@@ -233,4 +252,65 @@ export function importAllPrograms(data) {
     const existing_tracking = dbGet('programs_tracking') || {};
     dbSet('programs_tracking', { ...existing_tracking, ...data.programs_tracking });
   }
+}
+
+// ── Export program as Markdown ────────────────────────────────────────────────
+
+export function exportProgramMD(id) {
+  const prog = getProgram(id);
+  if(!prog) return null;
+
+  const tracking = (dbGet('programs_tracking') || {})[id] || {};
+  const DOMAINES = { hyrox:'🏟 Hyrox', force:'🏋 Force', gym:'💪 Gym', cardio:'🏃 Cardio', mobilite:'🧘 Mobilité', mixte:'⚡ Mixte', grossesse:'🤰 Grossesse' };
+  const created  = prog.createdAt ? new Date(prog.createdAt).toLocaleDateString('fr-FR') : '—';
+  const closed   = prog.closedAt ? new Date(prog.closedAt).toLocaleDateString('fr-FR') : prog.archivedAt ? new Date(prog.archivedAt).toLocaleDateString('fr-FR') : null;
+
+  let md = `# ${prog.name}\n\n`;
+  md += `**Domaine :** ${DOMAINES[prog.config?.domaine] || prog.config?.domaine || '—'}  \n`;
+  md += `**Niveau :** ${prog.config?.niveau || '—'}  \n`;
+  md += `**Fréquence :** ${prog.config?.seancesParSemaine || '?'}×/sem · ${prog.config?.dureeSeance || '?'} min  \n`;
+  md += `**Durée :** ${prog.totalWeeks || '?'} semaines  \n`;
+  md += `**Créé le :** ${created}  \n`;
+  if(closed) md += `**Clôturé le :** ${closed}  \n`;
+  if(prog.config?.competition?.date) md += `**Compétition :** ${prog.config.competition.type || ''} · ${prog.config.competition.date}  \n`;
+  md += `\n---\n\n`;
+
+  // Phases
+  if(prog.phases?.length) {
+    md += `## Phases\n\n| Phase | Semaines | Intensité |\n|---|---|---|\n`;
+    prog.phases.forEach(p => { md += `| ${p.nom} | S${p.debut}–S${p.fin} | ${Math.round(p.intensite*100)}% |\n`; });
+    md += `\n`;
+  }
+
+  // Semaines avec données
+  md += `## Suivi des séances\n\n`;
+  prog.semaines?.forEach(sem => {
+    const hasData = sem.jours?.some(day =>
+      day.exercices?.some(ex => tracking[ex.id + '_w' + sem.num])
+    );
+    if(!hasData) return;
+
+    md += `### Semaine ${sem.num} — ${sem.phase}${sem.isDeload ? ' (Deload)' : ''}\n\n`;
+    sem.jours?.forEach(day => {
+      day.exercices?.forEach(ex => {
+        const rec = tracking[ex.id + '_w' + sem.num];
+        if(!rec?.sets) return;
+        const sets = rec.sets.filter(s => s?.kg);
+        if(!sets.length) return;
+        md += `**${day.nom} · ${ex.nom || ex.id}**  \n`;
+        sets.forEach((s, i) => {
+          md += `  S${i+1}: ${s.kg} kg × ${s.reps || '?'} reps${s.rpe ? ' · RPE ' + s.rpe : ''}  \n`;
+        });
+        md += `\n`;
+      });
+    });
+  });
+
+  // ORM snapshot
+  if(prog.orm && Object.keys(prog.orm).length) {
+    md += `## 1RM à la création\n\n`;
+    Object.entries(prog.orm).forEach(([k,v]) => { md += `- **${k}** : ${v} kg\n`; });
+  }
+
+  return md;
 }

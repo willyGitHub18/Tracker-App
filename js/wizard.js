@@ -518,7 +518,7 @@ function _validateStep() {
     if(_config.grossesse_type === 'postnatal' && !_config.postnatal_phase) { _showError('Sélectionne ta phase post-natale.'); return false; }
     return true;
   }
-  if(_step === 4 && _config.materiel.length === 0) {
+  if(_step === 5 && _config.materiel.length === 0) {
     _showError('Sélectionne au moins un type de matériel.');
     return false;
   }
