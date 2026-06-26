@@ -105,7 +105,7 @@
 .programs-empty-icon{font-size:40px;margin-bottom:12px}
 .programs-empty-text{font-size:14px;margin-bottom:16px}
 .programs-grid{display:flex;flex-direction:column;gap:10px}
-.program-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;cursor:pointer;transition:border-color .15s}
+.program-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;cursor:pointer;transition:border-color .15s;-webkit-tap-highlight-color:transparent}
 .program-card:hover{border-color:var(--border-md)}
 .program-card.active-program{border-color:var(--green);background:#f0fbf5}
 .prog-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
@@ -113,8 +113,9 @@
 .prog-card-active-badge{font-size:10px;font-weight:600;background:var(--green);color:#fff;padding:2px 8px;border-radius:20px;white-space:nowrap}
 .prog-card-meta{display:flex;gap:8px;flex-wrap:wrap}
 .prog-meta-tag{font-size:11px;background:var(--surface2);border-radius:8px;padding:2px 8px;color:var(--text2)}
-.prog-card-actions{display:flex;gap:8px;margin-top:10px}
-.prog-action-btn{font-size:12px;font-weight:500;padding:5px 14px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--border-md);background:transparent;color:var(--text);font-family:var(--sans)}
+.prog-card-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.prog-action-btn{font-size:11px!important;padding:4px 10px!important;}
+.prog-action-btn{font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--border-md);background:transparent;color:var(--text);font-family:var(--sans);white-space:nowrap}
 .prog-action-btn.primary{background:var(--text);color:#fff;border-color:var(--text)}
 .prog-action-btn.danger{color:var(--red);border-color:rgba(156,34,34,.3)}
 
@@ -149,3 +150,14 @@
 /* ── Mixte day badge ── */
 .wiz-day-focus{display:inline-flex;gap:4px;flex-wrap:wrap;margin-top:4px}
 .wiz-focus-tag{font-size:10px;font-weight:500;padding:1px 7px;border-radius:8px;background:var(--surface2);color:var(--text2)}
+
+/* ── Programme schedule view ── */
+.prog-schedule-header{margin-bottom:14px}
+.prog-schedule-title{font-size:17px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px}
+.prog-schedule-meta{font-size:12px;color:var(--text3);display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.prog-phases-summary{display:flex;flex-direction:column;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:14px}
+.prog-phase-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--border)}
+.prog-phase-row:last-child{border-bottom:none}
+.prog-phase-name{flex:1;font-weight:500;color:var(--text)}
+.prog-phase-weeks{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.prog-phase-int{font-family:var(--mono);font-size:11px;color:var(--text2);min-width:36px;text-align:right}

@@ -45,9 +45,9 @@
 
 
 /* ── DOCUMENTATION ── */
-.doc-layout{display:grid;grid-template-columns:200px 1fr;gap:28px;align-items:flex-start}
-@media(max-width:700px){.doc-layout{grid-template-columns:1fr}}
-.doc-nav{position:sticky;top:44px;display:flex;flex-direction:column;gap:2px}
+
+@media(max-width:700px){.doc-nav-item{white-space:nowrap;flex-shrink:0}}
+
 .doc-nav-item{font-size:12px;font-weight:500;padding:6px 10px;border-radius:var(--radius);color:var(--text2);cursor:pointer;transition:background .15s;border:none;background:none;text-align:left;width:100%}
 .doc-nav-item:hover{background:var(--surface2);color:var(--text)}
 .doc-nav-item.active{background:var(--text);color:#fff}
@@ -77,3 +77,23 @@
 .doc-rule-body{font-size:13px;line-height:1.6}
 .doc-rule-body strong{color:var(--text);font-weight:600}
 .doc-rule-body span{color:var(--text2)}
+
+/* ── Doc grossesse additions ── */
+.doc-warn{background:var(--amber-bg);border:1px solid rgba(124,74,0,.25);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:#7c4a00;margin-top:12px;line-height:1.6}
+.doc-rule{background:var(--surface2);border-radius:var(--radius-lg);overflow:hidden;margin:10px 0}
+.doc-rule-row{display:flex;gap:12px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5}
+.doc-rule-row:last-child{border-bottom:none}
+.doc-rule-label{font-weight:600;color:var(--text);min-width:110px;flex-shrink:0}
+
+/* ── Doc layout — clean rewrite ── */
+.doc-layout{display:flex;flex-direction:column;gap:0}
+.doc-nav{display:flex;flex-direction:row;flex-wrap:wrap;gap:4px;padding:10px 0 12px;border-bottom:1px solid var(--border);margin-bottom:16px;position:static}
+.doc-nav-item{font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;color:var(--text2);cursor:pointer;border:1px solid var(--border-md);background:var(--surface);white-space:nowrap}
+.doc-nav-item:hover{background:var(--surface2);color:var(--text)}
+.doc-nav-item.active{background:var(--text);color:#fff;border-color:var(--text)}
+@media(min-width:700px){
+  .doc-layout{flex-direction:row;gap:28px;align-items:flex-start}
+  .doc-nav{flex-direction:column;flex-wrap:nowrap;width:200px;flex-shrink:0;border-bottom:none;border-right:1px solid var(--border);margin-bottom:0;padding:0 16px 0 0;position:sticky;top:44px;max-height:calc(100vh - 60px);overflow-y:auto}
+  .doc-nav-item{border-radius:var(--radius);border:none;background:transparent;text-align:left;padding:6px 10px}
+  .doc-nav-item.active{background:var(--text);color:#fff}
+}

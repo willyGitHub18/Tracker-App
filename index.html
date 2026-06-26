@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="ATHX">
+  <meta name="apple-mobile-web-app-title" content="Just2Train">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1a1a18">
   <link rel="canonical" href="https://willygithub18.github.io/Tracker-App/">
-  <title>ATHX Tracker</title>
+  <title>Just2Train</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -38,8 +38,9 @@ header h1{font-family:var(--mono);font-size:17px;font-weight:500;letter-spacing:
 header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono)}
 
 /* TOP NAV */
-.top-nav{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
-.top-nav-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:11px 16px;border:none;background:transparent;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-align:center}
+.top-nav{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.top-nav::-webkit-scrollbar{display:none}
+.top-nav-btn{flex-shrink:0;white-space:nowrap;flex:0 0 auto;font-family:var(--sans);font-size:13px;font-weight:500;padding:11px 16px;border:none;background:transparent;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-align:center}
 .top-nav-btn.active{color:var(--text);border-bottom-color:var(--text)}
 .top-nav-btn:hover:not(.active){color:var(--text);background:var(--surface2)}
 
@@ -354,9 +355,9 @@ tr:last-child td{border-bottom:none}
 
 
 /* ── DOCUMENTATION ── */
-.doc-layout{display:grid;grid-template-columns:200px 1fr;gap:28px;align-items:flex-start}
-@media(max-width:700px){.doc-layout{grid-template-columns:1fr}}
-.doc-nav{position:sticky;top:44px;display:flex;flex-direction:column;gap:2px}
+
+@media(max-width:700px){.doc-nav-item{white-space:nowrap;flex-shrink:0}}
+
 .doc-nav-item{font-size:12px;font-weight:500;padding:6px 10px;border-radius:var(--radius);color:var(--text2);cursor:pointer;transition:background .15s;border:none;background:none;text-align:left;width:100%}
 .doc-nav-item:hover{background:var(--surface2);color:var(--text)}
 .doc-nav-item.active{background:var(--text);color:#fff}
@@ -386,6 +387,26 @@ tr:last-child td{border-bottom:none}
 .doc-rule-body{font-size:13px;line-height:1.6}
 .doc-rule-body strong{color:var(--text);font-weight:600}
 .doc-rule-body span{color:var(--text2)}
+
+/* ── Doc grossesse additions ── */
+.doc-warn{background:var(--amber-bg);border:1px solid rgba(124,74,0,.25);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:#7c4a00;margin-top:12px;line-height:1.6}
+.doc-rule{background:var(--surface2);border-radius:var(--radius-lg);overflow:hidden;margin:10px 0}
+.doc-rule-row{display:flex;gap:12px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5}
+.doc-rule-row:last-child{border-bottom:none}
+.doc-rule-label{font-weight:600;color:var(--text);min-width:110px;flex-shrink:0}
+
+/* ── Doc layout — clean rewrite ── */
+.doc-layout{display:flex;flex-direction:column;gap:0}
+.doc-nav{display:flex;flex-direction:row;flex-wrap:wrap;gap:4px;padding:10px 0 12px;border-bottom:1px solid var(--border);margin-bottom:16px;position:static}
+.doc-nav-item{font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;color:var(--text2);cursor:pointer;border:1px solid var(--border-md);background:var(--surface);white-space:nowrap}
+.doc-nav-item:hover{background:var(--surface2);color:var(--text)}
+.doc-nav-item.active{background:var(--text);color:#fff;border-color:var(--text)}
+@media(min-width:700px){
+  .doc-layout{flex-direction:row;gap:28px;align-items:flex-start}
+  .doc-nav{flex-direction:column;flex-wrap:nowrap;width:200px;flex-shrink:0;border-bottom:none;border-right:1px solid var(--border);margin-bottom:0;padding:0 16px 0 0;position:sticky;top:44px;max-height:calc(100vh - 60px);overflow-y:auto}
+  .doc-nav-item{border-radius:var(--radius);border:none;background:transparent;text-align:left;padding:6px 10px}
+  .doc-nav-item.active{background:var(--text);color:#fff}
+}
 
 /* ══════════════════════════════════════════════
    WIZARD & PROGRAMMES
@@ -494,7 +515,7 @@ tr:last-child td{border-bottom:none}
 .programs-empty-icon{font-size:40px;margin-bottom:12px}
 .programs-empty-text{font-size:14px;margin-bottom:16px}
 .programs-grid{display:flex;flex-direction:column;gap:10px}
-.program-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;cursor:pointer;transition:border-color .15s}
+.program-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;cursor:pointer;transition:border-color .15s;-webkit-tap-highlight-color:transparent}
 .program-card:hover{border-color:var(--border-md)}
 .program-card.active-program{border-color:var(--green);background:#f0fbf5}
 .prog-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
@@ -502,8 +523,9 @@ tr:last-child td{border-bottom:none}
 .prog-card-active-badge{font-size:10px;font-weight:600;background:var(--green);color:#fff;padding:2px 8px;border-radius:20px;white-space:nowrap}
 .prog-card-meta{display:flex;gap:8px;flex-wrap:wrap}
 .prog-meta-tag{font-size:11px;background:var(--surface2);border-radius:8px;padding:2px 8px;color:var(--text2)}
-.prog-card-actions{display:flex;gap:8px;margin-top:10px}
-.prog-action-btn{font-size:12px;font-weight:500;padding:5px 14px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--border-md);background:transparent;color:var(--text);font-family:var(--sans)}
+.prog-card-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.prog-action-btn{font-size:11px!important;padding:4px 10px!important;}
+.prog-action-btn{font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--border-md);background:transparent;color:var(--text);font-family:var(--sans);white-space:nowrap}
 .prog-action-btn.primary{background:var(--text);color:#fff;border-color:var(--text)}
 .prog-action-btn.danger{color:var(--red);border-color:rgba(156,34,34,.3)}
 
@@ -539,12 +561,24 @@ tr:last-child td{border-bottom:none}
 .wiz-day-focus{display:inline-flex;gap:4px;flex-wrap:wrap;margin-top:4px}
 .wiz-focus-tag{font-size:10px;font-weight:500;padding:1px 7px;border-radius:8px;background:var(--surface2);color:var(--text2)}
 
+/* ── Programme schedule view ── */
+.prog-schedule-header{margin-bottom:14px}
+.prog-schedule-title{font-size:17px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px}
+.prog-schedule-meta{font-size:12px;color:var(--text3);display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.prog-phases-summary{display:flex;flex-direction:column;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:14px}
+.prog-phase-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--border)}
+.prog-phase-row:last-child{border-bottom:none}
+.prog-phase-name{flex:1;font-weight:500;color:var(--text)}
+.prog-phase-weeks{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.prog-phase-int{font-family:var(--mono);font-size:11px;color:var(--text2);min-width:36px;text-align:right}
+
+.top-nav-btn:nth-child(3){display:none}
   </style>
 </head>
 <body>
 <header>
-  <h1>ATHX // Tracker</h1>
-  <span class="sub">ATHX — Compétition 2026</span>
+  <h1>Just2Train</h1>
+  <span class="sub">Ton entraînement, ton programme</span>
 </header>
 <div class="top-nav">
   <button class="top-nav-btn active" onclick="showSection('tracker')">&#x1F4CA; Tracker</button>
@@ -1215,6 +1249,9 @@ tr:last-child td{border-bottom:none}
     <div id="programsListContent"></div>
   </div>
 
+  <!-- ── PROGRAMME DÉTAIL (clic depuis liste) ── -->
+  <div id="program-detail-view" class="prog-view"></div>
+
   <!-- ── PROGRAMME ACTIF ── -->
   <div id="program-active-view" class="prog-view">
     <div class="wiz-header">
@@ -1244,6 +1281,7 @@ tr:last-child td{border-bottom:none}
       <button class="doc-nav-item" onclick="showDoc('doc-musculaire')">Suivi musculaire</button>
       <button class="doc-nav-item" onclick="showDoc('doc-rpe')">RPE &amp; métriques</button>
       <button class="doc-nav-item" onclick="showDoc('doc-export')">Données &amp; export</button>
+        <button class="doc-nav-item" onclick="showDoc('doc-grossesse')">🤰 Grossesse</button>
     </nav>
 
     <div class="doc-content">
@@ -1501,6 +1539,190 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+
+      <div id="doc-grossesse" class="doc-section">
+        <div class="doc-card">
+          <h2>Programme Grossesse / Post-natal</h2>
+          <p>Ce module est basé sur les recommandations officielles des sociétés savantes françaises, canadiennes et américaines. Il ne remplace pas l'avis de ta sage-femme ou médecin — toute pratique sportive pendant la grossesse doit être validée par un professionnel de santé.</p>
+        </div>
+
+        <div class="doc-card">
+          <h3>🗣️ Intensité — test de la parole (référence officielle)</h3>
+          <p>L'<strong>ACOG (2020)</strong> recommande d'utiliser uniquement le <strong>test de la parole</strong> pour surveiller l'intensité pendant la grossesse :</p>
+          <div class="doc-rule">
+            <div class="doc-rule-row"><span class="doc-rule-label">Bonne intensité</span><span>Tu peux parler normalement mais pas chanter</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Trop intense</span><span>Tu ne peux plus tenir une conversation → ralentir immédiatement</span></div>
+          </div>
+          <div class="doc-warn">⚠️ La limite de 145 bpm (ou 140 bpm) est une recommandation <strong>obsolète depuis les années 1990</strong> (ACOG 1985, abandonnée). Les réponses cardiaques varient individuellement pendant la grossesse — la fréquence cardiaque n'est pas un indicateur fiable d'intensité.</div>
+        </div>
+
+        <div class="doc-card">
+          <h3>✅ Volume recommandé</h3>
+          <table class="doc-table">
+            <thead><tr><th>Recommandation</th><th>Source</th></tr></thead>
+            <tbody>
+              <tr><td>150 min/semaine d'activité modérée minimum</td><td>ACOG 2020, SOGC/CSEP 2019, HAS 2019</td></tr>
+              <tr><td>Au moins 3 jours/semaine, idéalement tous les jours</td><td>SOGC/CSEP 2019</td></tr>
+              <tr><td>Séances de 20–30 min minimum</td><td>ACOG 2020</td></tr>
+              <tr><td>Pas de limite supérieure établie pour les femmes sans complications</td><td>ACOG 2020</td></tr>
+            </tbody>
+          </table>
+          <p style="font-size:12px;color:var(--text3)">Notre programme vise 5–6 activités/semaine de 15–30 min selon le mois — conforme et au-dessus du minimum recommandé.</p>
+        </div>
+
+        <div class="doc-card">
+          <h3>✅ Activités recommandées (ACOG 2020)</h3>
+          <div class="doc-rule">
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Marche</span><span>Excellente tout au long de la grossesse</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Natation</span><span>Recommandée — portance de l'eau, pas de choc</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Vélo stationnaire</span><span>Safe — pas de risque de chute</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Yoga/Pilates modifiés</span><span>Recommandés — éviter le hot yoga</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Renforcement musculaire doux</span><span>Validé avec sage-femme ou médecin</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Jogging léger</span><span>Si pratiqué avant la grossesse et grossesse non compliquée</span></div>
+          </div>
+        </div>
+
+        <div class="doc-card">
+          <h3>🚫 Activités à éviter</h3>
+          <div class="doc-rule">
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Sports de contact</span><span>Rugby, boxe, hockey, arts martiaux</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Risque de chute</span><span>Ski alpin, équitation, vélo en extérieur, gymnastique</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Plongée sous-marine</span><span>Risque d'embolie gazeuse pour le fœtus</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Hot yoga / Hot Pilates</span><span>Hyperthermie maternelle dangereuse</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Position allongée sur le dos</span><span>Après le 4ème mois — compression veine cave</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Abdominaux classiques</span><span>Crunchs, sit-ups — pression abdominale excessive</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Brasse jambes larges</span><span>Si douleur pubienne (SPD)</span></div>
+          </div>
+        </div>
+
+        <div class="doc-card" style="border-color:#c0392b">
+          <h3 style="color:#c0392b">🚫 Contre-indications absolues à l'exercice</h3>
+          <p style="font-size:12px;color:var(--text3)">Source : HAS 2019, ACOG 2020, SOGC 2019. <strong>Ne pas faire d'exercice</strong> en présence de :</p>
+          <table class="doc-table">
+            <tbody>
+              <tr><td>Rupture prématurée des membranes</td></tr>
+              <tr><td>Travail prématuré en cours</td></tr>
+              <tr><td>Saignement vaginal persistant inexpliqué</td></tr>
+              <tr><td>Placenta praevia après 28 semaines</td></tr>
+              <tr><td>Prééclampsie</td></tr>
+              <tr><td>Béance du col (incompétence cervicale)</td></tr>
+              <tr><td>Grossesse multiple à risque d'accouchement prématuré</td></tr>
+              <tr><td>Cardiopathie hémodynamique significative</td></tr>
+              <tr><td>Pneumopathie restrictive</td></tr>
+              <tr><td>Diabète de type 1 non contrôlé</td></tr>
+              <tr><td>HTA non contrôlée</td></tr>
+              <tr><td>Retard de croissance intra-utérin sévère</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="doc-card" style="border-color:#e67e22">
+          <h3 style="color:#a04000">⚠️ Contre-indications relatives — consulter avant</h3>
+          <p style="font-size:12px;color:var(--text3)">Discuter avec le médecin avant de commencer ou continuer l'exercice :</p>
+          <table class="doc-table">
+            <tbody>
+              <tr><td>Anémie sévère</td></tr>
+              <tr><td>Arythmie cardiaque maternelle</td></tr>
+              <tr><td>Bronchite chronique</td></tr>
+              <tr><td>Diabète de type 1 mal équilibré</td></tr>
+              <tr><td>Obésité morbide (IMC > 40)</td></tr>
+              <tr><td>Maigreur extrême (IMC < 12)</td></tr>
+              <tr><td>Sédentarité extrême avant la grossesse</td></tr>
+              <tr><td>Grossesse gémellaire après 28 SA</td></tr>
+              <tr><td>HTA gestationnelle</td></tr>
+              <tr><td>Hyperthyroïdie non contrôlée</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="doc-card">
+          <h3>🚨 Signes d'arrêt immédiat — consulter</h3>
+          <table class="doc-table">
+            <tbody>
+              <tr><td>Contractions utérines</td></tr>
+              <tr><td>Saignements vaginaux</td></tr>
+              <tr><td>Douleur abdominale ou pelvienne aiguë</td></tr>
+              <tr><td>Essoufflement anormal avant l'effort</td></tr>
+              <tr><td>Vertiges ou étourdissements</td></tr>
+              <tr><td>Céphalées (maux de tête)</td></tr>
+              <tr><td>Douleur thoracique</td></tr>
+              <tr><td>Fuite de liquide amniotique</td></tr>
+              <tr><td>Diminution des mouvements du bébé</td></tr>
+              <tr><td>Œdème soudain du visage, mains ou chevilles</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="doc-card">
+          <h3>🦴 Douleur pubienne (SPD — Symphyse Pubienne Douloureuse)</h3>
+          <p>Très fréquente à partir du 5ème mois. Elle est due à la relaxine qui assouplit les ligaments pelviens.</p>
+          <div class="doc-rule">
+            <div class="doc-rule-row"><span class="doc-rule-label">Symptôme</span><span>Douleur à l'avant du pubis, parfois irradiant vers l'intérieur des cuisses</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Éviter</span><span>Squats profonds, fentes, jambes très écartées, brasse jambes larges en natation</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Remplacer par</span><span>Pont fessier latéral couché sur le côté gauche, Kegel, marche douce</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Consulter</span><span>Sage-femme ou kiné spécialisée périnée si la douleur persiste</span></div>
+          </div>
+        </div>
+
+        <div class="doc-card">
+          <h3>🎯 Kegel — périnée</h3>
+          <p>Les exercices de périnée sont l'un des investissements les plus importants pour l'accouchement et la récupération post-partum.</p>
+          <div class="doc-rule">
+            <div class="doc-rule-row"><span class="doc-rule-label">Technique</span><span>Contracter le périnée (comme pour retenir les urines) pendant 8–10 s, relâcher 5 s, répéter 10 fois</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Fréquence</span><span>Plusieurs fois par jour — pas seulement en séance</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Astuce</span><span>Associe-les à une habitude : café du matin, brossage de dents, téléphone</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Position</span><span>Assise, allongée sur le côté, debout — toutes les positions fonctionnent</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Ne pas</span><span>Contracter les fesses ou les abdominaux, bloquer la respiration</span></div>
+          </div>
+          <p>En Pilates : synchronisation expiration + contraction périnée = approche recommandée pour les renforcer ensemble.</p>
+        </div>
+
+        <div class="doc-card">
+          <h3>📅 Adaptations par mois de grossesse</h3>
+          <table class="doc-table">
+            <thead><tr><th>Mois</th><th>Durée séances</th><th>Squat</th><th>Extension 4 pattes</th><th>Psoas</th></tr></thead>
+            <tbody>
+              <tr><td>4–5</td><td>20–30 min</td><td>3 × 12</td><td>✓</td><td>✓</td></tr>
+              <tr><td>6</td><td>20 min</td><td>2 × 10</td><td>✓</td><td>✓</td></tr>
+              <tr><td>7</td><td>15–20 min</td><td>2 × 8 · 60° max</td><td>✓</td><td>✓</td></tr>
+              <tr><td>8</td><td>15 min</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td></tr>
+              <tr><td>9</td><td>10–15 min</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td></tr>
+            </tbody>
+          </table>
+          <p style="font-size:11px;color:var(--text3)">La suspension du squat et de l'extension à partir du 8ème mois est une précaution supplémentaire raisonnable — les recommandations officielles ne fixent pas de limite par mois mais laissent la décision à la sage-femme et à la femme enceinte selon son ressenti.</p>
+        </div>
+
+        <div class="doc-card">
+          <h3>👶 Post-natal — reprise progressive</h3>
+          <table class="doc-table">
+            <thead><tr><th>Phase</th><th>Durée</th><th>Activités</th></tr></thead>
+            <tbody>
+              <tr><td>S1–S6 · Récupération</td><td>6 premières semaines</td><td>Kegel très doux, respiration abdominale, marche très courte si accord médecin</td></tr>
+              <tr><td>S6–S12 · Reprise douce</td><td>6 à 12 semaines</td><td>Kegel progressif, pont fessier, chat/vache, marche 15–20 min. Pas de course.</td></tr>
+              <tr><td>3–6 mois · Remise en forme</td><td>3 à 6 mois</td><td>Gainage progressif (vérifier diastase), squats, cardio léger. Course avec accord kiné.</td></tr>
+              <tr><td>6 mois+ · Programme standard</td><td>Après 6 mois</td><td>Retour à un programme normal via le wizard. Allaitement = apports caloriques accrus.</td></tr>
+            </tbody>
+          </table>
+          <div class="doc-warn">⚕️ Attendre impérativement la visite post-natale (6 semaines) et l'accord du médecin ou sage-femme avant toute reprise sportive structurée. En cas de diastase des grands droits, consulter une kiné spécialisée périnée avant tout gainage.</div>
+        </div>
+
+        <div class="doc-card">
+          <h3>📚 Sources et références</h3>
+          <table class="doc-table">
+            <thead><tr><th>Source</th><th>Document</th></tr></thead>
+            <tbody>
+              <tr><td>ACOG</td><td>Committee Opinion No. 804 — Physical Activity and Exercise During Pregnancy and the Postpartum Period, 2020</td></tr>
+              <tr><td>HAS</td><td>Prescription d'activité physique et sportive — Grossesse et post-partum, juillet 2019</td></tr>
+              <tr><td>CNSF</td><td>Recommandations de pratique clinique — Activité physique périnatale, mars 2021</td></tr>
+              <tr><td>SOGC/CSEP</td><td>Canadian Guideline for Physical Activity Throughout Pregnancy, British Journal of Sports Medicine 2018;52:1339-46</td></tr>
+              <tr><td>ANSES</td><td>Actualisation des repères du PNNS — Révisions des repères relatifs à l'activité physique et à la sédentarité, 2016</td></tr>
+              <tr><td>Ameli.fr</td><td>Grossesse et sport — recommandations pratiques</td></tr>
+              <tr><td>NaîtreetGrandir.ca</td><td>L'activité physique pendant la grossesse</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div><!-- /doc-grossesse -->
     </div><!-- /doc-content -->
   </div><!-- /doc-layout -->
 </div>
@@ -5766,7 +5988,7 @@ function _fmtDate(d) {
 const SECTIONS   = ['tracker','musculaire','programme','programmes','doc'];
 const TRACK_TABS = ['saisie','progression','historique'];
 const PROG_TABS  = ['nutrition','warmup','mardi','mercredi','jeudi','vendredi','vacances'];
-const DOC_TABS   = ['doc-intro','doc-tracker','doc-progression','doc-statut','doc-musculaire','doc-rpe','doc-export'];
+const DOC_TABS   = ['doc-intro','doc-tracker','doc-progression','doc-statut','doc-musculaire','doc-rpe','doc-export','doc-grossesse'];
 
 function showSection(id) {
   document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
@@ -5776,6 +5998,16 @@ function showSection(id) {
   if(idx >= 0) document.querySelectorAll('.top-nav-btn')[idx]?.classList.add('active');
   if(id === 'musculaire')  renderMusculaire();
   if(id === 'programmes')  renderPrograms();
+  if(id === 'programme') {
+    // Redirect to Programmes tab — Programme tab is hidden
+    document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.top-nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('programmes')?.classList.add('active');
+    const idx = SECTIONS.indexOf('programmes');
+    if(idx >= 0) document.querySelectorAll('.top-nav-btn')[idx]?.classList.add('active');
+    renderPrograms();
+    return;
+  }
 }
 
 function showTracker(id) {
@@ -5922,6 +6154,128 @@ window._clearVacances  = function() { if(confirm('Effacer toutes les périodes ?
 
 // Program switcher (from tracker selector)
 window._switchProgram = function(id) { setCurrentProgram(id); };
+
+// Open program card — navigate to Programme tab showing this program
+window._openProgCard = function(e, id, status) {
+  if(e.target.closest('.prog-card-actions')) return; // let button handle it
+  window._viewProg(id);
+};
+
+window._viewProg = function(id) {
+  const prog = getProgram(id);
+  if(!prog) return;
+
+  // Show programme detail inside Programmes tab (not Programme tab)
+  document.querySelectorAll('.prog-view').forEach(v => v.classList.remove('active-view'));
+  const detailView = document.getElementById('program-detail-view');
+  if(detailView) {
+    detailView.classList.add('active-view');
+    _renderProgDetailView(prog, detailView);
+  } else {
+    // Fallback: show in active program view
+    showActiveProgram(1);
+  }
+};
+
+function _renderProgDetailView(prog, container) {
+  if(!prog || !container) return;
+
+  const DOMAINES_LABELS = { hyrox:'🏟 Hyrox', force:'🏋 Force', gym:'💪 Gym', cardio:'🏃 Cardio', mobilite:'🧘 Mobilité', mixte:'⚡ Mixte', grossesse:'🤰 Grossesse' };
+
+  // For ATHX fixed program — inject the full programme.html content
+  if(prog.migratedFrom === 'athx_legacy' || prog.subtype === 'fixed') {
+    const athxContent = document.getElementById('programme')?.innerHTML || '';
+    container.innerHTML = `
+      <div class="wiz-header">
+        <div class="wiz-header-top">
+          <div>
+            <div class="wiz-header-title">${esc(prog.name)}</div>
+            <div class="wiz-header-sub">Programme compétition · 17 semaines</div>
+          </div>
+          <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
+        </div>
+      </div>
+      <div>${athxContent}</div>`;
+    return;
+  }
+
+  // Grossesse
+  if(prog.subtype === 'grossesse') {
+    container.innerHTML = `
+      <div class="wiz-header">
+        <div class="wiz-header-top">
+          <div class="wiz-header-title">${esc(prog.name)}</div>
+          <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
+        </div>
+      </div>`;
+    const inner = document.createElement('div');
+    container.appendChild(inner);
+    renderGrossesseProgram(prog, 1, inner);
+    return;
+  }
+
+  // Generated programs — week-by-week schedule
+  const phasesHtml = prog.phases?.map(p =>
+    `<div class="prog-phase-row">
+      <span class="prog-phase-name">${esc(p.nom)}</span>
+      <span class="prog-phase-weeks">S${p.debut}–S${p.fin}</span>
+      <span class="prog-phase-int">${Math.round(p.intensite*100)}%</span>
+    </div>`
+  ).join('') || '';
+
+  const weekNav = prog.semaines?.map((w,i) => {
+    const cls = ['prog-week-btn', w.isDeload?'deload':'', w.isTaper?'taper':''].filter(Boolean).join(' ');
+    return `<button class="${cls}" onclick="window._showDetailWeek(${i+1})">${'S'+(i+1)}</button>`;
+  }).join('') || '';
+
+  container.innerHTML = `
+    <div class="wiz-header">
+      <div class="wiz-header-top">
+        <div>
+          <div class="wiz-header-title">${esc(prog.name)}</div>
+          <div class="wiz-header-sub">${DOMAINES_LABELS[prog.config?.domaine]||''} · ${prog.totalWeeks} semaines · ${prog.config?.seancesParSemaine||'?'}×/sem</div>
+        </div>
+        <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
+      </div>
+    </div>
+    ${phasesHtml ? `<div class="prog-phases-summary">${phasesHtml}</div>` : ''}
+    <div class="prog-week-nav" id="detailWeekNav">${weekNav}</div>
+    <div id="detailWeekContent"></div>`;
+
+  window._showDetailWeek = function(weekNum) {
+    const week = prog.semaines?.[weekNum-1];
+    if(!week) return;
+    document.querySelectorAll('#detailWeekNav .prog-week-btn').forEach((b,i) =>
+      b.classList.toggle('active', i+1===weekNum)
+    );
+    const phaseColors = { 'Base':'#e8f0fc','Construction':'#fdf0d8','Intensité':'#fdeaea','Pic':'#e0f4eb','Taper':'#f1efe8','Deload':'#e8e6e0','Bloc 1 — Base':'#e8f0fc','Bloc 2 — Intensité':'#fdf0d8','Bloc 3 — Simulation':'#e0f4eb' };
+    const phaseTextColors = { 'Base':'#1a5fb4','Construction':'#7c4a00','Intensité':'#9c2222','Pic':'#1b6b45','Taper':'#444441','Deload':'#444441','Bloc 1 — Base':'#1a5fb4','Bloc 2 — Intensité':'#7c4a00','Bloc 3 — Simulation':'#1b6b45' };
+    const bg  = phaseColors[week.phase]  || 'var(--surface2)';
+    const col = phaseTextColors[week.phase] || 'var(--text2)';
+    const daysHtml = week.jours?.map(day => `
+      <div class="prog-day-card">
+        <div class="prog-day-header">
+          <span class="prog-day-name">${day.nom}</span>
+          <span class="prog-day-split">${day.split&&day.split!==day.nom?esc(day.split):''}</span>
+        </div>
+        <div class="prog-ex-list">
+          ${(day.exercices||[]).map(ex => `
+            <div class="prog-ex-item">
+              <span class="prog-ex-item-name">${esc(ex.nom||ex.name||ex.id)}</span>
+              <span class="prog-ex-item-scheme">${ex.series?ex.series+'×':'' }${ex.reps||ex.scheme||'?'}</span>
+              ${ex.kgPlan?`<span class="prog-ex-item-kg">${ex.kgPlan} kg</span>`:ex.pct1rm?`<span class="prog-ex-item-kg">${ex.pct1rm}% 1RM</span>`:''}
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
+    document.getElementById('detailWeekContent').innerHTML = `
+      <span class="prog-phase-badge" style="background:${bg};color:${col}">
+        ${week.isDeload?'🔵 Deload · ':week.isTaper?'📉 Taper · `':`${week.phase}`}
+      </span>
+      <div class="prog-rpe-target">RPE cible : ${week.rpeTarget} · ${Math.round(week.intensite*100)}%</div>
+      ${daysHtml}`;
+  };
+  window._showDetailWeek(1);
+}
 window._markGrossesseDone = function(progId, exId, week, done) {
   const { setProgRecord, getProgRecord } = window._programs_mod || {};
   // Direct import not possible here — use global programs tracking via dbSet
@@ -5939,6 +6293,108 @@ window._setMoisGrossesse = function(m) {
 };
 
 // ── Programs rendering ────────────────────────────────────────────────────────
+
+// Programme tab = active program full schedule view
+function _showProgrammeTab() {
+  const active = getActiveProgram();
+  // If an ATHX/fixed program is active, show its HTML schedule
+  // Otherwise show a redirect message to Programmes tab
+  if(!active) {
+    const el = document.getElementById('programme');
+    if(el) el.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--text3)">
+      <div style="font-size:32px;margin-bottom:12px">📋</div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:8px">Aucun programme actif</div>
+      <div style="font-size:12px;margin-bottom:16px">Crée ou active un programme dans l'onglet Programmes</div>
+      <button class="wiz-btn-next" onclick="showSection('programmes')">Aller dans Programmes →</button>
+    </div>`;
+  }
+  // If active program is ATHX (fixed/subtype), keep existing HTML view
+  // For generated programs, show week-by-week schedule
+  if(active && active.subtype !== 'fixed') {
+    _renderProgrammeSchedule(active);
+  }
+  // For ATHX fixed program, the existing programme.html content is shown as-is
+}
+
+function _renderProgrammeSchedule(prog) {
+  const el = document.getElementById('programme');
+  if(!el || !prog) return;
+
+  const DOMAINES_LABELS = { hyrox:'🏟 Hyrox', force:'🏋 Force', gym:'💪 Gym', cardio:'🏃 Cardio', mobilite:'🧘 Mobilité', mixte:'⚡ Mixte', grossesse:'🤰 Grossesse' };
+
+  // Phase summary
+  const phasesHtml = prog.phases?.map(p =>
+    `<div class="prog-phase-row">
+      <span class="prog-phase-name">${p.nom}</span>
+      <span class="prog-phase-weeks">S${p.debut}–S${p.fin}</span>
+      <span class="prog-phase-int">${Math.round(p.intensite*100)}%</span>
+    </div>`
+  ).join('') || '';
+
+  // Week navigation
+  const weekNav = prog.semaines?.map((w,i) => {
+    const cls = ['prog-week-btn', w.isDeload?'deload':'', w.isTaper?'taper':''].filter(Boolean).join(' ');
+    return `<button class="${cls}" onclick="window._showProgWeek(${i+1})">${'S'+(i+1)}</button>`;
+  }).join('') || '';
+
+  el.innerHTML = `
+    <div class="prog-schedule-header">
+      <div class="prog-schedule-title">${esc(prog.name)}</div>
+      <div class="prog-schedule-meta">
+        ${DOMAINES_LABELS[prog.config?.domaine]||''} · ${prog.totalWeeks} semaines · ${prog.config?.seancesParSemaine||'?'}×/sem
+        <button class="prog-action-btn" style="margin-left:8px" onclick="showSection('programmes')">Gérer →</button>
+      </div>
+    </div>
+    <div class="prog-phases-summary">${phasesHtml}</div>
+    <div class="prog-week-nav" id="progWeekNav">${weekNav}</div>
+    <div id="progWeekDetail"></div>`;
+
+  window._showProgWeek = function(weekNum) {
+    const week = prog.semaines?.[weekNum-1];
+    if(!week) return;
+    // highlight active week btn
+    document.querySelectorAll('#progWeekNav .prog-week-btn').forEach((b,i) =>
+      b.classList.toggle('active', i+1===weekNum)
+    );
+    const phaseColors = {
+      'Base':'#e8f0fc','Construction':'#fdf0d8','Intensité':'#fdeaea',
+      'Pic':'#e0f4eb','Taper':'#f1efe8','Deload':'#e8e6e0',
+      'Bloc 1 — Base':'#e8f0fc','Bloc 2 — Intensité':'#fdf0d8','Bloc 3 — Simulation':'#e0f4eb',
+    };
+    const phaseTextColors = {
+      'Base':'#1a5fb4','Construction':'#7c4a00','Intensité':'#9c2222',
+      'Pic':'#1b6b45','Taper':'#444441','Deload':'#444441',
+      'Bloc 1 — Base':'#1a5fb4','Bloc 2 — Intensité':'#7c4a00','Bloc 3 — Simulation':'#1b6b45',
+    };
+    const bg  = phaseColors[week.phase]  || 'var(--surface2)';
+    const col = phaseTextColors[week.phase] || 'var(--text2)';
+
+    const daysHtml = week.jours?.map(day => `
+      <div class="prog-day-card">
+        <div class="prog-day-header">
+          <span class="prog-day-name">${day.nom}</span>
+          <span class="prog-day-split">${day.split&&day.split!==day.nom?esc(day.split):''}</span>
+        </div>
+        <div class="prog-ex-list">
+          ${(day.exercices||[]).map(ex => `
+            <div class="prog-ex-item">
+              <span class="prog-ex-item-name">${esc(ex.nom||ex.name||ex.id)}</span>
+              <span class="prog-ex-item-scheme">${ex.series||'?'}×${ex.reps||ex.scheme||'?'}</span>
+              ${ex.kgPlan?`<span class="prog-ex-item-kg">${ex.kgPlan} kg</span>`:ex.pct1rm?`<span class="prog-ex-item-kg">${ex.pct1rm}% 1RM</span>`:''}
+            </div>`).join('')}
+        </div>
+      </div>`).join('') || '';
+
+    document.getElementById('progWeekDetail').innerHTML = `
+      <span class="prog-phase-badge" style="background:${bg};color:${col}">
+        ${week.isDeload?'🔵 Deload · ':week.isTaper?'📉 Taper · ':`${week.phase}`}
+      </span>
+      <div class="prog-rpe-target">RPE cible : ${week.rpeTarget} · ${Math.round(week.intensite*100)}%</div>
+      ${daysHtml}`;
+  };
+  // Show first week by default
+  window._showProgWeek(1);
+}
 
 function renderPrograms() {
   const active   = getActiveProgram();
@@ -6004,7 +6460,7 @@ function _renderProgramsList(showArchived = false) {
       const statusColor = STATUS_COLORS[p.status] || 'var(--text3)';
       const compet = p.config?.competition?.type ? ` · 🏆 ${p.config.competition.type}` : '';
 
-      return `<div class="program-card ${isActive?'active-program':''}">
+      return `<div class="program-card ${isActive?'active-program':''}" onclick="window._openProgCard(event,'${p.id}','${p.status}')">
         <div class="prog-card-top">
           <div class="prog-card-name">${esc(p.name||'Programme')}</div>
           <span style="font-size:11px;font-weight:600;color:${statusColor}">${statusLabel}</span>
@@ -6019,16 +6475,17 @@ function _renderProgramsList(showArchived = false) {
         <div style="font-size:11px;color:var(--text3);margin-top:6px">
           Créé le ${created}${closedAt ? ` · Clôturé le ${closedAt}` : ''}
         </div>
-        <div class="prog-card-actions">
+        <div class="prog-card-actions" onclick="event.stopPropagation()">
           ${p.status === 'active' ? `
-            <button class="prog-action-btn primary" onclick="activateProgram('${p.id}');showActiveProgram(1)">${isActive ? '👁 Voir' : '+ Activer'}</button>
-            ${isActive && activeIds.length > 1 ? `<button class="prog-action-btn" onclick="setPrimaryProg('${p.id}')">⭐ Principal</button>` : ''}
-            <button class="prog-action-btn" onclick="closeProg('${p.id}','completed')">✓ Terminer</button>
-            <button class="prog-action-btn" onclick="closeProg('${p.id}','abandoned')">Abandonner</button>
+            <button class="prog-action-btn primary" onclick="event.stopPropagation();window._viewProg('${p.id}')">📋 Programme</button>
+            <button class="prog-action-btn" onclick="event.stopPropagation();activateProgram('${p.id}')">${isActive ? '✓ Actif' : '+ Activer'}</button>
+            ${isActive && activeIds.size > 1 ? `<button class="prog-action-btn" onclick="event.stopPropagation();setPrimaryProg('${p.id}')">⭐</button>` : ''}
+            <button class="prog-action-btn" onclick="event.stopPropagation();closeProg('${p.id}','completed')">Terminer</button>
+            <button class="prog-action-btn danger" onclick="event.stopPropagation();deleteProg('${p.id}')">✕</button>
           ` : `
-            <button class="prog-action-btn primary" onclick="exportProgJSON('${p.id}')">⬇ Exporter JSON</button>
+            <button class="prog-action-btn primary" onclick="event.stopPropagation();exportProgJSON('${p.id}')">⬇ JSON</button>
+            <button class="prog-action-btn danger" onclick="event.stopPropagation();deleteProg('${p.id}')">✕</button>
           `}
-          <button class="prog-action-btn danger" onclick="deleteProg('${p.id}')">Supprimer</button>
         </div>
       </div>`;
     }).join('')}

@@ -23,8 +23,9 @@ header h1{font-family:var(--mono);font-size:17px;font-weight:500;letter-spacing:
 header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono)}
 
 /* TOP NAV */
-.top-nav{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
-.top-nav-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:11px 16px;border:none;background:transparent;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-align:center}
+.top-nav{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.top-nav::-webkit-scrollbar{display:none}
+.top-nav-btn{flex-shrink:0;white-space:nowrap;flex:0 0 auto;font-family:var(--sans);font-size:13px;font-weight:500;padding:11px 16px;border:none;background:transparent;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-align:center}
 .top-nav-btn.active{color:var(--text);border-bottom-color:var(--text)}
 .top-nav-btn:hover:not(.active){color:var(--text);background:var(--surface2)}
 

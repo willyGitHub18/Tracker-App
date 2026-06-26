@@ -11,6 +11,7 @@
       <button class="doc-nav-item" onclick="showDoc('doc-musculaire')">Suivi musculaire</button>
       <button class="doc-nav-item" onclick="showDoc('doc-rpe')">RPE &amp; métriques</button>
       <button class="doc-nav-item" onclick="showDoc('doc-export')">Données &amp; export</button>
+        <button class="doc-nav-item" onclick="showDoc('doc-grossesse')">🤰 Grossesse</button>
     </nav>
 
     <div class="doc-content">
@@ -268,6 +269,190 @@
         </div>
       </div>
 
+
+      <div id="doc-grossesse" class="doc-section">
+        <div class="doc-card">
+          <h2>Programme Grossesse / Post-natal</h2>
+          <p>Ce module est basé sur les recommandations officielles des sociétés savantes françaises, canadiennes et américaines. Il ne remplace pas l'avis de ta sage-femme ou médecin — toute pratique sportive pendant la grossesse doit être validée par un professionnel de santé.</p>
+        </div>
+
+        <div class="doc-card">
+          <h3>🗣️ Intensité — test de la parole (référence officielle)</h3>
+          <p>L'<strong>ACOG (2020)</strong> recommande d'utiliser uniquement le <strong>test de la parole</strong> pour surveiller l'intensité pendant la grossesse :</p>
+          <div class="doc-rule">
+            <div class="doc-rule-row"><span class="doc-rule-label">Bonne intensité</span><span>Tu peux parler normalement mais pas chanter</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Trop intense</span><span>Tu ne peux plus tenir une conversation → ralentir immédiatement</span></div>
+          </div>
+          <div class="doc-warn">⚠️ La limite de 145 bpm (ou 140 bpm) est une recommandation <strong>obsolète depuis les années 1990</strong> (ACOG 1985, abandonnée). Les réponses cardiaques varient individuellement pendant la grossesse — la fréquence cardiaque n'est pas un indicateur fiable d'intensité.</div>
+        </div>
+
+        <div class="doc-card">
+          <h3>✅ Volume recommandé</h3>
+          <table class="doc-table">
+            <thead><tr><th>Recommandation</th><th>Source</th></tr></thead>
+            <tbody>
+              <tr><td>150 min/semaine d'activité modérée minimum</td><td>ACOG 2020, SOGC/CSEP 2019, HAS 2019</td></tr>
+              <tr><td>Au moins 3 jours/semaine, idéalement tous les jours</td><td>SOGC/CSEP 2019</td></tr>
+              <tr><td>Séances de 20–30 min minimum</td><td>ACOG 2020</td></tr>
+              <tr><td>Pas de limite supérieure établie pour les femmes sans complications</td><td>ACOG 2020</td></tr>
+            </tbody>
+          </table>
+          <p style="font-size:12px;color:var(--text3)">Notre programme vise 5–6 activités/semaine de 15–30 min selon le mois — conforme et au-dessus du minimum recommandé.</p>
+        </div>
+
+        <div class="doc-card">
+          <h3>✅ Activités recommandées (ACOG 2020)</h3>
+          <div class="doc-rule">
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Marche</span><span>Excellente tout au long de la grossesse</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Natation</span><span>Recommandée — portance de l'eau, pas de choc</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Vélo stationnaire</span><span>Safe — pas de risque de chute</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Yoga/Pilates modifiés</span><span>Recommandés — éviter le hot yoga</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Renforcement musculaire doux</span><span>Validé avec sage-femme ou médecin</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✓ Jogging léger</span><span>Si pratiqué avant la grossesse et grossesse non compliquée</span></div>
+          </div>
+        </div>
+
+        <div class="doc-card">
+          <h3>🚫 Activités à éviter</h3>
+          <div class="doc-rule">
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Sports de contact</span><span>Rugby, boxe, hockey, arts martiaux</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Risque de chute</span><span>Ski alpin, équitation, vélo en extérieur, gymnastique</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Plongée sous-marine</span><span>Risque d'embolie gazeuse pour le fœtus</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Hot yoga / Hot Pilates</span><span>Hyperthermie maternelle dangereuse</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Position allongée sur le dos</span><span>Après le 4ème mois — compression veine cave</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Abdominaux classiques</span><span>Crunchs, sit-ups — pression abdominale excessive</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">✗ Brasse jambes larges</span><span>Si douleur pubienne (SPD)</span></div>
+          </div>
+        </div>
+
+        <div class="doc-card" style="border-color:#c0392b">
+          <h3 style="color:#c0392b">🚫 Contre-indications absolues à l'exercice</h3>
+          <p style="font-size:12px;color:var(--text3)">Source : HAS 2019, ACOG 2020, SOGC 2019. <strong>Ne pas faire d'exercice</strong> en présence de :</p>
+          <table class="doc-table">
+            <tbody>
+              <tr><td>Rupture prématurée des membranes</td></tr>
+              <tr><td>Travail prématuré en cours</td></tr>
+              <tr><td>Saignement vaginal persistant inexpliqué</td></tr>
+              <tr><td>Placenta praevia après 28 semaines</td></tr>
+              <tr><td>Prééclampsie</td></tr>
+              <tr><td>Béance du col (incompétence cervicale)</td></tr>
+              <tr><td>Grossesse multiple à risque d'accouchement prématuré</td></tr>
+              <tr><td>Cardiopathie hémodynamique significative</td></tr>
+              <tr><td>Pneumopathie restrictive</td></tr>
+              <tr><td>Diabète de type 1 non contrôlé</td></tr>
+              <tr><td>HTA non contrôlée</td></tr>
+              <tr><td>Retard de croissance intra-utérin sévère</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="doc-card" style="border-color:#e67e22">
+          <h3 style="color:#a04000">⚠️ Contre-indications relatives — consulter avant</h3>
+          <p style="font-size:12px;color:var(--text3)">Discuter avec le médecin avant de commencer ou continuer l'exercice :</p>
+          <table class="doc-table">
+            <tbody>
+              <tr><td>Anémie sévère</td></tr>
+              <tr><td>Arythmie cardiaque maternelle</td></tr>
+              <tr><td>Bronchite chronique</td></tr>
+              <tr><td>Diabète de type 1 mal équilibré</td></tr>
+              <tr><td>Obésité morbide (IMC > 40)</td></tr>
+              <tr><td>Maigreur extrême (IMC < 12)</td></tr>
+              <tr><td>Sédentarité extrême avant la grossesse</td></tr>
+              <tr><td>Grossesse gémellaire après 28 SA</td></tr>
+              <tr><td>HTA gestationnelle</td></tr>
+              <tr><td>Hyperthyroïdie non contrôlée</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="doc-card">
+          <h3>🚨 Signes d'arrêt immédiat — consulter</h3>
+          <table class="doc-table">
+            <tbody>
+              <tr><td>Contractions utérines</td></tr>
+              <tr><td>Saignements vaginaux</td></tr>
+              <tr><td>Douleur abdominale ou pelvienne aiguë</td></tr>
+              <tr><td>Essoufflement anormal avant l'effort</td></tr>
+              <tr><td>Vertiges ou étourdissements</td></tr>
+              <tr><td>Céphalées (maux de tête)</td></tr>
+              <tr><td>Douleur thoracique</td></tr>
+              <tr><td>Fuite de liquide amniotique</td></tr>
+              <tr><td>Diminution des mouvements du bébé</td></tr>
+              <tr><td>Œdème soudain du visage, mains ou chevilles</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="doc-card">
+          <h3>🦴 Douleur pubienne (SPD — Symphyse Pubienne Douloureuse)</h3>
+          <p>Très fréquente à partir du 5ème mois. Elle est due à la relaxine qui assouplit les ligaments pelviens.</p>
+          <div class="doc-rule">
+            <div class="doc-rule-row"><span class="doc-rule-label">Symptôme</span><span>Douleur à l'avant du pubis, parfois irradiant vers l'intérieur des cuisses</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Éviter</span><span>Squats profonds, fentes, jambes très écartées, brasse jambes larges en natation</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Remplacer par</span><span>Pont fessier latéral couché sur le côté gauche, Kegel, marche douce</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Consulter</span><span>Sage-femme ou kiné spécialisée périnée si la douleur persiste</span></div>
+          </div>
+        </div>
+
+        <div class="doc-card">
+          <h3>🎯 Kegel — périnée</h3>
+          <p>Les exercices de périnée sont l'un des investissements les plus importants pour l'accouchement et la récupération post-partum.</p>
+          <div class="doc-rule">
+            <div class="doc-rule-row"><span class="doc-rule-label">Technique</span><span>Contracter le périnée (comme pour retenir les urines) pendant 8–10 s, relâcher 5 s, répéter 10 fois</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Fréquence</span><span>Plusieurs fois par jour — pas seulement en séance</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Astuce</span><span>Associe-les à une habitude : café du matin, brossage de dents, téléphone</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Position</span><span>Assise, allongée sur le côté, debout — toutes les positions fonctionnent</span></div>
+            <div class="doc-rule-row"><span class="doc-rule-label">Ne pas</span><span>Contracter les fesses ou les abdominaux, bloquer la respiration</span></div>
+          </div>
+          <p>En Pilates : synchronisation expiration + contraction périnée = approche recommandée pour les renforcer ensemble.</p>
+        </div>
+
+        <div class="doc-card">
+          <h3>📅 Adaptations par mois de grossesse</h3>
+          <table class="doc-table">
+            <thead><tr><th>Mois</th><th>Durée séances</th><th>Squat</th><th>Extension 4 pattes</th><th>Psoas</th></tr></thead>
+            <tbody>
+              <tr><td>4–5</td><td>20–30 min</td><td>3 × 12</td><td>✓</td><td>✓</td></tr>
+              <tr><td>6</td><td>20 min</td><td>2 × 10</td><td>✓</td><td>✓</td></tr>
+              <tr><td>7</td><td>15–20 min</td><td>2 × 8 · 60° max</td><td>✓</td><td>✓</td></tr>
+              <tr><td>8</td><td>15 min</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td></tr>
+              <tr><td>9</td><td>10–15 min</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td></tr>
+            </tbody>
+          </table>
+          <p style="font-size:11px;color:var(--text3)">La suspension du squat et de l'extension à partir du 8ème mois est une précaution supplémentaire raisonnable — les recommandations officielles ne fixent pas de limite par mois mais laissent la décision à la sage-femme et à la femme enceinte selon son ressenti.</p>
+        </div>
+
+        <div class="doc-card">
+          <h3>👶 Post-natal — reprise progressive</h3>
+          <table class="doc-table">
+            <thead><tr><th>Phase</th><th>Durée</th><th>Activités</th></tr></thead>
+            <tbody>
+              <tr><td>S1–S6 · Récupération</td><td>6 premières semaines</td><td>Kegel très doux, respiration abdominale, marche très courte si accord médecin</td></tr>
+              <tr><td>S6–S12 · Reprise douce</td><td>6 à 12 semaines</td><td>Kegel progressif, pont fessier, chat/vache, marche 15–20 min. Pas de course.</td></tr>
+              <tr><td>3–6 mois · Remise en forme</td><td>3 à 6 mois</td><td>Gainage progressif (vérifier diastase), squats, cardio léger. Course avec accord kiné.</td></tr>
+              <tr><td>6 mois+ · Programme standard</td><td>Après 6 mois</td><td>Retour à un programme normal via le wizard. Allaitement = apports caloriques accrus.</td></tr>
+            </tbody>
+          </table>
+          <div class="doc-warn">⚕️ Attendre impérativement la visite post-natale (6 semaines) et l'accord du médecin ou sage-femme avant toute reprise sportive structurée. En cas de diastase des grands droits, consulter une kiné spécialisée périnée avant tout gainage.</div>
+        </div>
+
+        <div class="doc-card">
+          <h3>📚 Sources et références</h3>
+          <table class="doc-table">
+            <thead><tr><th>Source</th><th>Document</th></tr></thead>
+            <tbody>
+              <tr><td>ACOG</td><td>Committee Opinion No. 804 — Physical Activity and Exercise During Pregnancy and the Postpartum Period, 2020</td></tr>
+              <tr><td>HAS</td><td>Prescription d'activité physique et sportive — Grossesse et post-partum, juillet 2019</td></tr>
+              <tr><td>CNSF</td><td>Recommandations de pratique clinique — Activité physique périnatale, mars 2021</td></tr>
+              <tr><td>SOGC/CSEP</td><td>Canadian Guideline for Physical Activity Throughout Pregnancy, British Journal of Sports Medicine 2018;52:1339-46</td></tr>
+              <tr><td>ANSES</td><td>Actualisation des repères du PNNS — Révisions des repères relatifs à l'activité physique et à la sédentarité, 2016</td></tr>
+              <tr><td>Ameli.fr</td><td>Grossesse et sport — recommandations pratiques</td></tr>
+              <tr><td>NaîtreetGrandir.ca</td><td>L'activité physique pendant la grossesse</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div><!-- /doc-grossesse -->
     </div><!-- /doc-content -->
   </div><!-- /doc-layout -->
 </div>
