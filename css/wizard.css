@@ -1,0 +1,151 @@
+/* ══════════════════════════════════════════════
+   WIZARD & PROGRAMMES
+   ══════════════════════════════════════════════ */
+
+/* ── Views ── */
+.prog-view{display:none}
+.prog-view.active-view{display:block}
+
+/* ── Header ── */
+.wiz-header{margin-bottom:20px}
+.wiz-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.wiz-header-title{font-size:18px;font-weight:600;letter-spacing:-.02em;margin-bottom:2px}
+.wiz-header-sub{font-size:12px;color:var(--text3)}
+.wiz-show-list-btn{font-size:12px;font-weight:500;color:var(--blue);background:none;border:none;cursor:pointer;white-space:nowrap;padding:4px 0}
+
+/* ── Progress bar ── */
+.wiz-progress{display:flex;align-items:center;gap:6px;margin-bottom:24px}
+.wiz-dot{width:8px;height:8px;border-radius:50%;background:var(--border-md);transition:background .2s}
+.wiz-dot.active{background:var(--text);transform:scale(1.3)}
+.wiz-dot.done{background:var(--green)}
+.wiz-step-label{font-size:11px;color:var(--text3);margin-left:6px;font-family:var(--mono)}
+
+/* ── Step body ── */
+.wiz-body{min-height:280px}
+.wiz-title{font-size:17px;font-weight:600;letter-spacing:-.02em;margin-bottom:6px}
+.wiz-subtitle{font-size:12px;color:var(--text3);margin-bottom:16px}
+
+/* ── Cards (step 1 & 2) ── */
+.wiz-cards{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.wiz-card{display:flex;flex-direction:column;gap:3px;padding:12px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;transition:all .15s}
+.wiz-card:hover{border-color:var(--border-md);background:var(--surface2)}
+.wiz-card.selected{border-color:var(--text);background:var(--surface)}
+.wiz-card-icon{font-size:20px;margin-bottom:2px}
+.wiz-card-label{font-size:14px;font-weight:600;color:var(--text)}
+.wiz-card-desc{font-size:11px;color:var(--text3);line-height:1.4}
+
+/* ── Fields ── */
+.wiz-field{margin-bottom:20px}
+.wiz-label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:8px}
+
+/* ── Chips ── */
+.wiz-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.wiz-chip{font-family:var(--sans);font-size:12px;font-weight:500;padding:6px 14px;border:1.5px solid var(--border-md);border-radius:20px;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.wiz-chip:hover{border-color:var(--text);color:var(--text)}
+.wiz-chip.selected{background:var(--text);border-color:var(--text);color:#fff}
+
+/* ── Matériel grid ── */
+.wiz-materiel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+@media(max-width:480px){.wiz-materiel-grid{grid-template-columns:repeat(2,1fr)}}
+.wiz-materiel-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;transition:all .15s;text-align:center}
+.wiz-materiel-item:hover{border-color:var(--border-md)}
+.wiz-materiel-item.selected{border-color:var(--text);background:var(--surface2)}
+.wiz-mat-icon{font-size:22px}
+.wiz-mat-label{font-size:11px;font-weight:500;color:var(--text);line-height:1.3}
+
+/* ── Exercices search ── */
+.wiz-search-row{margin-bottom:6px}
+.wiz-search-input{width:100%;font-family:var(--sans);font-size:13px;padding:8px 12px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);outline:none}
+.wiz-search-input:focus{border-color:var(--blue)}
+.wiz-ex-results{display:flex;flex-direction:column;gap:2px;max-height:160px;overflow-y:auto;margin-bottom:8px}
+.wiz-ex-result{padding:7px 12px;font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;color:var(--text)}
+.wiz-ex-result:hover{background:var(--surface2)}
+.wiz-ex-empty{font-size:11px;color:var(--text3);padding:6px 0}
+.wiz-ex-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.wiz-ex-tag{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:3px 10px;background:var(--blue-bg);color:var(--blue);border-radius:20px}
+.wiz-ex-tag.excluded{background:var(--red-bg);color:var(--red)}
+.wiz-ex-remove{background:none;border:none;cursor:pointer;font-size:11px;color:inherit;padding:0;line-height:1}
+
+/* ── Durée recommandée ── */
+.wiz-recommend{font-size:12px;color:var(--text2);background:var(--amber-bg);border-radius:var(--radius);padding:8px 12px;margin-top:8px;line-height:1.5}
+
+/* ── Compet fields ── */
+.wiz-compet-fields{background:var(--surface2);border-radius:var(--radius-lg);padding:12px 14px;margin-top:8px}
+.wiz-date-input,.wiz-text-input{width:100%;font-family:var(--sans);font-size:13px;padding:8px 12px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);outline:none;margin-top:6px}
+.wiz-date-input:focus,.wiz-text-input:focus{border-color:var(--blue)}
+
+/* ── Récap ── */
+.wiz-recap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:16px}
+.wiz-recap-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;gap:12px}
+.wiz-recap-row:last-child{border-bottom:none}
+.wiz-recap-row span{color:var(--text3);font-size:12px;flex-shrink:0}
+.wiz-recap-row strong{color:var(--text);text-align:right}
+
+/* ── ORM inputs ── */
+.wiz-orm-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.wiz-orm-row{display:flex;align-items:center;gap:12px}
+.wiz-orm-row label{font-size:12px;color:var(--text2);min-width:100px}
+.wiz-orm-input{font-family:var(--mono);font-size:14px;width:90px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);outline:none;text-align:center}
+.wiz-orm-input:focus{border-color:var(--blue)}
+
+/* ── Note ── */
+.wiz-note{font-size:11px;color:var(--text3);background:var(--surface2);border-radius:var(--radius);padding:7px 10px;line-height:1.5}
+
+/* ── Navigation ── */
+.wiz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)}
+.wiz-btn-back{font-family:var(--sans);font-size:13px;font-weight:500;padding:9px 18px;border:1px solid var(--border-md);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer}
+.wiz-btn-next{font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 24px;border:none;border-radius:var(--radius);background:var(--text);color:#fff;cursor:pointer;transition:opacity .15s}
+.wiz-btn-next:hover{opacity:.85}
+.wiz-btn-generate{font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 24px;border:none;border-radius:var(--radius);background:var(--green);color:#fff;cursor:pointer;transition:opacity .15s}
+.wiz-btn-generate:hover{opacity:.85}
+.wiz-error{font-size:12px;color:var(--red);background:var(--red-bg);border-radius:var(--radius);padding:7px 12px;margin-bottom:8px;text-align:center}
+
+/* ── Programs list ── */
+.programs-empty{text-align:center;padding:48px 16px;color:var(--text3)}
+.programs-empty-icon{font-size:40px;margin-bottom:12px}
+.programs-empty-text{font-size:14px;margin-bottom:16px}
+.programs-grid{display:flex;flex-direction:column;gap:10px}
+.program-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;cursor:pointer;transition:border-color .15s}
+.program-card:hover{border-color:var(--border-md)}
+.program-card.active-program{border-color:var(--green);background:#f0fbf5}
+.prog-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.prog-card-name{font-size:14px;font-weight:600;color:var(--text)}
+.prog-card-active-badge{font-size:10px;font-weight:600;background:var(--green);color:#fff;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.prog-card-meta{display:flex;gap:8px;flex-wrap:wrap}
+.prog-meta-tag{font-size:11px;background:var(--surface2);border-radius:8px;padding:2px 8px;color:var(--text2)}
+.prog-card-actions{display:flex;gap:8px;margin-top:10px}
+.prog-action-btn{font-size:12px;font-weight:500;padding:5px 14px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--border-md);background:transparent;color:var(--text);font-family:var(--sans)}
+.prog-action-btn.primary{background:var(--text);color:#fff;border-color:var(--text)}
+.prog-action-btn.danger{color:var(--red);border-color:rgba(156,34,34,.3)}
+
+/* ── Active program detail ── */
+.prog-week-nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:none}
+.prog-week-nav::-webkit-scrollbar{display:none}
+.prog-week-btn{font-size:11px;font-weight:500;padding:4px 10px;border:1px solid var(--border-md);border-radius:20px;background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:var(--sans)}
+.prog-week-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
+.prog-week-btn.deload{border-color:var(--blue);color:var(--blue)}
+.prog-week-btn.taper{border-color:var(--amber);color:var(--amber)}
+.prog-phase-badge{display:inline-block;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;margin-bottom:12px}
+.prog-day-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:12px;overflow:hidden}
+.prog-day-header{padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.prog-day-name{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)}
+.prog-day-split{font-size:11px;color:var(--text3)}
+.prog-ex-list{padding:8px 14px}
+.prog-ex-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.prog-ex-item:last-child{border-bottom:none}
+.prog-ex-item-name{font-weight:500;color:var(--text);flex:1}
+.prog-ex-item-scheme{font-family:var(--mono);font-size:11px;color:var(--text2);white-space:nowrap}
+.prog-ex-item-kg{font-family:var(--mono);font-size:11px;color:var(--blue);white-space:nowrap}
+.prog-rpe-target{font-size:11px;color:var(--text3);background:var(--surface2);border-radius:var(--radius);padding:5px 10px;margin-bottom:10px;display:inline-block}
+
+/* ── Age summary ── */
+.wiz-age-summary{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-top:12px}
+.wiz-age-summary-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px}
+.wiz-age-row{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;gap:12px}
+.wiz-age-row:last-child{border-bottom:none}
+.wiz-age-row span{color:var(--text3)}
+.wiz-age-row strong{color:var(--text);font-family:var(--mono);font-size:11px}
+
+/* ── Mixte day badge ── */
+.wiz-day-focus{display:inline-flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.wiz-focus-tag{font-size:10px;font-weight:500;padding:1px 7px;border-radius:8px;background:var(--surface2);color:var(--text2)}

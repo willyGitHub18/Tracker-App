@@ -1,109 +1,424 @@
 /**
- * tracker.js — Tracker UI: saisie, progression, historique
+ * tracker.js — Generic tracker
+ * Works with any program structure (ATHX fixed or wizard-generated).
+ * Falls back to legacy ATHX mode if no active program.
  */
 
-import { esc }                       from './security.js';
-import { EXERCISES, PHASES, PHASE_LABELS, PHASE_STYLE } from './data.js';
-import { getRecord, setRecord, getExStatus, setExStatus, normRecord, bestKg, getLatestWeek, getVacancesList, addVacances, removeVacances, clearAllVacances, repriseCoeff, vacancesStatus, ACTIVITE_LABELS } from './store.js';
+import { esc }            from './security.js';
+import { EXERCISES, PHASES, PHASE_LABELS, PHASE_STYLE, MUSCLE_MAP } from './data.js';
+import { getRecord, setRecord, getExStatus, setExStatus,
+         normRecord, bestKg, getLatestWeek,
+         getVacancesList, addVacances, removeVacances, clearAllVacances,
+         repriseCoeff, vacancesStatus, ACTIVITE_LABELS } from './store.js';
 import { parseSets, parseReps, calcAdj, getNextPlan } from './progression.js';
-import { repaintMuscles }            from './musculaire.js';
+import { repaintMuscles }  from './musculaire.js';
+import { renderGrossesseProgram } from './grossesse.js';
+import { getActiveProgram, getAllActivePrograms, getActiveProgramById,
+         getProgRecord, setProgRecord,
+         getProgExStatus, setProgExStatus, getProgLatestWeek } from './programs.js';
 
-// ── Week selector ──────────────────────────────────────────────────────────
+// ── Week selector ─────────────────────────────────────────────────────────────
+
+// Currently displayed program (may differ from primary active)
+let _currentProgId = null;
+
+export function getCurrentProgram() {
+  if(_currentProgId) {
+    const p = getActiveProgramById(_currentProgId);
+    if(p) return p;
+  }
+  return getActiveProgram();
+}
+
+export function setCurrentProgram(id) {
+  _currentProgId = id;
+  initWeekSel();
+  renderSaisie();
+}
 
 export function initWeekSel() {
-  const sel = document.getElementById('weekSel');
+  const prog  = getCurrentProgram();
+  const total = prog ? prog.totalWeeks : 17;
+  const sel   = document.getElementById('weekSel');
   if(!sel) return;
+
   sel.innerHTML = '';
-  for(let w = 1; w <= 17; w++) {
+  for(let w = 1; w <= total; w++) {
     const o = document.createElement('option');
     o.value = w;
     o.textContent = `Semaine ${w}`;
     sel.appendChild(o);
   }
-  sel.value = getLatestWeek(EXERCISES);
+
+  // Latest week with data
+  const latest = prog
+    ? getProgLatestWeek(prog.id, prog)
+    : getLatestWeek(EXERCISES);
+  sel.value = Math.min(latest, total);
 }
 
-// ── Saisie ─────────────────────────────────────────────────────────────────
+// ── Main render ───────────────────────────────────────────────────────────────
 
 export function renderSaisie() {
-  const week = parseInt(document.getElementById('weekSel').value, 10);
-  const ph   = PHASES[week - 1];
-  const badge = document.getElementById('phaseBadge');
-  badge.textContent       = PHASE_LABELS[ph];
-  badge.style.background  = PHASE_STYLE[ph].bg;
-  badge.style.color       = PHASE_STYLE[ph].color;
+  const prog = getCurrentProgram();
+  if(prog) {
+    _renderProgSaisie(prog);
+  } else {
+    _renderLegacySaisie();
+  }
+}
 
-  const days = ['Mercredi', 'Jeudi'];
-  let html = '';
+// ── Generic program tracker ───────────────────────────────────────────────────
 
-  /* ── Vacances / Congés — liste de périodes ── */
-  const _rc   = repriseCoeff();
-  const _stat = vacancesStatus();
-  const _list = getVacancesList();
-  const _fmt  = d => d ? new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
-  const _dur  = (d1,d2) => Math.max(0, Math.round((new Date(d2)-new Date(d1))/86400000));
-
-  if(_stat?.reprise) {
-    // Calcul des charges de reprise par exercice
-    const recoRows = EXERCISES
-      .filter(ex => ['press','squat','deadlift'].includes(ex.id))
-      .map(ex => {
-        let lastKg = null;
-        for(let w = 17; w >= 1; w--) {
-          const bk = bestKg(normRecord(getRecord(ex.id, w)));
-          if(bk) { lastKg = bk; break; }
-        }
-        if(!lastKg) return '';
-        const reprise = Math.round(lastKg * _stat.coeff / 1.25) * 1.25;
-        const delta   = Math.round((reprise - lastKg) * 10) / 10;
-        return `<div class="reprise-ex-row">
-          <span class="reprise-ex-name">${esc(ex.name)}</span>
-          <span class="reprise-ex-val">${lastKg} ${ex.unit}</span>
-          <span class="reprise-ex-arrow">→</span>
-          <span class="reprise-ex-rec">${reprise} ${ex.unit}</span>
-          <span class="reprise-ex-delta" style="color:var(--amber)">${delta} kg</span>
-        </div>`;
-      }).join('');
-
-    html += `<div class="reprise-panel">
-      <div class="reprise-panel-title">⚡ ${esc(_stat.label)}</div>
-      <div class="reprise-panel-coeff">
-        Coefficient : <strong>${Math.round(_stat.coeff * 100)}%</strong>
-        ${_stat.actBonus > 0 ? `<span class="reprise-bonus">+${_stat.actBonus}% activité</span>` : ''}
-        · RPE cible : <strong>${_stat.rpeTarget}</strong>
-      </div>
-      ${recoRows ? `<div class="reprise-ex-list">${recoRows}</div>` : ''}
-      <div class="reprise-note">Les recommandations S+1 sont automatiquement ajustées dans la saisie.</div>
-    </div>`;
-  } else if(_stat?.en_cours) {
-    html += `<div class="reprise-banner" style="background:#f0e8fc;border-color:#c0a0e8;color:#5a0090">🏖 Vacances en cours — retour dans ${_stat.joursRestants} jour${_stat.joursRestants > 1 ? 's' : ''}</div>`;
+function _renderProgSaisie(prog) {
+  // Grossesse programs have their own complete renderer
+  if(prog.subtype === 'grossesse') {
+    const container = document.getElementById('saisieContent');
+    container.innerHTML = _progSelectorUI() + _vacancesUI();
+    const inner = document.createElement('div');
+    container.appendChild(inner);
+    renderGrossesseProgram(prog, 1, inner);
+    return;
   }
 
-  html += `<div class="vacances-setup">
-    <div class="vacances-setup-title">🏖 Vacances / Congés</div>
-    ${_list.length ? `<div class="vac-list">${_list.map((v,i)=>
-      `<div class="vac-list-item">
-        <span class="vac-list-dates">${_fmt(v.debut)} → ${_fmt(v.fin)}</span>
-        <span class="vac-list-dur">${_dur(v.debut,v.fin)}j</span>
-        <span class="vac-list-act">${(ACTIVITE_LABELS[v.activite]||ACTIVITE_LABELS.sedentaire).label.split(' ')[0]}</span>
-        <button class="vac-remove-btn" onclick="window._removeVacances(${i})">✕</button>
-      </div>`
-    ).join('')}</div>` : ''}
-    <div class="vacances-row">
-      <label>Début</label>
-      <input type="date" id="vacDebut">
-      <label>Fin</label>
-      <input type="date" id="vacFin">
-    </div>
-    <div class="vacances-row" style="margin-top:6px">
-      <label>Activité</label>
-      <select id="vacActivite" style="font-size:12px;padding:5px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text)">
-        ${Object.entries(ACTIVITE_LABELS).map(([k,v])=>`<option value="${k}">${v.label}${v.bonus>0?' (+'+Math.round(v.bonus*100)+'%)':''}</option>`).join('')}
-      </select>
-      <button class="save-btn" style="padding:5px 14px;font-size:12px" onclick="window._saveVacances()">+ Ajouter</button>
-      ${_list.length ? `<button class="vac-clear-btn" onclick="window._clearVacances()">Tout effacer</button>` : ''}
-    </div>
-  </div>`;
+  const week    = parseInt(document.getElementById('weekSel').value, 10);
+  const semaine = prog.semaines?.[week - 1];
+  if(!semaine) return;
+
+  const badge = document.getElementById('phaseBadge');
+  const phaseColors = {
+    'Bloc 1 — Base':        { bg:'#e8f0fc', color:'#1a5fb4' },
+    'Bloc 2 — Intensité':   { bg:'#fdf0d8', color:'#7c4a00' },
+    'Bloc 3 — Simulation':  { bg:'#e0f4eb', color:'#1b6b45' },
+    'Base':                 { bg:'#e8f0fc', color:'#1a5fb4' },
+    'Construction':         { bg:'#fdf0d8', color:'#7c4a00' },
+    'Intensité':            { bg:'#fdeaea', color:'#9c2222' },
+    'Pic':                  { bg:'#e0f4eb', color:'#1b6b45' },
+    'Taper':                { bg:'#f1efe8', color:'#444441' },
+    'Deload':               { bg:'#e8e6e0', color:'#444441' },
+  };
+  const pStyle = phaseColors[semaine.phase] || { bg:'var(--surface2)', color:'var(--text2)' };
+  badge.textContent      = semaine.phase;
+  badge.style.background = pStyle.bg;
+  badge.style.color      = pStyle.color;
+
+  let html = _progSelectorUI() + _vacancesUI();
+
+  // Deload / taper info banner
+  if(semaine.isDeload) {
+    html += `<div class="day-status-banner day-status-hyrox">
+      🔵 Semaine de Deload — charges réduites (~60%). Aucune analyse de progression.
+      Saisie normale possible pour le suivi musculaire.
+    </div>`;
+  } else if(semaine.isTaper) {
+    html += `<div class="day-status-banner day-status-hyrox">
+      📉 Semaine de Taper — volume réduit avant compétition. RPE cible : ${semaine.rpeTarget}.
+    </div>`;
+  }
+
+  semaine.jours.forEach(day => {
+    html += `<div class="day-card">
+      <div class="day-header">
+        <span class="day-name">${day.nom}</span>
+        ${day.split && day.split !== day.nom ? `<span style="font-size:11px;color:var(--text3)">${day.split}</span>` : ''}
+      </div>
+      <div class="ex-wrap">`;
+
+    day.exercices.forEach(ex => {
+      const exStatus = getProgExStatus(prog.id, ex.id, week);
+      const rec      = normRecord(getProgRecord(prog.id, ex.id, week));
+      const plan     = ex.kgPlan;
+      const scheme   = ex.scheme;
+      const nSets    = _parseSetsGeneric(scheme);
+      const planReps = parseReps(scheme);
+
+      const btnN = exStatus === 'normal'  ? ' active-normal'  : '';
+      const btnH = exStatus === 'hyrox'   ? ' active-hyrox'   : '';
+      const btnD = exStatus === 'deload'  ? ' active-deload'  : '';
+      const btnS = exStatus === 'skipped' ? ' active-skipped' : '';
+
+      html += `<div class="ex-block">
+        <div class="ex-top">
+          <span class="ex-name-t">${esc(ex.nom)}</span>
+          <span class="ex-scheme">${esc(scheme || '—')}</span>
+          <span class="ex-status-btns">
+            <button class="session-status-btn${btnN}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
+            <button class="session-status-btn${btnH}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-compét</button>
+            <button class="session-status-btn${btnD}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
+            <button class="session-status-btn${btnS}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+          </span>
+        </div>`;
+
+      if(plan) {
+        html += `<div class="ex-plan-txt">Plan : <strong>${plan} ${ex.unit || 'kg'}</strong>${planReps ? ` × <strong>${planReps} reps</strong>` : ''} <span class="ex-ref">${esc(ex.refText || '')}</span></div>`;
+      }
+
+      // Deload: show grid but with reduced plan hint
+      const showGrid = exStatus !== 'skipped';
+      const deloadKg = plan ? Math.round(plan * 0.60 / 1.25) * 1.25 : null;
+
+      if(exStatus === 'deload' && deloadKg) {
+        html += `<div class="ex-plan-txt" style="color:var(--blue)">🔵 Charge deload suggérée : <strong>${deloadKg} ${ex.unit || 'kg'}</strong> (~60%)</div>`;
+      }
+
+      // Analysis (skip for deload)
+      const bk = bestKg(rec);
+      if(bk != null && exStatus !== 'deload' && exStatus !== 'skipped') {
+        const adj = _calcAdjGeneric(prog, ex, week, semaine);
+        if(adj?.signals?.length) {
+          const cls = adj.type === 'ok' ? 'adj-ok'
+            : adj.type === 'ahead' ? 'adj-ahead'
+            : adj.type === 'behind' ? 'adj-behind' : 'adj-slight';
+          html += `<div class="adj-box ${cls}" style="padding:8px 12px">
+            ${adj.signals.map(s => {
+              const ic  = s.type==='good'?'✓ ':s.type==='warn'?'⚠ ':s.type==='danger'?'✗ ':'· ';
+              const col = s.type==='good'?'var(--green)':s.type==='warn'?'var(--amber)':s.type==='danger'?'var(--red)':'var(--text2)';
+              return `<div style="display:flex;gap:6px;margin-bottom:2px"><span style="color:${col};font-weight:600;flex-shrink:0">${ic}</span><span>${esc(s.text)}</span></div>`;
+            }).join('')}
+          </div>`;
+        }
+
+        // S+1 recommendation
+        const nxt = _getNextPlanGeneric(prog, ex, week, semaine);
+        if(nxt && !semaine.isDeload) {
+          const nextSem     = prog.semaines?.[week];
+          const nextPlanKg  = nextSem?.jours?.flatMap(d=>d.exercices).find(e=>e.id===ex.id)?.kgPlan;
+          const delta       = nextPlanKg ? Math.round((nxt.kg - nextPlanKg)*10)/10 : null;
+          const deltaStr    = delta != null ? (delta > 0 ? `+${delta} vs plan` : delta < 0 ? `${delta} vs plan` : 'conforme') : '';
+          const deltaCls    = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--red)' : 'var(--text2)';
+          const outcomeClass = nxt.outcome === 'success' ? 'next-rec-success'
+            : nxt.outcome === 'deload' || nxt.outcome === 'vacances' ? 'next-rec-back'
+            : 'next-rec-hold';
+          html += `<div class="next-rec-block ${outcomeClass}">
+            <div class="rec-line">S${week+1} recommandé : <strong>${nxt.kg} ${ex.unit||'kg'}</strong>
+              ${delta != null ? `<span style="color:${deltaCls};font-size:11px;margin-left:6px">(${deltaStr})</span>` : ''}
+            </div>
+            <div class="reason">${esc(nxt.rule)}</div>
+          </div>`;
+        }
+      }
+
+      // Grossesse: no kg grid, show desc + video + completion checkbox
+      if(prog.subtype === 'grossesse') {
+        if(!ex.supprime) {
+          html += `<div class="grossesse-ex-body">`;
+          if(ex.desc) html += `<div class="grossesse-ex-desc">${esc(ex.desc)}</div>`;
+          if(ex.note) html += `<div class="grossesse-ex-note">⚠️ ${esc(ex.note)}</div>`;
+          if(ex.ballon) html += `<span class="ballon-badge">🎈 Ballon</span>`;
+          if(ex.video) html += `<a class="grossesse-video-btn" href="https://www.youtube.com/watch?v=${esc(ex.video)}" target="_blank" rel="noopener">▶ Voir la démonstration</a>`;
+          const done = getProgRecord(prog.id, ex.id, week)?.done;
+          html += `<label class="grossesse-check"><input type="checkbox" ${done?'checked':''} onchange="window._markGrossesseDone('${prog.id}','${ex.id}',${week},this.checked)"> Exercice réalisé</label>`;
+          html += `</div>`;
+        } else {
+          html += `<div class="grossesse-supprime">⛔ ${esc(ex.supprime_msg||'Exercice suspendu ce mois.')}</div>`;
+        }
+        html += '</div>'; // ex-block
+        return; // skip normal grid
+      }
+
+      // Sets grid (show for all statuses except skipped)
+      if(showGrid) {
+        const placeholder = exStatus === 'deload' && deloadKg ? deloadKg : (plan || '');
+        html += `<table class="sets-table">
+          <thead><tr><th>Série</th><th>Charge (${ex.unit||'kg'})</th><th>Reps</th><th>RPE</th><th></th></tr></thead>
+          <tbody>`;
+        for(let s = 0; s < Math.max(nSets, 3); s++) {
+          const sr  = rec?.sets?.[s] || {};
+          const chk = sr.kg && sr.reps ? '✓' : '';
+          html += `<tr>
+            <td class="set-num">S${s+1}</td>
+            <td><input class="set-inp" type="number" id="pkg_${ex.id}_${s}" step="1.25" min="0"
+                value="${sr.kg||''}" placeholder="${placeholder}" data-ex="${ex.id}" data-idx="${s}" data-nsets="${Math.max(nSets,3)}"></td>
+            <td><input class="set-inp reps-inp" type="number" id="preps_${ex.id}_${s}"
+                min="0" max="30" step="1" value="${sr.reps||''}" placeholder="${planReps||'—'}"></td>
+            <td><select class="set-rpe" id="prpe_${ex.id}_${s}">
+              <option value="">—</option>${_rpeOptions(sr.rpe)}
+            </select></td>
+            <td class="set-status" style="color:${chk?'var(--green)':'var(--border)'}">${chk}</td>
+          </tr>`;
+        }
+        html += '</tbody></table>';
+
+        if(rec?.sets?.some(s=>s?.kg)) {
+          const done   = (rec.sets||[]).filter(s=>s?.reps);
+          const avgRpe = done.length ? Math.round(done.reduce((a,s)=>a+(parseFloat(s.rpe)||0),0)/done.length*10)/10 : null;
+          html += `<div class="sets-summary"><strong>${done.length}</strong> série${done.length>1?'s':''} · ${avgRpe?`RPE moy. <strong>${avgRpe}</strong> · `:''}Meilleure : <strong>${bestKg(rec)} ${ex.unit||'kg'}</strong></div>`;
+        }
+      }
+
+      html += '</div>'; // ex-block
+    });
+
+    html += `</div></div>
+      <div class="save-row">
+        <button class="save-btn" data-prog-day="${day.nom}" data-prog-week="${week}">Enregistrer ${day.nom}</button>
+        <span class="save-ok" id="pok_${day.nom}">&#x2713; Enregistré</span>
+      </div>`;
+  });
+
+  document.getElementById('saisieContent').innerHTML = html;
+  _bindProgSaisieEvents(prog, week);
+}
+
+function _bindProgSaisieEvents(prog, week) {
+  const content = document.getElementById('saisieContent');
+
+  // Status buttons
+  content.addEventListener('click', e => {
+    const btn = e.target.closest('[data-status][data-progex]');
+    if(!btn) return;
+    const { progex, ex, status } = btn.dataset;
+    setProgExStatus(progex, ex, parseInt(btn.dataset.week), status);
+    renderSaisie();
+  }, { once: true });
+
+  // Auto-fill
+  content.addEventListener('input', e => {
+    const inp = e.target.closest('.set-inp[data-idx="0"]');
+    if(!inp) return;
+    const { ex, nsets } = inp.dataset;
+    for(let i = 1; i < parseInt(nsets); i++) {
+      const el = document.getElementById(`pkg_${ex}_${i}`);
+      if(el && !el.value) el.value = inp.value;
+    }
+  });
+
+  // Save buttons
+  content.addEventListener('click', e => {
+    const btn = e.target.closest('[data-prog-day]');
+    if(!btn) return;
+    _saveProgSaisie(prog, parseInt(btn.dataset.progWeek), btn.dataset.progDay);
+  });
+
+  // Vacances
+  _bindVacancesEvents();
+}
+
+function _saveProgSaisie(prog, week, dayName) {
+  const semaine = prog.semaines?.[week - 1];
+  if(!semaine) return;
+  const day = semaine.jours.find(d => d.nom === dayName);
+  if(!day) return;
+
+  day.exercices.forEach(ex => {
+    const nSets = Math.max(_parseSetsGeneric(ex.scheme), 3);
+    const sets  = [];
+    let anyData = false;
+
+    for(let s = 0; s < nSets; s++) {
+      const kg   = parseFloat(document.getElementById(`pkg_${ex.id}_${s}`)?.value) || null;
+      const reps = parseInt(document.getElementById(`preps_${ex.id}_${s}`)?.value, 10) || null;
+      const rpe  = document.getElementById(`prpe_${ex.id}_${s}`)?.value || '';
+      sets.push({ kg, reps, rpe });
+      if(kg || reps) anyData = true;
+    }
+    if(!anyData) return;
+
+    const bk     = Math.max(...sets.map(s=>s.kg||0).filter(v=>v>0)) || null;
+    const filled = sets.find(s=>s.rpe);
+    setProgRecord(prog.id, ex.id, week, {
+      sets, kg: bk, rpe: filled?.rpe||'', ts: Date.now(),
+      sessionStatus: getProgExStatus(prog.id, ex.id, week),
+    });
+  });
+
+  const ok = document.getElementById(`pok_${dayName}`);
+  if(ok) { ok.style.display='inline'; setTimeout(()=>ok.style.display='none', 2200); }
+  renderSaisie();
+  repaintMuscles();
+}
+
+// ── Generic analysis helpers ──────────────────────────────────────────────────
+
+function _calcAdjGeneric(prog, ex, week, semaine) {
+  const rec = normRecord(getProgRecord(prog.id, ex.id, week));
+  if(!rec?.sets?.some(s=>s?.kg)) return null;
+
+  const planKg   = ex.kgPlan;
+  const scheme   = ex.scheme;
+  const planReps = parseReps(scheme) || 5;
+  const nSets    = _parseSetsGeneric(scheme) || 4;
+  const status   = getProgExStatus(prog.id, ex.id, week);
+  if(status === 'skipped') return { type:'skipped', signals:[], skipped:true };
+  if(status === 'deload')  return { type:'deload', signals:[{type:'neutral',text:'Séance deload — aucune analyse.'}], deload:true };
+
+  const sets = rec.sets.filter(s=>s?.kg);
+  const done = sets.filter(s=>s?.reps&&s.reps>0);
+  const bk   = Math.max(...sets.map(s=>s.kg||0));
+  const avgRpe  = done.length ? done.reduce((a,s)=>a+(parseFloat(s.rpe)||7),0)/done.length : null;
+  const avgReps = done.length ? done.reduce((a,s)=>a+(s.reps||0),0)/done.length : null;
+
+  const signals = [];
+  if(avgRpe != null) {
+    if(avgRpe >= 9.5) signals.push({type:'danger', text:`RPE ${Math.round(avgRpe*10)/10} — intensité maximale.`});
+    else if(avgRpe >= 9) signals.push({type:'warn', text:`RPE ${Math.round(avgRpe*10)/10} — proche limite.`});
+    else if(avgRpe <= 7) signals.push({type:'good', text:`RPE ${Math.round(avgRpe*10)/10} — zone optimale.`});
+    else signals.push({type:'neutral', text:`RPE ${Math.round(avgRpe*10)/10} — bon calibrage.`});
+  }
+  if(avgReps != null && planReps > 0) {
+    const ratio = avgReps / planReps;
+    if(ratio < 0.8) signals.push({type:'danger', text:`${Math.round(avgReps*10)/10} reps/série — insuffisant.`});
+    else if(ratio >= 0.95) signals.push({type:'good', text:`${Math.round(avgReps*10)/10} reps/série ✓`});
+    else signals.push({type:'warn', text:`${Math.round(avgReps*10)/10} reps/série (plan: ${planReps}).`});
+  }
+  if(planKg && Math.abs(bk - planKg) >= 1.25) {
+    const d = Math.round((bk-planKg)*10)/10;
+    signals.push({type: d>0?'good':'warn', text:`${d>0?'+':''}${d} kg vs plan.`});
+  }
+
+  const hasDanger = signals.some(s=>s.type==='danger');
+  const hasWarn   = signals.some(s=>s.type==='warn');
+  return { type: hasDanger?'behind':hasWarn?'slight_behind':'ahead', signals, bk, avgRpe, avgReps };
+}
+
+function _getNextPlanGeneric(prog, ex, week, semaine) {
+  if(week >= (prog.totalWeeks || 17)) return null;
+  const rec = normRecord(getProgRecord(prog.id, ex.id, week));
+  if(!rec?.sets?.some(s=>s?.kg)) return null;
+
+  const rc = repriseCoeff();
+  if(rc) {
+    const bk = Math.max(...(rec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0));
+    const repriseKg = Math.round(bk * rc.coeff / 1.25) * 1.25;
+    return { kg:repriseKg, rule:`${rc.label} · ${Math.round(rc.coeff*100)}% · RPE ${rc.rpeTarget}`, outcome:'vacances' };
+  }
+
+  const status = getProgExStatus(prog.id, ex.id, week);
+  const bk     = Math.max(...(rec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0));
+  const p      = ex.id === 'squat' || ex.id === 'deadlift' ? 2.5 : 1.25;
+
+  if(status === 'skipped') return { kg:bk, rule:'Séance sautée — même charge.', outcome:'skipped' };
+  if(status === 'deload')  return { kg: ex.kgPlan || bk, rule:'Retour au plan S+1.', outcome:'deload' };
+
+  const avgRpe  = (() => {
+    const done = (rec.sets||[]).filter(s=>s?.reps);
+    return done.length ? done.reduce((a,s)=>a+(parseFloat(s.rpe)||7),0)/done.length : null;
+  })();
+  const avgReps = (() => {
+    const done = (rec.sets||[]).filter(s=>s?.reps);
+    return done.length ? done.reduce((a,s)=>a+(s.reps||0),0)/done.length : null;
+  })();
+  const planReps = parseReps(ex.scheme) || 5;
+
+  if(avgRpe != null && avgRpe > 9.5) return { kg:Math.max(bk-p,p), rule:'RPE > 9.5 — recul d\'un palier.', outcome:'overload' };
+  if(avgReps != null && planReps > 0 && avgReps/planReps < 0.8) return { kg:Math.max(bk-2*p,p), rule:'Reps insuffisantes — recul 2 paliers.', outcome:'crush' };
+  if(avgRpe != null && avgRpe <= 8.5 && avgReps != null && avgReps/planReps >= 0.95) return { kg:bk+p, rule:'Toutes séries validées ✓ — progression d\'un palier.', outcome:'success' };
+  if(avgRpe != null && avgRpe > 8.5) return { kg:bk, rule:'RPE élevé — consolide à la même charge.', outcome:'high_rpe' };
+  return { kg:bk, rule:'Séries incomplètes — même charge.', outcome:'partial' };
+}
+
+// ── Legacy ATHX tracker (unchanged logic) ────────────────────────────────────
+
+function _renderLegacySaisie() {
+  const week  = parseInt(document.getElementById('weekSel').value, 10);
+  const ph    = PHASES[week - 1];
+  const badge = document.getElementById('phaseBadge');
+  badge.textContent      = PHASE_LABELS[ph];
+  badge.style.background = PHASE_STYLE[ph].bg;
+  badge.style.color      = PHASE_STYLE[ph].color;
+
+  const days = ['Mercredi', 'Jeudi'];
+  let html = _progSelectorUI() + _vacancesUI();
 
   days.forEach(day => {
     const exs = EXERCISES.filter(e => e.day === day);
@@ -114,17 +429,17 @@ export function renderSaisie() {
       <div class="ex-wrap">`;
 
     exs.forEach(ex => {
-      const plan      = ex.plan[week - 1];
-      const scheme    = ex.repScheme[week - 1];
-      const rec       = normRecord(getRecord(ex.id, week));
-      const nSets     = parseSets(scheme) || 3;
-      const planReps  = parseReps(scheme);
-      const exStatus  = getExStatus(ex.id, week);
+      const plan     = ex.plan[week - 1];
+      const scheme   = ex.repScheme[week - 1];
+      const rec      = normRecord(getRecord(ex.id, week));
+      const nSets    = parseSets(scheme) || 3;
+      const planReps = parseReps(scheme);
+      const exStatus = getExStatus(ex.id, week);
 
-      const btnN = exStatus === 'normal'  ? ' active-normal'  : '';
-      const btnH = exStatus === 'hyrox'   ? ' active-hyrox'   : '';
-      const btnD = exStatus === 'deload'  ? ' active-deload'  : '';
-      const btnS = exStatus === 'skipped' ? ' active-skipped' : '';
+      const btnN = exStatus==='normal' ?' active-normal' :'';
+      const btnH = exStatus==='hyrox'  ?' active-hyrox'  :'';
+      const btnD = exStatus==='deload' ?' active-deload' :'';
+      const btnS = exStatus==='skipped'?' active-skipped':'';
 
       html += `<div class="ex-block">
         <div class="ex-top">
@@ -139,77 +454,84 @@ export function renderSaisie() {
         </div>`;
 
       if(plan) {
-        html += `<div class="ex-plan-txt">Plan : <strong>${plan} ${ex.unit}</strong>${planReps ? ` × <strong>${planReps} reps</strong>` : ''} <span class="ex-ref">${ex.refText}</span></div>`;
+        html += `<div class="ex-plan-txt">Plan : <strong>${plan} ${ex.unit}</strong>${planReps?` × <strong>${planReps} reps</strong>`:''} <span class="ex-ref">${ex.refText}</span></div>`;
 
         const bk = bestKg(rec);
-        if(bk != null || exStatus === 'skipped' || exStatus === 'deload') {
-          const adj = calcAdj(ex, week);
-          if(adj && adj.signals.length) {
-            const cls = adj.type === 'ok' ? 'adj-ok'
-              : adj.type.includes('ahead') ? 'adj-ahead'
-              : (adj.type.includes('behind') && !adj.type.includes('slight')) ? 'adj-behind'
-              : 'adj-slight';
-            const sigHtml = adj.signals.map(s => {
-              const ic  = s.type === 'good' ? '✓ ' : s.type === 'warn' ? '⚠ ' : s.type === 'danger' ? '✗ ' : '· ';
-              const col = s.type === 'good' ? 'var(--green)' : s.type === 'warn' ? 'var(--amber)' : s.type === 'danger' ? 'var(--red)' : 'var(--text2)';
-              return `<div style="display:flex;gap:6px;margin-bottom:2px"><span style="color:${col};font-weight:600;flex-shrink:0">${ic}</span><span>${esc(s.text)}</span></div>`;
-            }).join('');
-            html += `<div class="adj-box ${cls}" style="padding:8px 12px">${sigHtml}</div>`;
-          }
+        const deloadKg = exStatus === 'deload' ? Math.round(plan * 0.60 / 1.25) * 1.25 : null;
 
+        if(exStatus === 'deload') {
+          html += `<div class="ex-plan-txt" style="color:var(--blue)">🔵 Charge deload suggérée : <strong>${deloadKg} ${ex.unit}</strong> (~60%) — saisie normale ci-dessous</div>`;
+        }
+
+        if(bk != null && exStatus !== 'deload') {
+          const adj = calcAdj(ex, week);
+          if(adj?.signals?.length) {
+            const cls = adj.type==='ok'?'adj-ok':adj.type.includes('ahead')?'adj-ahead':(adj.type.includes('behind')&&!adj.type.includes('slight'))?'adj-behind':'adj-slight';
+            html += `<div class="adj-box ${cls}" style="padding:8px 12px">
+              ${adj.signals.map(s=>{
+                const ic  = s.type==='good'?'✓ ':s.type==='warn'?'⚠ ':s.type==='danger'?'✗ ':'· ';
+                const col = s.type==='good'?'var(--green)':s.type==='warn'?'var(--amber)':s.type==='danger'?'var(--red)':'var(--text2)';
+                return `<div style="display:flex;gap:6px;margin-bottom:2px"><span style="color:${col};font-weight:600;flex-shrink:0">${ic}</span><span>${esc(s.text)}</span></div>`;
+              }).join('')}
+            </div>`;
+          }
           if(!adj?.skipped && !adj?.hyrox && !adj?.deload) {
             const nxt = getNextPlan(ex, week);
             if(nxt) {
-              const planNext     = ex.plan[week];
-              const planRepsNext = parseReps(ex.repScheme[week]) || planReps;
-              const delta        = planNext ? Math.round((nxt.kg - planNext) * 10) / 10 : 0;
-              const deltaStr     = delta > 0 ? `+${delta} vs plan` : delta < 0 ? `${delta} vs plan` : 'conforme au plan';
-              const deltaCls     = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--red)' : 'var(--text2)';
-              const rpeTarget    = adj?.avgRpe != null ? (adj.avgRpe > 8.5 ? '≤ 8' : adj.avgRpe < 7 ? '7.5–8.5' : '7–8') : '7–8';
-              const outcomeClass = nxt.outcome === 'success' ? 'next-rec-success' : nxt.outcome === 'high_rpe' || nxt.outcome === 'partial' ? 'next-rec-hold' : 'next-rec-back';
+              const planNext    = ex.plan[week];
+              const planRepsNext= parseReps(ex.repScheme[week]) || planReps;
+              const delta       = planNext ? Math.round((nxt.kg-planNext)*10)/10 : 0;
+              const deltaStr    = delta>0?`+${delta} vs plan`:delta<0?`${delta} vs plan`:'conforme au plan';
+              const deltaCls    = delta>0?'var(--green)':delta<0?'var(--red)':'var(--text2)';
+              const rpeTarget   = adj?.avgRpe!=null?(adj.avgRpe>8.5?'≤ 8':adj.avgRpe<7?'7.5–8.5':'7–8'):'7–8';
+              const outcomeClass= nxt.outcome==='success'?'next-rec-success':nxt.outcome==='high_rpe'||nxt.outcome==='partial'?'next-rec-hold':'next-rec-back';
               html += `<div class="next-rec-block ${outcomeClass}">
-                <div class="rec-line">S${week + 1} recommandé : <strong>${nxt.kg} ${ex.unit}</strong> × <strong>${planRepsNext} reps</strong>
-                  ${planNext ? `<span style="color:${deltaCls};font-size:11px;font-weight:500;margin-left:6px">(${deltaStr})</span>` : ''}
+                <div class="rec-line">S${week+1} recommandé : <strong>${nxt.kg} ${ex.unit}</strong> × <strong>${planRepsNext} reps</strong>
+                  ${planNext?`<span style="color:${deltaCls};font-size:11px;margin-left:6px">(${deltaStr})</span>`:''}
                 </div>
                 <div class="reason">${esc(nxt.rule)}</div>
-                <div class="reason" style="margin-top:2px">RPE cible : <strong>${rpeTarget}</strong>${nxt.plateauCount > 0 ? ` · Plateau : ${nxt.plateauCount}/3 sem.` : ''}</div>
+                <div class="reason" style="margin-top:2px">RPE cible : <strong>${rpeTarget}</strong>${nxt.plateauCount>0?` · Plateau : ${nxt.plateauCount}/3 sem.`:''}</div>
               </div>`;
             }
           }
         }
-
-        // Sets grid
-        if(exStatus !== 'skipped' && exStatus !== 'deload') {
-          html += `<table class="sets-table">
-            <thead><tr><th>Série</th><th>Charge (${ex.unit})</th><th>Reps</th><th>RPE</th><th></th></tr></thead><tbody>`;
-          for(let s = 0; s < nSets; s++) {
-            const sr  = rec?.sets?.[s] || {};
-            const done = sr.kg && sr.reps ? '✓' : '';
-            const doneCls = done ? 'color:var(--green)' : 'color:var(--border)';
-            html += `<tr>
-              <td class="set-num">S${s + 1}</td>
-              <td><input class="set-inp" type="number" id="kg_${ex.id}_${s}" step="1.25" min="0" value="${sr.kg || ''}" placeholder="${plan}" data-ex="${ex.id}" data-idx="${s}" data-nsets="${nSets}"></td>
-              <td><input class="set-inp reps-inp" type="number" id="reps_${ex.id}_${s}" min="0" max="30" step="1" value="${sr.reps || ''}" placeholder="${planReps || '—'}"></td>
-              <td><select class="set-rpe" id="rpe_${ex.id}_${s}"><option value="">—</option>${_rpeOptions(sr.rpe)}</select></td>
-              <td class="set-status" style="${doneCls}">${done}</td>
-            </tr>`;
-          }
-          html += '</tbody></table>';
-        }
-
-        // Summary if data exists
-        if(rec?.sets?.some(s => s?.kg)) {
-          const done       = (rec.sets || []).filter(s => s?.reps);
-          const avgRpe     = done.length ? Math.round(done.reduce((a, s) => a + (parseFloat(s.rpe) || 0), 0) / done.length * 10) / 10 : null;
-          html += `<div class="sets-summary"><strong>${done.length}</strong> série${done.length > 1 ? 's' : ''} · ${avgRpe ? `RPE moy. <strong>${avgRpe}</strong> · ` : ''}Meilleure charge : <strong>${bestKg(rec)} ${ex.unit}</strong></div>`;
-        }
       } else {
         html += `<div class="ex-plan-txt ex-ref">${scheme}</div>`;
       }
+
+      // Grid: show for all except skipped
+      if(exStatus !== 'skipped') {
+        const deloadKg = exStatus==='deload'&&plan ? Math.round(plan*0.60/1.25)*1.25 : null;
+        html += `<table class="sets-table">
+          <thead><tr><th>Série</th><th>Charge (${ex.unit})</th><th>Reps</th><th>RPE</th><th></th></tr></thead><tbody>`;
+        for(let s = 0; s < nSets; s++) {
+          const sr  = rec?.sets?.[s] || {};
+          const chk = sr.kg&&sr.reps?'✓':'';
+          html += `<tr>
+            <td class="set-num">S${s+1}</td>
+            <td><input class="set-inp" type="number" id="kg_${ex.id}_${s}" step="1.25" min="0"
+                value="${sr.kg||''}" placeholder="${deloadKg||plan}"
+                data-ex="${ex.id}" data-idx="${s}" data-nsets="${nSets}"></td>
+            <td><input class="set-inp reps-inp" type="number" id="reps_${ex.id}_${s}"
+                min="0" max="30" step="1" value="${sr.reps||''}" placeholder="${planReps||'—'}"></td>
+            <td><select class="set-rpe" id="rpe_${ex.id}_${s}">
+              <option value="">—</option>${_rpeOptions(sr.rpe)}
+            </select></td>
+            <td class="set-status" style="color:${chk?'var(--green)':'var(--border)'}">${chk}</td>
+          </tr>`;
+        }
+        html += '</tbody></table>';
+        if(rec?.sets?.some(s=>s?.kg)) {
+          const done   = (rec.sets||[]).filter(s=>s?.reps);
+          const avgRpe = done.length?Math.round(done.reduce((a,s)=>a+(parseFloat(s.rpe)||0),0)/done.length*10)/10:null;
+          html += `<div class="sets-summary"><strong>${done.length}</strong> série${done.length>1?'s':''} · ${avgRpe?`RPE moy. <strong>${avgRpe}</strong> · `:''}Meilleure charge : <strong>${bestKg(rec)} ${ex.unit}</strong></div>`;
+        }
+      }
+
       html += '</div>'; // ex-block
     });
 
-    html += `</div></div><!-- day-card end -->
+    html += `</div></div>
       <div class="save-row">
         <button class="save-btn" data-day="${day}" data-week="${week}">Enregistrer ${day}</button>
         <span class="save-ok" id="ok_${day}">&#x2713; Enregistré</span>
@@ -217,43 +539,35 @@ export function renderSaisie() {
   });
 
   document.getElementById('saisieContent').innerHTML = html;
-  _bindSaisieEvents(week);
+  _bindLegacyEvents(week);
 }
 
-function _rpeOptions(selected) {
-  return [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]
-    .map(r => `<option value="${r}"${String(selected) === String(r) ? ' selected' : ''}>${r}</option>`)
-    .join('');
-}
-
-function _bindSaisieEvents(week) {
-  // Status buttons (event delegation)
+function _bindLegacyEvents(week) {
   document.getElementById('saisieContent').addEventListener('click', e => {
-    const btn = e.target.closest('[data-status]');
+    const btn = e.target.closest('[data-status]:not([data-progex])');
     if(!btn) return;
     const { ex, status } = btn.dataset;
     setExStatus(ex, week, status);
     renderSaisie();
   }, { once: true });
 
-  // Auto-fill charge from S1
   document.getElementById('saisieContent').addEventListener('input', e => {
     const inp = e.target.closest('.set-inp[data-idx="0"]');
     if(!inp) return;
     const { ex, nsets } = inp.dataset;
-    const n = parseInt(nsets, 10);
-    for(let i = 1; i < n; i++) {
+    for(let i=1;i<parseInt(nsets);i++) {
       const el = document.getElementById(`kg_${ex}_${i}`);
       if(el && !el.value) el.value = inp.value;
     }
   });
 
-  // Save buttons
   document.getElementById('saisieContent').addEventListener('click', e => {
-    const btn = e.target.closest('.save-btn');
+    const btn = e.target.closest('.save-btn[data-day]');
     if(!btn) return;
-    saveSaisie(parseInt(btn.dataset.week, 10), btn.dataset.day);
+    saveSaisie(parseInt(btn.dataset.week), btn.dataset.day);
   });
+
+  _bindVacancesEvents();
 }
 
 export function saveSaisie(week, day) {
@@ -261,128 +575,318 @@ export function saveSaisie(week, day) {
   exs.forEach(ex => {
     const scheme = ex.repScheme[week - 1];
     const nSets  = parseSets(scheme) || 3;
-    const sets   = [];
-    let anyData  = false;
-
-    for(let s = 0; s < nSets; s++) {
-      const kgEl   = document.getElementById(`kg_${ex.id}_${s}`);
-      const repsEl = document.getElementById(`reps_${ex.id}_${s}`);
-      const rpeEl  = document.getElementById(`rpe_${ex.id}_${s}`);
-      const kg     = kgEl?.value  ? parseFloat(kgEl.value)    : null;
-      const reps   = repsEl?.value ? parseInt(repsEl.value, 10) : null;
-      const rpe    = rpeEl?.value  || '';
+    const sets = [];
+    let anyData = false;
+    for(let s=0;s<nSets;s++) {
+      const kg   = parseFloat(document.getElementById(`kg_${ex.id}_${s}`)?.value) || null;
+      const reps = parseInt(document.getElementById(`reps_${ex.id}_${s}`)?.value, 10) || null;
+      const rpe  = document.getElementById(`rpe_${ex.id}_${s}`)?.value || '';
       sets.push({ kg, reps, rpe });
-      if(kg || reps) anyData = true;
+      if(kg||reps) anyData = true;
     }
-
     if(!anyData) return;
-
-    const bk           = Math.max(...sets.map(s => s.kg || 0).filter(v => v > 0)) || null;
-    const filledRpe    = sets.find(s => s.rpe);
-    const sessionStatus = getExStatus(ex.id, week);
-
-    setRecord(ex.id, week, {
-      sets, kg: bk, rpe: filledRpe ? filledRpe.rpe : '', ts: Date.now(), sessionStatus,
-    });
+    const bk     = Math.max(...sets.map(s=>s.kg||0).filter(v=>v>0))||null;
+    const filled = sets.find(s=>s.rpe);
+    setRecord(ex.id, week, { sets, kg:bk, rpe:filled?.rpe||'', ts:Date.now(), sessionStatus:getExStatus(ex.id,week) });
   });
 
   const ok = document.getElementById(`ok_${day}`);
-  if(ok) { ok.style.display = 'inline'; setTimeout(() => ok.style.display = 'none', 2200); }
-
+  if(ok) { ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2200); }
   renderSaisie();
   repaintMuscles();
 }
 
-// ── Progression ────────────────────────────────────────────────────────────
+// ── Vacances UI (shared) ──────────────────────────────────────────────────────
 
-export function renderProgression() {
-  let html = '<div class="prog-grid">';
-  EXERCISES.forEach(ex => {
-    let best = null, lastW = null;
-    for(let w = 1; w <= 17; w++) {
-      const bk = bestKg(normRecord(getRecord(ex.id, w)));
-      if(bk) { if(!best || bk > best) best = bk; lastW = w; }
-    }
-    const maxPlan = Math.max(...ex.plan.filter(Boolean));
-    const pct = best ? Math.min(100, Math.round(best / maxPlan * 100)) : 0;
-    html += `<div class="prog-card">
-      <div class="prog-card-name">${ex.name}</div>
-      <div class="prog-card-day">${ex.day} — ${ex.refText}</div>
-      <div class="prog-current">${best ? `${best} ${ex.unit}` : '—'}</div>
-      <div class="prog-pct">${pct}% de l'objectif</div>
-      <div class="prog-bar-wrap"><div class="prog-bar" style="width:${pct}%;background:${ex.color}"></div></div>
-      <div class="prog-nums"><span>0</span><span>${maxPlan} ${ex.unit}</span></div>
-      <div class="prog-last">${lastW ? `Dernière saisie : S${lastW}` : 'Aucune donnée'}</div>
-    </div>`;
-  });
-  html += '</div>';
-  document.getElementById('progressionContent').innerHTML = html;
+function _progSelectorUI() {
+  const all = getAllActivePrograms();
+  if(all.length <= 1) return ''; // no selector needed if only one
+
+  const current = getCurrentProgram();
+  const options = all.map(p =>
+    `<option value="${p.id}" ${p.id === current?.id ? 'selected' : ''}>${esc(p.name)}</option>`
+  ).join('');
+
+  return `<div class="prog-selector-bar">
+    <label class="prog-selector-label">Programme actif</label>
+    <select class="prog-selector-select" onchange="window._switchProgram(this.value)">
+      ${options}
+    </select>
+    <span class="prog-selector-hint">${all.length} programme${all.length > 1 ? 's' : ''} en cours</span>
+  </div>`;
 }
 
-// ── Historique ─────────────────────────────────────────────────────────────
+function _vacancesUI() {
+  const _rc   = repriseCoeff();
+  const _stat = vacancesStatus();
+  const _list = getVacancesList();
+  const _fmt  = d => d ? new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
+  const _dur  = (d1,d2) => Math.max(0,Math.round((new Date(d2)-new Date(d1))/86400000));
+
+  let html = '';
+  if(_stat?.reprise) {
+    html += `<div class="reprise-panel">
+      <div class="reprise-panel-title">⚡ ${esc(_stat.label)}</div>
+      <div class="reprise-panel-coeff">Coefficient : <strong>${Math.round(_stat.coeff*100)}%</strong>${_stat.actBonus>0?`<span class="reprise-bonus">+${_stat.actBonus}% activité</span>`:''} · RPE cible : <strong>${_stat.rpeTarget}</strong></div>
+      <div class="reprise-note">Les recommandations S+1 sont automatiquement ajustées.</div>
+    </div>`;
+  } else if(_stat?.en_cours) {
+    html += `<div class="reprise-banner" style="background:#f0e8fc;border-color:#c0a0e8;color:#5a0090">🏖 Vacances en cours — retour dans ${_stat.joursRestants} jour${_stat.joursRestants>1?'s':''}</div>`;
+  }
+
+  html += `<div class="vacances-setup">
+    <div class="vacances-setup-title">🏖 Vacances / Congés</div>
+    ${_list.length?`<div class="vac-list">${_list.map((v,i)=>`
+      <div class="vac-list-item">
+        <span class="vac-list-dates">${_fmt(v.debut)} → ${_fmt(v.fin)}</span>
+        <span class="vac-list-dur">${_dur(v.debut,v.fin)}j</span>
+        <span class="vac-list-act">${(ACTIVITE_LABELS[v.activite]||ACTIVITE_LABELS.sedentaire).label.split(' ')[0]}</span>
+        <button class="vac-remove-btn" onclick="window._removeVacances(${i})">✕</button>
+      </div>`).join('')}</div>`:''}
+    <div class="vacances-row">
+      <label>Début</label><input type="date" id="vacDebut">
+      <label>Fin</label><input type="date" id="vacFin">
+    </div>
+    <div class="vacances-row" style="margin-top:6px">
+      <label>Activité</label>
+      <select id="vacActivite" style="font-size:12px;padding:5px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+        ${Object.entries(ACTIVITE_LABELS).map(([k,v])=>`<option value="${k}">${v.label}${v.bonus>0?' (+'+Math.round(v.bonus*100)+'%)':''}</option>`).join('')}
+      </select>
+      <button class="save-btn" style="padding:5px 14px;font-size:12px" onclick="window._saveVacances()">+ Ajouter</button>
+      ${_list.length?`<button class="vac-clear-btn" onclick="window._clearVacances()">Tout effacer</button>`:''}
+    </div>
+  </div>`;
+  return html;
+}
+
+function _bindVacancesEvents() {
+  // handled via window.* in app.js
+}
+
+// ── Progression ───────────────────────────────────────────────────────────────
+
+export function renderProgression() {
+  const prog = getActiveProgram();
+  const container = document.getElementById('progressionContent');
+
+  const MAIN_LIFTS = ['press','squat','deadlift'];
+  let _progChart = null, _benchChart = null;
+
+  const BENCH_DATA = {
+    M: { press:[0.62,0.80,1.00,1.22], squat:[1.05,1.32,1.62,1.95], deadlift:[1.32,1.65,2.00,2.40] },
+    F: { press:[0.30,0.40,0.52,0.66], squat:[0.68,0.88,1.10,1.34], deadlift:[0.80,1.02,1.26,1.52] },
+  };
+  const EX_COLORS = { press:'#1a5fb4', squat:'#7c4a00', deadlift:'#1b6b45' };
+  const EX_NAMES  = { press:'Strict Press', squat:'Back Squat', deadlift:'Deadlift' };
+  const BW = 73;
+
+  container.innerHTML = `
+    <div class="prog-filters">
+      <div class="prog-filter-group">
+        <label>Sexe</label>
+        <select id="benchSex"><option value="M" selected>Homme</option><option value="F">Femme</option></select>
+      </div>
+      <div class="prog-filter-note">Source : Strength Level · population générale entraînée</div>
+    </div>
+    <div class="prog-pct-row" id="progPctRow"></div>
+    <div class="prog-chart-card">
+      <div class="prog-chart-label">Courbe de progression</div>
+      <div class="prog-chart-sub">Charge max réalisée par semaine · ligne pleine = réalisé · pointillé = plan</div>
+      <div class="prog-legend">
+        <span><i class="pleg-line" style="background:#1a5fb4"></i>Press</span>
+        <span><i class="pleg-line" style="background:#7c4a00"></i>Squat</span>
+        <span><i class="pleg-line" style="background:#1b6b45"></i>Deadlift</span>
+        <span><i class="pleg-dash"></i>Plan</span>
+      </div>
+      <div style="position:relative;width:100%;height:260px">
+        <canvas id="progChartCanvas" role="img" aria-label="Courbes de progression"></canvas>
+      </div>
+    </div>
+    <div class="prog-chart-card">
+      <div class="prog-chart-label">Benchmark population</div>
+      <div class="prog-chart-sub">Percentiles de force par rapport à la population</div>
+      <div class="prog-legend">
+        <span><i class="pleg-box" style="background:rgba(160,160,160,0.35)"></i>Population P25→P90</span>
+        <span><i class="pleg-box" style="background:#1a5fb4cc"></i>Press</span>
+        <span><i class="pleg-box" style="background:#7c4a00cc"></i>Squat</span>
+        <span><i class="pleg-box" style="background:#1b6b45cc"></i>Deadlift</span>
+      </div>
+      <div style="position:relative;width:100%;height:300px">
+        <canvas id="benchChartCanvas" role="img" aria-label="Benchmark force"></canvas>
+      </div>
+    </div>`;
+
+  document.getElementById('benchSex').addEventListener('change', refreshBench);
+
+  // Build progression chart
+  const totalWeeks = prog ? prog.totalWeeks : 17;
+  const labels = Array.from({length:totalWeeks},(_,i)=>`S${i+1}`);
+  const datasets = [];
+
+  MAIN_LIFTS.forEach(id => {
+    const kgs  = [];
+    const plans = [];
+    for(let w=1;w<=totalWeeks;w++) {
+      const rec = prog
+        ? normRecord(getProgRecord(prog.id, id, w))
+        : normRecord(getRecord(id, w));
+      kgs.push(bestKg(rec)||null);
+
+      if(prog) {
+        const ex = prog.semaines?.[w-1]?.jours?.flatMap(d=>d.exercices)?.find(e=>e.id===id);
+        plans.push(ex?.kgPlan||null);
+      } else {
+        const ex = EXERCISES.find(e=>e.id===id);
+        plans.push(ex?.plan?.[w-1]||null);
+      }
+    }
+    datasets.push({ label:EX_NAMES[id], data:kgs, borderColor:EX_COLORS[id], borderWidth:2.5, pointBackgroundColor:EX_COLORS[id], pointRadius:kgs.map(v=>v?4:0), tension:0.35, fill:false, spanGaps:true });
+    datasets.push({ label:'_plan_'+id, data:plans, borderColor:EX_COLORS[id], borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false, spanGaps:true });
+  });
+
+  if(_progChart) _progChart.destroy();
+  _progChart = new Chart(document.getElementById('progChartCanvas'), {
+    type:'line', data:{labels,datasets},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{filter:i=>!i.dataset.label.startsWith('_plan_'), callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y??'—'} kg`}} },
+      scales:{ x:{grid:{display:false},ticks:{font:{size:11},maxRotation:0}}, y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},callback:v=>v+'kg'}} }
+    }
+  });
+
+  function refreshBench() {
+    const sex = document.getElementById('benchSex').value;
+    const b   = BENCH_DATA[sex];
+    const userBest = {};
+    MAIN_LIFTS.forEach(id => {
+      let best = null;
+      for(let w=1;w<=totalWeeks;w++) {
+        const rec = prog ? normRecord(getProgRecord(prog.id,id,w)) : normRecord(getRecord(id,w));
+        const bk  = bestKg(rec);
+        if(bk && (!best||bk>best)) best = bk;
+      }
+      userBest[id] = best;
+    });
+
+    document.getElementById('progPctRow').innerHTML = MAIN_LIFTS.map(id => {
+      const u = userBest[id];
+      if(!u) return `<div class="pct-card"><div class="pct-name">${EX_NAMES[id]}</div><div class="pct-val" style="color:#9b9b94">—</div><div class="pct-sub">Aucune donnée</div></div>`;
+      const pts = b[id].map(r=>Math.round(r*BW*10)/10);
+      let pct, col;
+      if(u<pts[0]){pct='< P25';col='#9b9b94';}
+      else if(u<pts[1]){pct='P25–50';col='#7c4a00';}
+      else if(u<pts[2]){pct='P50–75';col='#1b6b45';}
+      else if(u<pts[3]){pct='P75–90';col='#1a5fb4';}
+      else{pct='Top 10%';col='#6b00c2';}
+      return `<div class="pct-card"><div class="pct-dot" style="background:${col}"></div><div class="pct-name">${EX_NAMES[id]}</div><div class="pct-val" style="color:${col}">${pct}</div><div class="pct-sub">${u} kg · ×${(u/BW).toFixed(2)} BW</div></div>`;
+    }).join('');
+
+    const seg1=MAIN_LIFTS.map(id=>Math.round(b[id][0]*BW));
+    const seg2=MAIN_LIFTS.map(id=>Math.round((b[id][1]-b[id][0])*BW));
+    const seg3=MAIN_LIFTS.map(id=>Math.round((b[id][2]-b[id][1])*BW));
+    const seg4=MAIN_LIFTS.map(id=>Math.round((b[id][3]-b[id][2])*BW));
+
+    const toiPlugin = { id:'toiBar', afterDatasetsDraw(chart){
+      const {ctx,scales:{x,y}} = chart;
+      MAIN_LIFTS.forEach((id,i) => {
+        const u = userBest[id]; if(!u) return;
+        const bw = (x.getPixelForValue(1)-x.getPixelForValue(0))*0.14;
+        const cx = x.getPixelForValue(i);
+        const top = y.getPixelForValue(u), bottom = y.getPixelForValue(0);
+        const r=3; ctx.save(); ctx.fillStyle=EX_COLORS[id]+'dd'; ctx.strokeStyle=EX_COLORS[id]; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.moveTo(cx-bw+r,top); ctx.lineTo(cx+bw-r,top); ctx.quadraticCurveTo(cx+bw,top,cx+bw,top+r);
+        ctx.lineTo(cx+bw,bottom); ctx.lineTo(cx-bw,bottom); ctx.lineTo(cx-bw,top+r); ctx.quadraticCurveTo(cx-bw,top,cx-bw+r,top);
+        ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+      });
+    }};
+
+    if(_benchChart) _benchChart.destroy();
+    _benchChart = new Chart(document.getElementById('benchChartCanvas'), {
+      type:'bar', plugins:[toiPlugin],
+      data:{ labels:MAIN_LIFTS.map(id=>EX_NAMES[id]),
+        datasets:[
+          {label:'< P25',data:seg1,backgroundColor:'rgba(200,198,192,0.45)',borderWidth:0,stack:'pop',borderRadius:0},
+          {label:'P25–50',data:seg2,backgroundColor:'rgba(168,165,155,0.55)',borderWidth:0,stack:'pop'},
+          {label:'P50–75',data:seg3,backgroundColor:'rgba(138,135,125,0.60)',borderWidth:0,stack:'pop'},
+          {label:'P75–90',data:seg4,backgroundColor:'rgba(108,105,95,0.40)',borderWidth:0,stack:'pop',borderRadius:{topLeft:3,topRight:3}},
+        ]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>EX_NAMES[MAIN_LIFTS[i[0].dataIndex]],label:ctx=>{const id=MAIN_LIFTS[ctx.dataIndex];const[p25,p50,p75,p90]=b[id].map(r=>Math.round(r*BW));const ranges={'< P25':`0–${p25} kg`,'P25–50':`${p25}–${p50} kg`,'P50–75':`${p50}–${p75} kg`,'P75–90':`${p75}–${p90} kg`};return ranges[ctx.dataset.label]||'';},footer:i=>{const id=MAIN_LIFTS[i[0].dataIndex];const u=userBest[id];return u?`Toi : ${u} kg`:[];} }}},
+        scales:{ x:{stacked:true,grid:{display:false},ticks:{font:{size:12}}}, y:{stacked:true,grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},callback:v=>v+'kg'},beginAtZero:true} }
+      }
+    });
+  }
+
+  refreshBench();
+}
+
+// ── Historique ────────────────────────────────────────────────────────────────
 
 export function renderHistorique() {
-  let html = '';
-  let hasData = false;
+  const prog = getActiveProgram();
+  let html = '', hasData = false;
 
-  EXERCISES.forEach(ex => {
+  const exercises = prog
+    ? [...new Map(prog.semaines.flatMap(s=>s.jours.flatMap(d=>d.exercices)).map(e=>[e.id,e])).values()]
+    : EXERCISES;
+
+  exercises.forEach(ex => {
     const rows = [];
-    for(let w = 1; w <= 17; w++) {
-      const r = normRecord(getRecord(ex.id, w));
+    const totalWeeks = prog ? prog.totalWeeks : 17;
+    for(let w=1;w<=totalWeeks;w++) {
+      const r = prog
+        ? normRecord(getProgRecord(prog.id, ex.id||ex, w))
+        : normRecord(getRecord(ex.id, w));
       if(!r) continue;
-      const bk   = bestKg(r);
-      if(!bk) continue;
-      const plan = ex.plan[w - 1];
-      const delta = plan ? Math.round((bk - plan) * 10) / 10 : null;
-      const done  = (r.sets || []).filter(s => s?.reps);
-      const avgRpe  = done.length ? Math.round(done.reduce((a, s) => a + (parseFloat(s.rpe) || 0), 0) / done.length * 10) / 10 : null;
-      const avgReps = done.length ? Math.round(done.reduce((a, s) => a + (s.reps || 0), 0) / done.length * 10) / 10 : null;
-      rows.push({ w, bk, plan, delta, sets: r.sets || [], done, avgRpe, avgReps, ts: r.ts });
+      const bk = bestKg(r); if(!bk) continue;
+      const plan  = prog
+        ? prog.semaines?.[w-1]?.jours?.flatMap(d=>d.exercices)?.find(e=>e.id===(ex.id||ex))?.kgPlan
+        : ex.plan?.[w-1];
+      const delta = plan ? Math.round((bk-plan)*10)/10 : null;
+      const done  = (r.sets||[]).filter(s=>s?.reps);
+      const avgRpe  = done.length?Math.round(done.reduce((a,s)=>a+(parseFloat(s.rpe)||0),0)/done.length*10)/10:null;
+      const avgReps = done.length?Math.round(done.reduce((a,s)=>a+(s.reps||0),0)/done.length*10)/10:null;
+      rows.push({ w, bk, plan, delta, sets:r.sets||[], done, avgRpe, avgReps });
     }
-
     if(!rows.length) return;
     hasData = true;
 
-    html += `<div class="hist-block"><div class="hist-title">${ex.name} — ${ex.day}</div>
-      <table><thead><tr><th>Sem.</th><th>Charge</th><th>Plan</th><th>Δkg</th><th>Reps/s</th><th>RPE</th><th>Séries</th><th>Signal</th><th>S+1</th></tr></thead><tbody>`;
-
+    const name = ex.nom || ex.name || ex.id;
+    html += `<div class="hist-block"><div class="hist-title">${esc(name)}</div>
+      <table><thead><tr><th>Sem.</th><th>Charge</th><th>Plan</th><th>Δkg</th><th>Reps/s</th><th>RPE</th></tr></thead><tbody>`;
     rows.forEach(r => {
-      const dc = r.delta === null ? 'delta-neu' : r.delta > 0 ? 'delta-pos' : r.delta < 0 ? 'delta-neg' : 'delta-neu';
-      const dt = r.delta === null ? '—' : r.delta > 0 ? `+${r.delta}` : r.delta === 0 ? '±0' : `${r.delta}`;
-
-      const adj    = calcAdj(ex, r.w);
-      const topSig = adj?.signals?.length ? (adj.signals.find(s => s.type === 'danger') || adj.signals.find(s => s.type === 'warn') || adj.signals[0]) : null;
-      const sigCol = topSig ? (topSig.type === 'good' ? 'var(--green)' : topSig.type === 'warn' ? 'var(--amber)' : topSig.type === 'danger' ? 'var(--red)' : 'var(--text3)') : 'var(--text3)';
-
-      const nxt      = getNextPlan(ex, r.w);
-      const setsStr  = r.sets.filter(s => s?.kg).map(s => `${esc(String(s.reps || '?'))}×${esc(String(s.kg))}`).join(' | ') || '—';
-
+      const dc = r.delta===null?'delta-neu':r.delta>0?'delta-pos':'delta-neg';
+      const dt = r.delta===null?'—':r.delta>0?`+${r.delta}`:r.delta===0?'±0':`${r.delta}`;
       html += `<tr>
-        <td>S${r.w}</td>
-        <td><strong>${r.bk}</strong> ${ex.unit}</td>
-        <td>${r.plan || '—'}</td>
-        <td class="${dc}">${dt}</td>
-        <td style="font-family:var(--mono);font-size:11px;text-align:center">${r.avgReps || '—'}</td>
-        <td style="font-family:var(--mono);font-size:11px;text-align:center">${r.avgRpe || '—'}</td>
-        <td style="font-size:10px;color:var(--text2)">${setsStr}</td>
-        <td style="font-size:11px;color:${sigCol}">${topSig ? esc(topSig.text) : '—'}</td>
-        <td style="font-family:var(--mono);font-size:11px;color:var(--blue)">${nxt ? `${nxt.kg} ${ex.unit}` : '—'}</td>
+        <td>S${r.w}</td><td><strong>${r.bk}</strong> ${ex.unit||'kg'}</td>
+        <td>${r.plan||'—'}</td><td class="${dc}">${dt}</td>
+        <td style="font-family:var(--mono);font-size:11px;text-align:center">${r.avgReps||'—'}</td>
+        <td style="font-family:var(--mono);font-size:11px;text-align:center">${r.avgRpe||'—'}</td>
       </tr>`;
     });
-
     html += '</tbody></table></div>';
   });
 
   if(!hasData) html = '<div class="empty">Aucune donnée saisie.</div>';
   else html += `<button class="reset-btn" id="resetDataBtn">Effacer toutes les données</button>`;
-
   document.getElementById('historiqueContent').innerHTML = html;
 
   document.getElementById('resetDataBtn')?.addEventListener('click', () => {
     if(confirm('Effacer toutes les données ?')) {
-      import('./db.js').then(({ dbClear }) => {
-        dbClear().then(() => { renderHistorique(); renderProgression(); });
-      });
+      import('./db.js').then(({dbClear}) => dbClear().then(()=>{renderHistorique();renderProgression();}));
     }
   });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function _rpeOptions(selected) {
+  return [6,6.5,7,7.5,8,8.5,9,9.5,10]
+    .map(r=>`<option value="${r}"${String(selected)===String(r)?' selected':''}>${r}</option>`)
+    .join('');
+}
+
+function _parseSetsGeneric(scheme) {
+  if(!scheme||['Deload','—','Taper','Repos'].includes(scheme)) return 3;
+  const m = scheme.match(/^(\d+)[×x]/);
+  return m ? parseInt(m[1],10) : 3;
 }

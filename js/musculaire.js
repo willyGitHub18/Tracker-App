@@ -4,6 +4,7 @@
 
 import { EXERCISES, MUSCLE_LABELS, RECOVERY_HALFLIFE, MUSCLE_MAP, MUSCLE_THRESH } from './data.js';
 import { getRecord, getExStatus, normRecord } from './store.js';
+import { getAllActivePrograms, getProgRecord } from './programs.js';
 
 let _currentLoad      = {};
 let _selectedMuscleId = null;
@@ -20,31 +21,66 @@ export function calcGlobalMuscleLoad() {
   const load = {};
   Object.keys(MUSCLE_LABELS).forEach(m => { load[m] = 0; });
 
-  EXERCISES.filter(e => ['press','squat','deadlift'].includes(e.id)).forEach(ex => {
-    const factors = MUSCLE_MAP[ex.id];
-    if(!factors) return;
+  const activeProgs = getAllActivePrograms();
 
-    for(let w = 1; w <= 17; w++) {
-      const rec = normRecord(getRecord(ex.id, w));
-      if(!rec || !rec.sets) continue;
-
-      const ts = rec.ts || 0;
-      if(!ts) continue;
-
-      const hoursAgo = (now - ts) / 3_600_000;
-
-      rec.sets.forEach(s => {
-        if(!s?.kg || !s?.reps) return;
-        const rpe = parseFloat(s.rpe) || 7;
-        const vol = s.reps * (rpe / 10);
-        Object.entries(factors).forEach(([mid, factor]) => {
-          const hl = RECOVERY_HALFLIFE[mid] || 48;
-          load[mid] = (load[mid] || 0) + vol * factor * Math.pow(2, -hoursAgo / hl);
+  if(activeProgs.length > 0) {
+    // Cumulate load from ALL active programs
+    activeProgs.forEach(prog => {
+      prog.semaines?.forEach((sem, wi) => {
+        sem.jours?.forEach(day => {
+          day.exercices?.forEach(ex => {
+            const rec = normRecord(getProgRecord(prog.id, ex.id, wi + 1));
+            if(!rec?.sets) return;
+            const ts = rec.ts || 0;
+            if(!ts) return;
+            const hoursAgo = (now - ts) / 3_600_000;
+            const factors = MUSCLE_MAP[ex.id] || _buildFactors(ex.muscles || []);
+            rec.sets.forEach(s => {
+              if(!s?.kg || !s?.reps) return;
+              const rpe = parseFloat(s.rpe) || 7;
+              const vol = s.reps * (rpe / 10);
+              Object.entries(factors).forEach(([mid, factor]) => {
+                const hl = RECOVERY_HALFLIFE[mid] || 48;
+                load[mid] = (load[mid] || 0) + vol * factor * Math.pow(2, -hoursAgo / hl);
+              });
+            });
+          });
         });
       });
-    }
-  });
+    });
+  } else {
+    // Legacy ATHX
+    EXERCISES.filter(e => ['press','squat','deadlift'].includes(e.id)).forEach(ex => {
+      const factors = MUSCLE_MAP[ex.id];
+      if(!factors) return;
+      for(let w = 1; w <= 17; w++) {
+        const rec = normRecord(getRecord(ex.id, w));
+        if(!rec?.sets) continue;
+        const ts = rec.ts || 0;
+        if(!ts) continue;
+        const hoursAgo = (now - ts) / 3_600_000;
+        rec.sets.forEach(s => {
+          if(!s?.kg || !s?.reps) return;
+          const rpe = parseFloat(s.rpe) || 7;
+          const vol = s.reps * (rpe / 10);
+          Object.entries(factors).forEach(([mid, factor]) => {
+            const hl = RECOVERY_HALFLIFE[mid] || 48;
+            load[mid] = (load[mid] || 0) + vol * factor * Math.pow(2, -hoursAgo / hl);
+          });
+        });
+      }
+    });
+  }
   return load;
+}
+
+// Build muscle factors from a flat muscles array (for wizard-generated exercises)
+function _buildFactors(muscles) {
+  const factors = {};
+  muscles.forEach((mid, i) => {
+    factors[mid] = i === 0 ? 1.0 : i === 1 ? 0.6 : 0.3;
+  });
+  return factors;
 }
 
 export function calcRawContribsByMuscle() {

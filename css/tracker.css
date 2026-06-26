@@ -151,3 +151,58 @@ tr:last-child td{border-bottom:none}
 .reprise-ex-rec{font-family:var(--mono);font-size:12px;font-weight:600;color:#7c4a00}
 .reprise-ex-delta{font-family:var(--mono);font-size:11px;min-width:40px;text-align:right}
 .reprise-note{font-size:11px;color:#7c4a00;font-style:italic;opacity:.8}
+
+/* ── Program selector ── */
+.prog-selector-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:14px}
+.prog-selector-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
+.prog-selector-select{font-family:var(--sans);font-size:13px;font-weight:500;padding:5px 28px 5px 10px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);cursor:pointer;appearance:none;-webkit-appearance:none;flex:1;min-width:0}
+.prog-selector-hint{font-size:11px;color:var(--text3);white-space:nowrap}
+
+/* ── Grossesse tracker ── */
+.grossesse-ex-body{padding:8px 0}
+.grossesse-ex-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px}
+.grossesse-ex-note{font-size:11px;color:var(--amber);background:var(--amber-bg);border-radius:var(--radius);padding:5px 10px;margin-bottom:8px}
+.grossesse-supprime{font-size:12px;color:var(--red);background:var(--red-bg);border-radius:var(--radius);padding:8px 12px;margin:4px 0}
+.grossesse-video-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--red);background:#fff0f0;border:1px solid rgba(156,34,34,.2);border-radius:var(--radius);padding:5px 12px;text-decoration:none;margin-bottom:8px}
+.grossesse-video-btn:hover{background:#fdeaea}
+.grossesse-check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer;margin-top:6px}
+.grossesse-check input{width:16px;height:16px;cursor:pointer;accent-color:var(--green)}
+.ballon-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:#f0e8fc;color:#6b00c2;margin-bottom:6px}
+
+/* ── Grossesse UI ── */
+.g-banner{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:var(--radius-lg);margin-bottom:16px;font-size:12px;line-height:1.5}
+.g-banner-icon{font-size:24px;flex-shrink:0}
+.g-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:16px}
+.g-tab{flex:1;font-family:var(--sans);font-size:12px;font-weight:500;padding:6px 8px;border:none;border-radius:7px;background:transparent;color:var(--text2);cursor:pointer}
+.g-tab.active{background:var(--text);color:#fff}
+.g-panel{display:none}.g-panel.active{display:block}
+.g-week-grid{display:flex;flex-direction:column;gap:8px}
+.g-day-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.g-day-card:hover{border-color:var(--border-md)}
+.g-day-name{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:2px}
+.g-day-seance{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.g-day-dur{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.g-day-alt{font-size:11px;color:var(--blue);margin-top:4px;cursor:pointer}
+.g-seance-list{display:flex;flex-direction:column;gap:8px}
+.g-seance-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.g-seance-card:hover{border-color:var(--border-md)}
+.g-seance-card-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px}
+.g-seance-tag{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.g-seance-mat{font-size:11px;color:var(--text3)}
+.g-seance-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.g-back-btn{font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0;margin-bottom:12px;display:block}
+.g-alert-card{background:var(--amber-bg);border:1px solid rgba(124,74,0,.2);border-radius:var(--radius);padding:8px 12px;font-size:11px;color:var(--amber);margin-bottom:12px}
+.g-exercices-list{display:flex;flex-direction:column;gap:10px}
+.g-ex-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.g-ex-block.g-ex-supprime{opacity:.6}
+.g-ex-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.g-ex-num{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
+.g-ex-name{font-size:13px;font-weight:600;color:var(--text);flex:1}
+.g-ex-dosage{font-size:11px;font-family:var(--mono);color:var(--text2)}
+.g-badge-supprime{font-size:10px;background:#fdf3ef;color:#a05f49;padding:2px 7px;border-radius:8px;font-weight:500}
+.g-supprime-msg{padding:10px 14px;font-size:12px;color:#a05f49;background:#fdf3ef}
+.g-ex-body{padding:10px 14px}
+.g-conseils-note{font-size:12px;color:var(--blue);background:var(--blue-bg);border-radius:var(--radius);padding:8px 12px;margin-top:12px}
+.conseil-block{margin-bottom:14px}
+.conseil-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px}
+.conseil-card{font-size:12px;color:var(--text2);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;line-height:1.6}

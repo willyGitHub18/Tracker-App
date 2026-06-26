@@ -1,0 +1,50 @@
+<div id="programmes" class="section-panel">
+
+  <!-- ── WIZARD ── -->
+  <div id="wizard-view" class="prog-view active-view">
+    <div class="wiz-header">
+      <div class="wiz-header-top">
+        <div>
+          <div class="wiz-header-title">Créer un programme</div>
+          <div class="wiz-header-sub">Réponds aux questions pour générer ton programme personnalisé</div>
+        </div>
+        <button class="wiz-show-list-btn" onclick="showProgramsList()">
+          Mes programmes →
+        </button>
+      </div>
+    </div>
+    <div id="wizardContent"></div>
+  </div>
+
+  <!-- ── LISTE PROGRAMMES ── -->
+  <div id="programs-list-view" class="prog-view">
+    <div class="wiz-header">
+      <div class="wiz-header-top">
+        <div>
+          <div class="wiz-header-title">Mes programmes</div>
+          <div class="wiz-header-sub">Sélectionne un programme pour l'activer ou crées-en un nouveau</div>
+        </div>
+        <button class="wiz-show-list-btn" onclick="showWizard()">
+          + Nouveau programme
+        </button>
+      </div>
+    </div>
+    <div id="programsListContent"></div>
+  </div>
+
+  <!-- ── PROGRAMME ACTIF ── -->
+  <div id="program-active-view" class="prog-view">
+    <div class="wiz-header">
+      <div class="wiz-header-top">
+        <div id="activeProgramTitle">
+          <div class="wiz-header-title">Programme actif</div>
+        </div>
+        <button class="wiz-show-list-btn" onclick="showProgramsList()">
+          Changer →
+        </button>
+      </div>
+    </div>
+    <div id="activeProgramContent"></div>
+  </div>
+
+</div>

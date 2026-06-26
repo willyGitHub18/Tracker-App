@@ -1,0 +1,417 @@
+/**
+ * generator.js — Program generation algorithm
+ * Takes wizard config and produces a full program structure.
+ */
+
+import { filterExercises } from './exercises-db.js';
+import { AGE_MODIFIERS, MIXTE_SPLITS, GROSSESSE_MOIS_CONFIG, GROSSESSE_EXERCISES_PRENATAL, GROSSESSE_SEMAINE_TYPE, POSTNATAL_PHASES, PILATES_VIDEOS } from './data.js';
+
+// ── Phase structures by duration ──────────────────────────────────────────────
+
+const PHASE_TEMPLATES = {
+  8:  [
+    { nom:'Base',        weeks:4, intensite:0.70, rpeTarget:'7–7.5' },
+    { nom:'Pic',         weeks:3, intensite:0.85, rpeTarget:'8–8.5' },
+    { nom:'Taper',       weeks:1, intensite:0.70, rpeTarget:'6.5–7', isTaper:true },
+  ],
+  12: [
+    { nom:'Base',        weeks:5, intensite:0.70, rpeTarget:'7–7.5' },
+    { nom:'Construction',weeks:4, intensite:0.78, rpeTarget:'7.5–8' },
+    { nom:'Pic',         weeks:2, intensite:0.88, rpeTarget:'8–9'   },
+    { nom:'Taper',       weeks:1, intensite:0.70, rpeTarget:'6.5–7', isTaper:true },
+  ],
+  16: [
+    { nom:'Base',        weeks:5, intensite:0.68, rpeTarget:'6.5–7.5' },
+    { nom:'Construction',weeks:5, intensite:0.76, rpeTarget:'7–8'     },
+    { nom:'Intensité',   weeks:4, intensite:0.84, rpeTarget:'8–8.5'   },
+    { nom:'Pic',         weeks:1, intensite:0.90, rpeTarget:'8.5–9'   },
+    { nom:'Taper',       weeks:1, intensite:0.70, rpeTarget:'6.5–7', isTaper:true },
+  ],
+};
+
+// ── Volume by level ───────────────────────────────────────────────────────────
+
+const VOLUME_BASE = {
+  debutant:      { series: 3, repsRange: [10, 12], exPerSession: 4 },
+  intermediaire: { series: 4, repsRange: [6, 8],   exPerSession: 5 },
+  avance:        { series: 5, repsRange: [4, 6],   exPerSession: 6 },
+};
+
+function getVolume(niveau, age) {
+  const base = VOLUME_BASE[niveau] || VOLUME_BASE.intermediaire;
+  const mod  = AGE_MODIFIERS[age] || AGE_MODIFIERS['30-39'];
+  return {
+    series:       Math.min(base.series, mod.seriesMax),
+    repsRange:    base.repsRange,
+    exPerSession: Math.max(3, Math.round(base.exPerSession * mod.volumeMult)),
+    rpeMax:       mod.rpeMax,
+    rpeTarget:    mod.rpeTarget,
+    deloadFreq:   mod.deloadFreq,
+    recovDays:    mod.recovDays,
+    mobilityPct:  mod.mobilityPct,
+  };
+}
+
+// ── Days per week templates ───────────────────────────────────────────────────
+
+const DAY_TEMPLATES = {
+  2: ['Lundi', 'Jeudi'],
+  3: ['Lundi', 'Mercredi', 'Vendredi'],
+  4: ['Lundi', 'Mardi', 'Jeudi', 'Vendredi'],
+  5: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'],
+};
+
+// ── Exercise split by domain ──────────────────────────────────────────────────
+
+const DOMAIN_SPLITS = {
+  hyrox: {
+    2: ['Force + MetCon', 'Force + MetCon'],
+    3: ['Force membres inf.', 'Force membres sup. + Core', 'MetCon complet'],
+    4: ['Force inf.', 'Force sup.', 'MetCon léger', 'Simulation race'],
+    5: ['Force inf.', 'Force sup.', 'MetCon', 'Force full', 'Simulation'],
+  },
+  force: {
+    2: ['Push + Legs', 'Pull + Legs'],
+    3: ['Push', 'Pull', 'Legs'],
+    4: ['Push', 'Pull', 'Legs', 'Full body'],
+    5: ['Push', 'Pull', 'Legs', 'Upper', 'Lower'],
+  },
+  gym: {
+    2: ['Full body A', 'Full body B'],
+    3: ['Push', 'Pull', 'Legs'],
+    4: ['Chest/Tri', 'Back/Bi', 'Legs', 'Shoulders/Core'],
+    5: ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms/Core'],
+  },
+  cardio: {
+    2: ['Endurance', 'Interval'],
+    3: ['Endurance', 'Interval', 'Récupération active'],
+    4: ['Long run', 'Interval', 'Tempo', 'Récupération'],
+    5: ['Long run', 'Interval', 'Tempo', 'Fartlek', 'Récupération'],
+  },
+  mobilite: {
+    2: ['Mobilité haut du corps', 'Mobilité bas du corps'],
+    3: ['Mobilité haut', 'Mobilité bas', 'Full body flow'],
+    4: ['Hanche + ischio', 'Épaule + thoracique', 'Full body', 'Yoga flow'],
+    5: ['Hanche', 'Épaule', 'Thoracique', 'Bas du corps', 'Full body'],
+  },
+};
+
+// ── Main generator ────────────────────────────────────────────────────────────
+
+export function generateProgram(config, newProgramId) {
+  const {
+    domaine, niveau, age, seancesParSemaine, dureeSeance,
+    materiel, exercicesForces, exercicesExclus, duree, competition, orm,
+    name,
+  } = config;
+
+  // ── Grossesse: special generation ──────────────────────────────────────────
+  if(domaine === 'grossesse') {
+    return _generateGrossesseProg(config, newProgramId);
+  }
+
+  // 1. Get phase template
+  const closestDuration = [8, 12, 16].reduce((prev, curr) =>
+    Math.abs(curr - duree) < Math.abs(prev - duree) ? curr : prev
+  );
+  const phaseTemplate = PHASE_TEMPLATES[closestDuration];
+
+  // 2. Adjust phases if competition
+  const phases = _buildPhases(phaseTemplate, duree, competition);
+
+  // 3. Get exercises pool
+  const pool = filterExercises({
+    domain: domaine,
+    materiel,
+    niveau,
+    excludeIds: exercicesExclus || [],
+  });
+
+  // Ensure forced exercises are included
+  const forcedExercises = (exercicesForces || []).map(id => {
+    const ex = pool.find(e => e.id === id) || { id, name: id };
+    return ex;
+  });
+
+  // 4. Get volume params (age-adjusted)
+  const vol = getVolume(niveau, age || '30-39');
+  const ageMod = AGE_MODIFIERS[age || '30-39'] || AGE_MODIFIERS['30-39'];
+
+  // 5. Build week-by-week schedule
+  const days    = DAY_TEMPLATES[Math.min(seancesParSemaine, 5)] || DAY_TEMPLATES[3];
+  const isMixte = domaine === 'mixte';
+  const mixteSplits = isMixte ? (MIXTE_SPLITS[Math.min(seancesParSemaine, 5)] || MIXTE_SPLITS[3]) : null;
+  const splits  = isMixte ? mixteSplits.map(s=>s.nom) : (DOMAIN_SPLITS[domaine] || DOMAIN_SPLITS.gym)[Math.min(seancesParSemaine, 5)] || [];
+
+  const semaines = [];
+  let weekNum = 1;
+
+  phases.forEach(phase => {
+    for(let pw = 0; pw < phase.weeks; pw++) {
+      const isDeload = pw > 0 && pw % (vol.deloadFreq || 4) === (vol.deloadFreq - 1);
+      const isTaper  = phase.isTaper;
+
+      const jours = days.map((dayName, di) => {
+        const splitName  = splits[di] || dayName;
+        // For mixte: use focus domains for this day's split
+        const dayFocus = isMixte && mixteSplits?.[di]?.focus;
+        const dayRpeMax = isMixte && mixteSplits?.[di]?.rpeMax
+          ? Math.min(mixteSplits[di].rpeMax, vol.rpeMax)
+          : vol.rpeMax;
+
+        const exForDay = isMixte && dayFocus
+          ? _selectExercisesForMixte(pool, forcedExercises, dayFocus, vol.exPerSession, di)
+          : _selectExercisesForDay(pool, forcedExercises, splitName, domaine, vol.exPerSession, di);
+
+        const exercices = exForDay.map(ex => {
+          const reps = _repsForPhase(phase, vol, isDeload, isTaper);
+          const pct  = isDeload ? 0.60 : isTaper ? 0.65 : phase.intensite;
+          const kg   = orm ? _calcKg(ex.id, pct, orm) : null;
+
+          return {
+            id:       ex.id,
+            nom:      ex.name,
+            series:   isDeload || isTaper ? Math.max(2, vol.series - 2) : vol.series,
+            reps,
+            pct1rm:   Math.round(pct * 100),
+            kgPlan:   kg,
+            muscles:  ex.muscles || [],
+          };
+        });
+
+        return { nom: dayName, split: splitName, exercices };
+      });
+
+      semaines.push({
+        num:     weekNum,
+        phase:   phase.nom,
+        isDeload,
+        isTaper,
+        rpeTarget: isDeload ? '≤ 6.5' : isTaper ? '≤ 7' : (phase.rpeTarget || vol.rpeTarget),
+        intensite: isDeload ? 0.60 : isTaper ? 0.65 : phase.intensite,
+        jours,
+      });
+
+      weekNum++;
+    }
+  });
+
+  return {
+    id:        newProgramId,
+    name:      name || `Programme ${domaine === 'mixte' ? 'Mixte' : domaine} ${duree} sem.`,
+    createdAt: Date.now(),
+    config,
+    phases:    phases.map(p => ({
+      nom:       p.nom,
+      debut:     p.startWeek,
+      fin:       p.startWeek + p.weeks - 1,
+      intensite: p.intensite,
+      rpeTarget: p.rpeTarget,
+    })),
+    semaines,
+    orm: orm || {},
+    totalWeeks: weekNum - 1,
+  };
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function _buildPhases(template, totalWeeks, competition) {
+  // Distribute weeks across phases, respecting taper at end
+  const taperWeeks  = 1;
+  const mainWeeks   = totalWeeks - taperWeeks;
+  const nonTaper    = template.filter(p => !p.isTaper);
+  const totalRatio  = nonTaper.reduce((s, p) => s + p.weeks, 0);
+
+  let weekCursor = 1;
+  const phases = nonTaper.map(p => {
+    const scaled = Math.max(1, Math.round(p.weeks / totalRatio * mainWeeks));
+    const phase  = { ...p, weeks: scaled, startWeek: weekCursor };
+    weekCursor  += scaled;
+    return phase;
+  });
+
+  // Add taper
+  const taperTemplate = template.find(p => p.isTaper);
+  if(taperTemplate) {
+    phases.push({ ...taperTemplate, weeks: taperWeeks, startWeek: weekCursor });
+    weekCursor += taperWeeks;
+  }
+
+  // If competition: insert taper 2 weeks before
+  if(competition?.date) {
+    const compDate   = new Date(competition.date);
+    const startDate  = new Date(); // approximate
+    const weeksToComp = Math.max(1, Math.ceil((compDate - startDate) / 604800000));
+    // Mark competition week
+    phases.compWeek = Math.min(weeksToComp, totalWeeks);
+  }
+
+  return phases;
+}
+
+function _selectExercisesForDay(pool, forced, splitName, domaine, count, dayIndex) {
+  const split  = splitName.toLowerCase();
+  let filtered = [...pool];
+
+  // Filter by muscle group based on split name
+  if(split.includes('push') || split.includes('sup') || split.includes('chest')) {
+    filtered = pool.filter(e => e.muscles?.some(m => ['pec','deltAnt','triceps'].includes(m)));
+  } else if(split.includes('pull') || split.includes('back')) {
+    filtered = pool.filter(e => e.muscles?.some(m => ['dorsaux','biceps','trapeze'].includes(m)));
+  } else if(split.includes('legs') || split.includes('inf') || split.includes('leg')) {
+    filtered = pool.filter(e => e.muscles?.some(m => ['quad','ischio','fessiers','mollets'].includes(m)));
+  } else if(split.includes('metcon') || split.includes('cardio') || split.includes('simulation')) {
+    filtered = pool.filter(e => e.domains?.includes('hyrox') || e.domains?.includes('cardio'));
+  }
+
+  if(filtered.length < 2) filtered = pool;
+
+  // Prioritise forced exercises for day 0
+  const result = [];
+  if(dayIndex === 0) {
+    forced.slice(0, 2).forEach(ex => {
+      if(!result.find(e => e.id === ex.id)) result.push(ex);
+    });
+  }
+
+  // Fill remaining slots
+  const used = new Set(result.map(e => e.id));
+  const shuffled = _shuffle(filtered.filter(e => !used.has(e.id)));
+  shuffled.slice(0, count - result.length).forEach(ex => result.push(ex));
+
+  return result.slice(0, count);
+}
+
+function _repsForPhase(phase, vol, isDeload, isTaper) {
+  if(isDeload || isTaper) return vol.repsRange[1] + 2; // higher reps, lower weight
+  // Higher intensity = lower reps
+  if(phase.intensite >= 0.88) return vol.repsRange[0];
+  if(phase.intensite >= 0.78) return Math.round((vol.repsRange[0] + vol.repsRange[1]) / 2);
+  return vol.repsRange[1];
+}
+
+function _calcKg(exId, pct, orm) {
+  const ref = orm[exId] || orm.squat || orm.deadlift || orm.press;
+  if(!ref) return null;
+  return Math.round(ref * pct / 1.25) * 1.25;
+}
+
+function _generateGrossesseProg(config, id) {
+  const { grossesse_type, mois_grossesse, postnatal_phase, duree, name, seancesParSemaine } = config;
+  const isPrenatal = grossesse_type === 'prenatal';
+  const mois = mois_grossesse || 5;
+  const moisConf = GROSSESSE_MOIS_CONFIG[mois] || GROSSESSE_MOIS_CONFIG[5];
+  const totalWeeks = duree || (isPrenatal ? 8 : 6);
+
+  // Phases based on type
+  let phases;
+  if(isPrenatal) {
+    phases = [{ nom:`Programme prénatal — ${moisConf.label}`, debut:1, fin:totalWeeks, intensite:0.55, rpeTarget:`≤ ${moisConf.rpe_max}` }];
+  } else {
+    const phaseDef = POSTNATAL_PHASES.find(p=>p.id===postnatal_phase) || POSTNATAL_PHASES[0];
+    phases = [{ nom:`Post-natal — ${phaseDef.label}`, debut:1, fin:totalWeeks, intensite:0.50, rpeTarget:'≤ 6' }];
+  }
+
+  // Build semaines
+  const semaines = [];
+  for(let w = 1; w <= totalWeeks; w++) {
+    const currentMois = isPrenatal ? Math.min(9, mois + Math.floor((w-1) / 4)) : mois;
+    const mc = GROSSESSE_MOIS_CONFIG[currentMois] || moisConf;
+
+    const jours = GROSSESSE_SEMAINE_TYPE.map(day => {
+      if(day.seance === 'repos') {
+        return { nom:day.jour, split:day.label, exercices:[
+          { id:'kegel_repos', nom:'Kegel quotidien', unit:'', kgPlan:null, scheme:'3 × 10 · 8 s', muscles:['core'], pct1rm:null },
+          { id:'etirements_repos', nom:'Étirements doux', unit:'', kgPlan:null, scheme:'10 min', muscles:[], pct1rm:null },
+        ]};
+      }
+
+      // Get exercises for this seance type
+      let seanceId = day.seance;
+      const exs = GROSSESSE_EXERCISES_PRENATAL
+        .filter(e => e.seance === seanceId)
+        .map(e => {
+          const dosage = e.dosage_key ? mc[e.dosage_key] : e.dosage;
+          const supprime = e.supprime_key ? mc[e.supprime_key] : (e.supprime_from ? currentMois >= e.supprime_from : false);
+          return {
+            id:       e.id,
+            nom:      e.name,
+            unit:     '',
+            kgPlan:   null,
+            scheme:   dosage || '—',
+            muscles:  [],
+            pct1rm:   null,
+            ballon:   e.ballon || false,
+            video:    e.video_key === 'pilates_par_mois' ? PILATES_VIDEOS[currentMois] : e.video,
+            desc:     e.desc,
+            supprime,
+            supprime_msg: e.supprime_msg,
+            note:     e.note_key ? mc[e.note_key] : null,
+          };
+        });
+
+      return {
+        nom:      day.jour,
+        split:    day.label,
+        alt:      day.alt || null,
+        altLabel: day.altLabel || null,
+        exercices: exs,
+      };
+    });
+
+    semaines.push({
+      num:       w,
+      phase:     phases[0].nom,
+      isDeload:  false,
+      isTaper:   false,
+      rpeTarget: `≤ ${mc.rpe_max}`,
+      intensite: phases[0].intensite,
+      moisCourant: currentMois,
+      jours,
+    });
+  }
+
+  return {
+    id,
+    name:       name || (isPrenatal ? `Programme prénatal — ${moisConf.label}` : `Programme post-natal`),
+    type:       grossesse_type === 'prenatal' ? 'prenatal' : 'postnatal',
+    subtype:    'grossesse',
+    status:     'active',
+    createdAt:  Date.now(),
+    config,
+    phases,
+    semaines,
+    orm:        {},
+    totalWeeks,
+  };
+}
+
+function _selectExercisesForMixte(pool, forced, focuses, count, dayIndex) {
+  // Filter exercises that match any of the focus domains
+  const filtered = pool.filter(e =>
+    e.domains?.some(d => focuses.includes(d))
+  );
+  const src = filtered.length >= 2 ? filtered : pool;
+
+  const result = [];
+  // Add forced exercises on day 0
+  if(dayIndex === 0) {
+    forced.slice(0, 2).forEach(ex => {
+      if(!result.find(e=>e.id===ex.id)) result.push(ex);
+    });
+  }
+  const used = new Set(result.map(e=>e.id));
+  const shuffled = _shuffle(src.filter(e=>!used.has(e.id)));
+  shuffled.slice(0, count - result.length).forEach(ex => result.push(ex));
+  return result.slice(0, count);
+}
+
+function _shuffle(arr) {
+  const a = [...arr];
+  for(let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
