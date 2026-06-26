@@ -34,7 +34,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 
 /* HEADER */
 header{background:var(--text);color:#fff;padding:16px 24px 14px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
-header h1{font-family:var(--mono);font-size:17px;font-weight:500;letter-spacing:-.02em}
+header h1{font-family:var(--mono);font-size:17px;font-weight:500;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono)}
 
 /* TOP NAV */
@@ -4037,7 +4037,7 @@ function importJSON(event) {
   }
 
   const reader = new FileReader();
-  reader.onload = async e => {
+  reader.onload = e => {
     try {
       const parsed   = JSON.parse(e.target.result);
       const incoming = parsed.data || parsed;
@@ -4058,8 +4058,7 @@ function importJSON(event) {
       if(fb) { fb.style.display = 'inline'; setTimeout(() => fb.style.display = 'none', 3000); }
 
       // Refresh all views
-      const { renderSaisie } = await import('./tracker.js');
-      renderSaisie();
+      if(typeof renderSaisie === 'function') renderSaisie();
       repaintMuscles();
 
     } catch(err) {
@@ -6052,6 +6051,7 @@ function showDoc(id) {
 // ── Window exposures ──────────────────────────────────────────────────────────
 
 window.showSection   = showSection;
+window._dbClear      = dbClear;
 window.showTracker   = showTracker;
 window.showProg      = showProg;
 window.showWeek      = showWeek;
