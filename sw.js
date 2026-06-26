@@ -1,51 +1,39 @@
 /**
- * sw.js — Service Worker
- * Cache-first strategy for static assets, network-first for navigation.
+ * sw.js — Service Worker Just2Train
+ * Architecture monofichier : seul index.html est à cacher.
  *
  * ⚠ À chaque déploiement : incrémenter APP_VERSION
  *   pour invalider le cache sur tous les appareils.
  */
 
-const APP_VERSION = '1.0.0';  // ← incrémenter à chaque déploiement
-const CACHE_NAME  = `athx-${APP_VERSION}`;
+const APP_VERSION = '2.0.0';  // ← incrémenter à chaque déploiement
+const CACHE_NAME  = `just2train-${APP_VERSION}`;
+const BASE        = self.registration.scope;
 
-// Base path auto-detected from sw.js location (works on GitHub Pages subpaths)
-const BASE = self.registration.scope;
-
+// Seuls fichiers réellement présents sur GitHub Pages
 const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
-  BASE + 'css/base.css',
-  BASE + 'css/tracker.css',
-  BASE + 'css/musculaire.css',
-  BASE + 'css/programme.css',
-  BASE + 'js/app.js',
-  BASE + 'js/db.js',
-  BASE + 'js/store.js',
-  BASE + 'js/security.js',
-  BASE + 'js/data.js',
-  BASE + 'js/tracker.js',
-  BASE + 'js/musculaire.js',
-  BASE + 'js/progression.js',
-  BASE + 'js/io.js',
-  BASE + 'views/tracker.html',
-  BASE + 'views/musculaire.html',
-  BASE + 'views/programme.html',
-  BASE + 'views/doc.html',
   BASE + 'manifest.json',
-  'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap',
+  BASE + 'icons/icon-192.png',
+  BASE + 'icons/icon-512.png',
 ];
 
-// ── Install: pre-cache all static assets ────────────────────────────────────
+// ── Install ───────────────────────────────────────────────────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
+      .catch(err => {
+        // Ne pas bloquer l'install si une icône manque
+        console.warn('[SW] install warning:', err);
+        return self.skipWaiting();
+      })
   );
 });
 
-// ── Activate: clear old caches ───────────────────────────────────────────────
+// ── Activate: purge vieux caches ──────────────────────────────────────────────
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
@@ -56,35 +44,36 @@ self.addEventListener('activate', event => {
   );
 });
 
-// ── Fetch: cache-first for static, network-first for navigation ──────────────
+// ── Fetch: cache-first pour index.html, network pour le reste ─────────────────
 self.addEventListener('fetch', event => {
   const { request } = event;
 
-  // Skip non-GET and Chrome extension requests
   if(request.method !== 'GET' || request.url.startsWith('chrome-extension')) return;
 
-  // Navigation requests: network-first with cache fallback
+  // Navigation → toujours index.html depuis le cache
   if(request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then(res => { _updateCache(request, res.clone()); return res; })
-        .catch(() => caches.match('/index.html'))
+      caches.match(BASE + 'index.html')
+        .then(cached => cached || fetch(request))
     );
     return;
   }
 
-  // Static assets: cache-first
+  // Autres assets → cache-first
   event.respondWith(
     caches.match(request).then(cached => {
       if(cached) return cached;
-      return fetch(request).then(res => {
-        if(res.ok) _updateCache(request, res.clone());
-        return res;
+      return fetch(request).then(response => {
+        if(!response || response.status !== 200 || response.type === 'opaque') return response;
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+        return response;
       });
     })
   );
 });
 
-function _updateCache(request, response) {
-  caches.open(CACHE_NAME).then(cache => cache.put(request, response));
-}
+// ── Message: skipWaiting à la demande (bouton "Mettre à jour") ────────────────
+self.addEventListener('message', event => {
+  if(event.data === 'skipWaiting') self.skipWaiting();
+});

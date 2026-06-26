@@ -86,8 +86,6 @@ export async function initWizard() {
 
   // Load exercises in background
   loadExercisesDB().then(({ fromApi, fromFallback }) => {
-    if(fromApi) console.log('[wizard] Exercices chargés depuis wger');
-    if(fromFallback) console.log('[wizard] Exercices fallback utilisés');
   });
 
   renderStep();

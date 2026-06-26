@@ -265,7 +265,7 @@ function _buildSeanceDetail(seanceKey, mois) {
   if(!s) return '';
 
   let html = `<button class="g-back-btn" data-gback="seances">← Retour aux séances</button>
-    <div class="g-seance-title">${s.icon} ${s.title}</div>
+    <div class="g-seance-title">${s.icon} ${esc(s.title||"")}</div>
     <div class="g-seance-mat">🎒 ${s.mat} · ${_seanceDuration(seanceKey, mois)}</div>
     <div class="g-alert-card">💬 Test de la parole à tout moment. Arrête si douleur, vertiges ou contractions.</div>
     <div class="g-exercices-list">`;

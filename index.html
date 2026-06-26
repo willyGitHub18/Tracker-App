@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Just2Train">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#1a1a18">
-  <link rel="canonical" href="https://willygithub18.github.io/Tracker-App/">
-  <title>Just2Train</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Just2Train">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a18">
+<link rel="canonical" href="https://willygithub18.github.io/Tracker-App/">
+<title>Just2Train</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 
 
@@ -573,13 +573,10 @@ tr:last-child td{border-bottom:none}
 .prog-phase-int{font-family:var(--mono);font-size:11px;color:var(--text2);min-width:36px;text-align:right}
 
 .top-nav-btn:nth-child(3){display:none}
-  </style>
+</style>
 </head>
 <body>
-<header>
-  <h1>Just2Train</h1>
-  <span class="sub">Ton entraînement, ton programme</span>
-</header>
+<header><h1>Just2Train</h1><span class="sub">Ton entraînement, ton programme</span></header>
 <div class="top-nav">
   <button class="top-nav-btn active" onclick="showSection('tracker')">&#x1F4CA; Tracker</button>
   <button class="top-nav-btn" onclick="showSection('musculaire');renderMusculaire()">&#x1F9AC; Muscles</button>
@@ -1729,7 +1726,7 @@ tr:last-child td{border-bottom:none}
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-/* ── db.js ── */
+/* -- db.js -- */
 /**
  * db.js — IndexedDB storage layer
  * Replaces localStorage for better iOS stability.
@@ -1859,7 +1856,7 @@ async function dbClear() {
 
 
 
-/* ── security.js ── */
+/* -- security.js -- */
 /**
  * security.js — Input sanitisation & validation
  * All functions are pure (no side effects).
@@ -1947,7 +1944,7 @@ function isValidMuscleId(id) {
 }
 
 
-/* ── data.js ── */
+/* -- data.js -- */
 /**
  * data.js — All app constants and exercise definitions
  * No side effects. Pure data.
@@ -2271,7 +2268,7 @@ const POSTNATAL_PHASES = [
 ];
 
 
-/* ── store.js ── */
+/* -- store.js -- */
 /**
  * store.js — App-level storage helpers
  * Wraps db.js with typed accessors for records and session status.
@@ -2493,7 +2490,7 @@ function _mergePeriods(list, gapDays) {
 }
 
 
-/* ── progression.js ── */
+/* -- progression.js -- */
 /**
  * progression.js — Lafay-inspired progression engine
  *
@@ -2786,7 +2783,7 @@ function _calcBaseline(ex, upToWeek) {
 }
 
 
-/* ── tracker.js ── */
+/* -- tracker.js -- */
 /**
  * tracker.js — Generic tracker
  * Works with any program structure (ATHX fixed or wizard-generated).
@@ -3669,7 +3666,7 @@ function _parseSetsGeneric(scheme) {
 }
 
 
-/* ── musculaire.js ── */
+/* -- musculaire.js -- */
 /**
  * musculaire.js — Muscle fatigue tracking & SVG body painting
  */
@@ -3989,7 +3986,7 @@ window._selectMuscle = (mid) => {
 };
 
 
-/* ── io.js ── */
+/* -- io.js -- */
 /**
  * io.js — JSON and CSV import/export
  */
@@ -4084,7 +4081,7 @@ function _dateStr() {
 }
 
 
-/* ── exercises-db.js ── */
+/* -- exercises-db.js -- */
 /**
  * exercises-db.js — Exercise database
  * Fetches from wger API and caches in IndexedDB.
@@ -4320,7 +4317,7 @@ function _categoryToDomains(catId) {
 
 
 
-/* ── programs.js ── */
+/* -- programs.js -- */
 /**
  * programs.js — Multi-program storage
  * Handles active, archived (completed/abandoned) programs.
@@ -4351,11 +4348,15 @@ function getProgram(id) {
 }
 
 function saveProgram(program) {
-  const list = getPrograms();
-  const idx  = list.findIndex(p => p.id === program.id);
-  if(idx >= 0) list[idx] = program;
-  else list.push(program);
-  dbSet(KEY_LIST, list);
+  try {
+    const list = getPrograms();
+    const idx  = list.findIndex(p => p.id === program.id);
+    if(idx >= 0) list[idx] = program;
+    else list.push(program);
+    dbSet(KEY_LIST, list);
+  } catch(err) {
+    console.error('[programs] saveProgram failed:', err);
+  }
 }
 
 function deleteProgram(id) {
@@ -4466,10 +4467,14 @@ function getProgRecord(programId, exId, week) {
 }
 
 function setProgRecord(programId, exId, week, data) {
-  const all = dbGet('programs_tracking') || {};
-  if(!all[programId]) all[programId] = {};
-  all[programId][`${exId}_w${week}`] = data;
-  dbSet('programs_tracking', all);
+  try {
+    const all = dbGet('programs_tracking') || {};
+    if(!all[programId]) all[programId] = {};
+    all[programId][`${exId}_w${week}`] = data;
+    dbSet('programs_tracking', all);
+  } catch(err) {
+    console.error('[programs] setProgRecord failed:', err);
+  }
 }
 
 function getProgExStatus(programId, exId, week) {
@@ -4550,7 +4555,7 @@ function importAllPrograms(data) {
 }
 
 
-/* ── generator.js ── */
+/* -- generator.js -- */
 /**
  * generator.js — Program generation algorithm
  * Takes wizard config and produces a full program structure.
@@ -4968,7 +4973,7 @@ function _shuffle(arr) {
 }
 
 
-/* ── grossesse.js ── */
+/* -- grossesse.js -- */
 /**
  * grossesse.js — Programme prénatal/post-natal complet
  * Basé sur les recommandations CNSF, HAS, SOGC/CSEP
@@ -5236,7 +5241,7 @@ function _buildSeanceDetail(seanceKey, mois) {
   if(!s) return '';
 
   let html = `<button class="g-back-btn" data-gback="seances">← Retour aux séances</button>
-    <div class="g-seance-title">${s.icon} ${s.title}</div>
+    <div class="g-seance-title">${s.icon} ${esc(s.title||"")}</div>
     <div class="g-seance-mat">🎒 ${s.mat} · ${_seanceDuration(seanceKey, mois)}</div>
     <div class="g-alert-card">💬 Test de la parole à tout moment. Arrête si douleur, vertiges ou contractions.</div>
     <div class="g-exercices-list">`;
@@ -5342,7 +5347,7 @@ function _bannerColor(mois) {
 }
 
 
-/* ── wizard.js ── */
+/* -- wizard.js -- */
 /**
  * wizard.js — 7-step program construction wizard
  */
@@ -5424,8 +5429,6 @@ async function initWizard() {
 
   // Load exercises in background
   loadExercisesDB().then(({ fromApi, fromFallback }) => {
-    if(fromApi) console.log('[wizard] Exercices chargés depuis wger');
-    if(fromFallback) console.log('[wizard] Exercices fallback utilisés');
   });
 
   renderStep();
@@ -5975,7 +5978,7 @@ function _fmtDate(d) {
 }
 
 
-/* ── app.js ── */
+/* -- app.js -- */
 /**
  * app.js — Entry point
  * Handles routing, PWA, ATHX migration, and program lifecycle.
@@ -6598,8 +6601,6 @@ function _migrateAthxIfNeeded() {
     // We mark it so tracker knows to use legacy storage
     prog.migratedFrom = 'athx_legacy';
     saveProgram(prog);
-
-    console.log('[ATHX] Legacy data detected — ATHX programme created and activated');
   }
 
   dbSet(MIGRATION_KEY, true);
@@ -6634,7 +6635,6 @@ async function init() {
   if('serviceWorker' in navigator && isDeployed) {
     try {
       const reg = await navigator.serviceWorker.register('./sw.js');
-      console.log('[SW] registered:', reg.scope);
       reg.addEventListener('updatefound', () => {
         const nw = reg.installing;
         nw.addEventListener('statechange', () => {
@@ -6646,8 +6646,6 @@ async function init() {
       });
     } catch(err) { console.warn('[SW] failed:', err); }
   }
-
-  console.log('[ATHX] App ready');
 }
 
 function _showUpdateBanner() {

@@ -1,14 +1,13 @@
 {
-  "name": "ATHX Tracker",
-  "short_name": "ATHX",
-  "description": "Suivi d'entraînement ATHX — force, progression et fatigue musculaire",
+  "name": "Just2Train",
+  "short_name": "Just2Train",
+  "description": "Ton entraînement, ton programme — tracker de charges, suivi musculaire, wizard de programmes",
   "start_url": "/Tracker-App/",
   "scope": "/Tracker-App/",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#1a1a18",
   "theme_color": "#1a1a18",
-  "lang": "fr",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -22,6 +21,5 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "categories": ["sports", "health", "fitness"]
+  ]
 }

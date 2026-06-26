@@ -29,11 +29,15 @@ export function getProgram(id) {
 }
 
 export function saveProgram(program) {
-  const list = getPrograms();
-  const idx  = list.findIndex(p => p.id === program.id);
-  if(idx >= 0) list[idx] = program;
-  else list.push(program);
-  dbSet(KEY_LIST, list);
+  try {
+    const list = getPrograms();
+    const idx  = list.findIndex(p => p.id === program.id);
+    if(idx >= 0) list[idx] = program;
+    else list.push(program);
+    dbSet(KEY_LIST, list);
+  } catch(err) {
+    console.error('[programs] saveProgram failed:', err);
+  }
 }
 
 export function deleteProgram(id) {
@@ -144,10 +148,14 @@ export function getProgRecord(programId, exId, week) {
 }
 
 export function setProgRecord(programId, exId, week, data) {
-  const all = dbGet('programs_tracking') || {};
-  if(!all[programId]) all[programId] = {};
-  all[programId][`${exId}_w${week}`] = data;
-  dbSet('programs_tracking', all);
+  try {
+    const all = dbGet('programs_tracking') || {};
+    if(!all[programId]) all[programId] = {};
+    all[programId][`${exId}_w${week}`] = data;
+    dbSet('programs_tracking', all);
+  } catch(err) {
+    console.error('[programs] setProgRecord failed:', err);
+  }
 }
 
 export function getProgExStatus(programId, exId, week) {

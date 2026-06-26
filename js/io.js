@@ -50,7 +50,7 @@ export function importJSON(event) {
   }
 
   const reader = new FileReader();
-  reader.onload = async e => {
+  reader.onload = e => {
     try {
       const parsed   = JSON.parse(e.target.result);
       const incoming = parsed.data || parsed;
@@ -71,8 +71,7 @@ export function importJSON(event) {
       if(fb) { fb.style.display = 'inline'; setTimeout(() => fb.style.display = 'none', 3000); }
 
       // Refresh all views
-      const { renderSaisie } = await import('./tracker.js');
-      renderSaisie();
+      if(typeof renderSaisie === 'function') renderSaisie();
       repaintMuscles();
 
     } catch(err) {

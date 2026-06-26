@@ -3,7 +3,7 @@
  * Handles routing, PWA, ATHX migration, and program lifecycle.
  */
 
-import { dbInit, dbGet, dbSet }    from './db.js';
+import { dbInit, dbGet, dbSet, dbClear } from './db.js';
 import { initWeekSel, renderSaisie, renderProgression, renderHistorique, setCurrentProgram, getCurrentProgram } from './tracker.js';
 import { renderMusculaire, initBodyDelegation, repaintMuscles, switchBodyView } from './musculaire.js';
 import { exportJSON, exportCSV, importJSON } from './io.js';
@@ -85,6 +85,7 @@ export function showDoc(id) {
 // ── Window exposures ──────────────────────────────────────────────────────────
 
 window.showSection   = showSection;
+window._dbClear      = dbClear;
 window.showTracker   = showTracker;
 window.showProg      = showProg;
 window.showWeek      = showWeek;
@@ -631,8 +632,6 @@ function _migrateAthxIfNeeded() {
     // We mark it so tracker knows to use legacy storage
     prog.migratedFrom = 'athx_legacy';
     saveProgram(prog);
-
-    console.log('[ATHX] Legacy data detected — ATHX programme created and activated');
   }
 
   dbSet(MIGRATION_KEY, true);
@@ -667,7 +666,6 @@ async function init() {
   if('serviceWorker' in navigator && isDeployed) {
     try {
       const reg = await navigator.serviceWorker.register('./sw.js');
-      console.log('[SW] registered:', reg.scope);
       reg.addEventListener('updatefound', () => {
         const nw = reg.installing;
         nw.addEventListener('statechange', () => {
@@ -679,8 +677,6 @@ async function init() {
       });
     } catch(err) { console.warn('[SW] failed:', err); }
   }
-
-  console.log('[ATHX] App ready');
 }
 
 function _showUpdateBanner() {
