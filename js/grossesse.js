@@ -22,7 +22,7 @@ const SEANCES_PRENATAL = {
     tag:'Endurance · Lun & Sam', title:'Marche active', icon:'🚶‍♀️', mat:'Dehors',
     exercices:[
       { id:'ech', name:'Échauffement marche lente', dosage:'3 min', desc:'Marche lente avec rotations douces des chevilles, épaules et cou. Progresser en allure sur 3 minutes.', tip:'💡 Commence dans la rue dès le départ.', video:null },
-      { id:'marche_soutenue', name:'Marche à allure soutenue', dosage_fn: m => MOIS_CONFIG[m].duree_marche, desc:"Allure permettant de tenir une conversation (test de la parole). Dos droit, abdos légèrement engagés. Si tu pousses la poussette, ça compte !", tip_fn: m => MOIS_CONFIG[m].marche_note ? '⚠️ ' + MOIS_CONFIG[m].marche_note + ' FC max : 145 bpm.' : '⚠️ FC max : 145 bpm. Ralentis si tu ne peux plus parler.', video:null },
+      { id:'marche_soutenue', name:'Marche à allure soutenue', dosage_fn: m => MOIS_CONFIG[m].duree_marche, desc:"Allure permettant de tenir une conversation (test de la parole). Dos droit, abdos légèrement engagés. Si tu pousses la poussette, ça compte !", tip_fn: m => MOIS_CONFIG[m].marche_note ? "⚠️ " + MOIS_CONFIG[m].marche_note + " Test de la parole = référence d'intensité (ACOG 2020)." : "⚠️ Test de la parole = seul indicateur fiable. Parler normalement = intensité correcte. Si tu ne peux plus parler, ralentis.", video:null },
       { id:'retour_marche', name:'Retour au calme + étirements', dosage:'3 min', desc:'Marche lente 2 min, étirement des mollets 30 s par côté. Rotation lente des hanches debout.', tip:'💡 Profite du retour à la maison pour finir en marchant doucement.', video:null },
     ]
   },
@@ -92,12 +92,13 @@ const SEMAINE_TYPE = [
 
 const CONSEILS_HTML = `
 <div class="conseil-block">
-  <div class="conseil-title">🗣️ Intensité modérée — test de la parole</div>
-  <div class="conseil-card">Tu dois pouvoir tenir une conversation pendant l'effort. <strong>FC max : 145 bpm.</strong> Ralentis immédiatement si tu ne peux plus parler.</div>
+  <div class="conseil-title">🗣️ Intensité — test de la parole uniquement</div>
+  <div class="conseil-card">Tu dois pouvoir tenir une conversation pendant l'effort. Si tu ne peux plus parler normalement, ralentis immédiatement.<br><br>
+  <strong>⚠️ La limite de 145 bpm est obsolète depuis les années 1990</strong> (ACOG 1985, abandonnée). L'ACOG 2020 recommande d'utiliser uniquement le <strong>test de la parole et le RPE</strong> — la fréquence cardiaque n'est pas un indicateur fiable pendant la grossesse car les réponses cardiaques varient individuellement.</div>
 </div>
 <div class="conseil-block">
   <div class="conseil-title">⚠️ Positions à éviter</div>
-  <div class="conseil-card">Pas de position allongée sur le dos après le 4ème mois → toujours côté gauche. Pas de crunchs, sit-ups ou abdominaux classiques. Pas de sauts, sports de contact.</div>
+  <div class="conseil-card">Pas de position allongée sur le dos après le 4ème mois → toujours côté gauche. Pas de crunchs, sit-ups ou abdominaux classiques. Pas de sauts, sports de contact, ski alpin, équitation. Pas de plongée sous-marine. Pas de hot yoga.</div>
 </div>
 <div class="conseil-block">
   <div class="conseil-title">🦴 Douleur pubienne (SPD)</div>
@@ -105,24 +106,32 @@ const CONSEILS_HTML = `
 </div>
 <div class="conseil-block">
   <div class="conseil-title">🎯 Kegel — objectif pluriquotidien</div>
-  <div class="conseil-card">Les Kegel se font <strong>plusieurs fois par jour</strong>, pas seulement en séance. 3 × 10 contractions de 8–10 s = 5 min. Associe-les à une habitude : café, brossage de dents, téléphone.</div>
+  <div class="conseil-card">Les Kegel se font <strong>plusieurs fois par jour</strong>, pas seulement en séance. 3 × 10 contractions de 8-10 s = 5 min. Associe-les à une habitude : café, brossage de dents, téléphone.</div>
 </div>
 <div class="conseil-block">
-  <div class="conseil-title">💧 Hydratation & chaleur</div>
+  <div class="conseil-title">💧 Hydratation et chaleur</div>
   <div class="conseil-card">Boire avant, pendant et après chaque séance. Éviter l'exercice en pleine chaleur ou pièce mal ventilée.</div>
 </div>
 <div class="conseil-block">
-  <div class="conseil-title">⚕️ Validation médicale</div>
-  <div class="conseil-card">La séance de renforcement musculaire doit être validée par ta sage-femme ou médecin avant le début du programme. Durée max par séance : 90 min (non contraignant ici).</div>
+  <div class="conseil-title">⚕️ Validation médicale obligatoire</div>
+  <div class="conseil-card">Ce programme doit être validé par ta sage-femme ou médecin avant de commencer, en particulier la séance de renforcement musculaire.</div>
 </div>
-<div class="conseil-block alert">
-  <div class="conseil-title">🚨 Signes d'arrêt immédiats — consulter si :</div>
-  <div class="conseil-card" style="color:var(--red)">contractions · saignements · douleur abdominale ou pelvienne aiguë · essoufflement anormal · vertiges · gonflement soudain · diminution des mouvements du bébé</div>
+<div class="conseil-block" style="border:1.5px solid #c0392b;border-radius:10px;padding:12px;background:#fdf3f3">
+  <div class="conseil-title" style="color:#c0392b">🚫 Contre-indications absolues — ne pas faire d'exercice si :</div>
+  <div class="conseil-card" style="background:transparent;border:none;padding:0">Rupture prématurée des membranes · Travail prématuré en cours · Saignement vaginal persistant inexpliqué · Placenta praevia après 28 semaines · Prééclampsie · Béance du col · Grossesse multiple à risque d'accouchement prématuré · Cardiopathie hémodynamique significative · Pneumopathie restrictive · Diabète de type 1 non contrôlé · HTA non contrôlée · Retard de croissance intra-utérin sévère<br><br><strong>Source : HAS 2019, ACOG 2020, SOGC 2019</strong></div>
+</div>
+<div class="conseil-block" style="border:1px solid #e67e22;border-radius:10px;padding:12px;background:#fdf5ec">
+  <div class="conseil-title" style="color:#a04000">⚠️ Contre-indications relatives — consulter avant si :</div>
+  <div class="conseil-card" style="background:transparent;border:none;padding:0">Anémie sévère · Arythmie cardiaque · Bronchite chronique · Diabète de type 1 mal équilibré · Obésité morbide (IMC > 40) · Maigreur extrême (IMC < 12) · Sédentarité extrême avant grossesse · Grossesse gémellaire après 28 SA · HTA gestationnelle · Hyperthyroïdie non contrôlée</div>
+</div>
+<div class="conseil-block">
+  <div class="conseil-title">🚨 Arrêter immédiatement et consulter si :</div>
+  <div class="conseil-card" style="color:#c0392b">Contractions · Saignements · Douleur abdominale ou pelvienne aiguë · Essoufflement anormal avant l'effort · Vertiges · Céphalées · Douleur thoracique · Fuite de liquide amniotique · Diminution des mouvements du bébé · Oedème soudain du visage, mains ou chevilles</div>
 </div>
 <div class="conseil-block">
   <div class="conseil-title">📚 Sources</div>
-  <div class="conseil-card" style="font-size:11px;color:var(--text3)">CNSF – Recommandations de pratique clinique, mars 2021 · HAS – Grossesse et post-partum · ANSES 2016 · Guide canadien SOGC/CSEP, Br J Sports Med 2018;52:1339-46 · Ameli.fr · NaîtreetGrandir.ca</div>
-</div>`;
+  <div class="conseil-card" style="font-size:11px;color:#888">ACOG Committee Opinion No. 804, 2020 · HAS – Prescription APS grossesse, 2019 · CNSF – RPC, mars 2021 · SOGC/CSEP Canadian Guideline, Br J Sports Med 2018;52:1339-46 · ANSES 2016 · Ameli.fr · NaitreEtGrandir.ca</div>
+</div>`
 
 // ── Post-natal config ─────────────────────────────────────────────────────────
 

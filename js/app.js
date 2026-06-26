@@ -300,7 +300,7 @@ function renderActiveProgramDetail(weekNum) {
 
   if(titleEl) {
     const compet = prog.config?.competition?.date
-      ? ` · 🏆 ${prog.config.competition.type || 'Compétition'} ${new Date(prog.config.competition.date).toLocaleDateString('fr-FR')}`
+      ? ` · 🏆 ${esc(prog.config.competition.type || 'Compétition')} ${new Date(prog.config.competition.date).toLocaleDateString('fr-FR')}`
       : '';
     titleEl.innerHTML = `
       <div class="wiz-header-title">${esc(prog.name)}${compet}</div>

@@ -219,8 +219,8 @@ export const AGE_TRANCHES = [
 ];
 
 export const AGE_MODIFIERS = {
-  '18-29': { volumeMult:1.0,  seriesMax:5, deloadFreq:4, mobilityPct:0.10, rpeMax:9.0, recovDays:1,   rpeTarget:'7–9'   },
-  '30-39': { volumeMult:1.0,  seriesMax:4, deloadFreq:4, mobilityPct:0.15, rpeMax:8.5, recovDays:1,   rpeTarget:'7–8.5' },
+  '18-29': { volumeMult:1.0,  seriesMax:5, deloadFreq:6, mobilityPct:0.10, rpeMax:9.0, recovDays:1,   rpeTarget:'7–9'   },
+  '30-39': { volumeMult:1.0,  seriesMax:4, deloadFreq:5, mobilityPct:0.15, rpeMax:8.5, recovDays:1,   rpeTarget:'7–8.5' },
   '40-49': { volumeMult:0.85, seriesMax:4, deloadFreq:3, mobilityPct:0.20, rpeMax:8.0, recovDays:2,   rpeTarget:'6.5–8' },
   '50-59': { volumeMult:0.75, seriesMax:3, deloadFreq:3, mobilityPct:0.25, rpeMax:7.5, recovDays:2,   rpeTarget:'6–7.5' },
   '60+':   { volumeMult:0.65, seriesMax:3, deloadFreq:2, mobilityPct:0.35, rpeMax:7.0, recovDays:2,   rpeTarget:'5.5–7' },
@@ -268,7 +268,7 @@ export const GROSSESSE_MOIS_CONFIG = {
 export const GROSSESSE_EXERCISES_PRENATAL = [
   // Marche
   { id:'ech_marche',    seance:'marche',  name:'Échauffement marche lente',           dosage:'3 min',                   video:null,          desc:'Marche lente avec rotations douces des chevilles et épaules. Progresser en allure sur 3 min.' },
-  { id:'marche',        seance:'marche',  name:'Marche active',                        dosage_key:'duree_marche',        video:null,          desc:'Allure permettant de tenir une conversation (test de la parole). Dos droit, abdos légers. FC max 145 bpm.', note_key:'marche_note' },
+  { id:'marche',        seance:'marche',  name:'Marche active',                        dosage_key:'duree_marche',        video:null,          desc:'Allure permettant de tenir une conversation (test de la parole = seul indicateur recommandé, ACOG 2020). Dos droit, abdos légers.', note_key:'marche_note' },
   { id:'retour_marche', seance:'marche',  name:'Retour au calme + étirements',         dosage:'3 min',                   video:null,          desc:'Marche lente 2 min, étirement mollets 30 s par côté, rotation lente des hanches.' },
   // Renforcement
   { id:'ech_renfo',     seance:'renfo',   name:'Échauffement — ballon',               dosage:'3 min',                   video:'1x0RTGdyAww', desc:'Assise sur le ballon : cercles bassin × 8 chaque sens, balancement avant/arrière, rotations épaules.', ballon:true },

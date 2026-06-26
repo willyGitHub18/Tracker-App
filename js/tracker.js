@@ -120,7 +120,7 @@ function _renderProgSaisie(prog) {
     html += `<div class="day-card">
       <div class="day-header">
         <span class="day-name">${day.nom}</span>
-        ${day.split && day.split !== day.nom ? `<span style="font-size:11px;color:var(--text3)">${day.split}</span>` : ''}
+        ${day.split && day.split !== day.nom ? `<span style="font-size:11px;color:var(--text3)">${esc(day.split)}</span>` : ''}
       </div>
       <div class="ex-wrap">`;
 
