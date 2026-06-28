@@ -44,7 +44,8 @@ export function importJSON(event) {
   if(!file) return;
 
   if(file.size > 524_288) {
-    alert('Fichier trop volumineux (max 512 Ko).');
+    if(typeof _showSaveToast === 'function') _showSaveToast('⚠️ Fichier trop volumineux (max 512 Ko)');
+    else alert('Fichier trop volumineux (max 512 Ko).');
     event.target.value = '';
     return;
   }
@@ -56,7 +57,12 @@ export function importJSON(event) {
       const incoming = parsed.data || parsed;
       const result   = validateImport(incoming);
 
-      if(!result.ok) throw new Error(result.error);
+      if(!result.ok) {
+        if(typeof _showSaveToast === 'function') _showSaveToast('⚠️ Import échoué : ' + result.error);
+        else alert('Import échoué : ' + result.error);
+        event.target.value = '';
+        return;
+      }
 
       importRecords(result.clean);
 
@@ -67,6 +73,7 @@ export function importJSON(event) {
         });
       }
 
+      if(typeof _showSaveToast === 'function') _showSaveToast('✓ Import réussi — ' + Object.keys(result.clean).length + ' entrées');
       const fb = document.getElementById('importFeedback');
       if(fb) { fb.style.display = 'inline'; setTimeout(() => fb.style.display = 'none', 3000); }
 
@@ -75,7 +82,8 @@ export function importJSON(event) {
       repaintMuscles();
 
     } catch(err) {
-      alert(`Import échoué : ${err.message}`);
+      if(typeof _showSaveToast === 'function') _showSaveToast('⚠️ Import échoué : ' + err.message.slice(0, 60));
+      else alert('Import échoué : ' + err.message);
     }
     event.target.value = '';
   };

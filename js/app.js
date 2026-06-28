@@ -132,6 +132,7 @@ export function showDoc(id) {
 // ── Window exposures ──────────────────────────────────────────────────────────
 
 window.showSection   = showSection;
+window.importJSON    = importJSON;
 window._NUTRITION_PLANS = NUTRITION_PLANS;
 window._dbClear      = dbClear;
 window.showTracker   = showTracker;
@@ -982,8 +983,6 @@ async function init() {
   // Data toolbar
   document.getElementById('btnExportJSON')?.addEventListener('click', exportJSON);
   document.getElementById('btnExportCSV')?.addEventListener('click',  exportCSV);
-  document.getElementById('fileImport')?.addEventListener('change',   importJSON);
-
   // Init wizard
   initWizard();
 
