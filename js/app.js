@@ -76,18 +76,37 @@ export function showTracker(id) {
   if(id === 'historique')  renderHistorique();
 }
 
-export function showProg(id, ctx) {
-  // Scope to the clicked button's container if possible
-  const container = ctx ? ctx.closest('[id]') : document;
-  (container === document
-    ? document.querySelectorAll('.prog-tab')
-    : document.querySelectorAll('.prog-tab')
-  ).forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('#progNav button, .prog-top-nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById(id)?.classList.add('active');
-  const idx = PROG_TABS.indexOf(id);
-  if(idx >= 0) document.querySelectorAll('#progNav button')[idx]?.classList.add('active');
+export function showProgAthx(id) {
+  // Called from ATHX detail view — tabs have prefixed IDs
+  const btn = event?.currentTarget || event?.target?.closest('button');
+  const nav = btn?.closest('.prog-top-nav');
+  const content = nav?.closest('.athx-content') || nav?.parentElement;
+
+  nav?.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn?.classList.add('active');
+
+  content?.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
+  const target = content?.querySelector('#athx-' + id);
+  if(target) target.classList.add('active');
 }
+
+function showProg(id) {
+  // Find the container that holds both the nav and the tab
+  // This handles both the original #programme panel and the cloned detail view
+  const btn = event?.target?.closest('button');
+  const nav = btn?.closest('.prog-top-nav') || document.querySelector('.prog-top-nav');
+  const section = nav?.closest('.section-panel, [id]') || document;
+
+  // Deactivate all tabs and buttons in this section
+  section.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
+  nav?.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+
+  // Find the tab by id within this section (not globally)
+  const target = section.querySelector('#' + id) || document.getElementById(id);
+  target?.classList.add('active');
+  btn?.classList.add('active');
+}
+
 
 export function showWeek(day, bloc) {
   ['b1','b1d','b2','b2d','b3','b3d'].forEach(b => {
@@ -193,9 +212,15 @@ window._confirmReprise = function(repriseWeek) {
 };
 
 window.showProgramsList = function() {
+  // Restore #programme to its original parent if it was moved
+  const progSection = document.getElementById('programme');
+  const mainDiv = document.querySelector('.main');
+  if(progSection && progSection.parentElement !== mainDiv && mainDiv) {
+    mainDiv.appendChild(progSection);
+  }
+
   document.querySelectorAll('.prog-view').forEach(v => v.classList.remove('active-view'));
   document.getElementById('programs-list-view')?.classList.add('active-view');
-  // Clear stale detail view
   const dv = document.getElementById('program-detail-view');
   if(dv) dv.innerHTML = '';
   _renderProgramsList();
@@ -393,25 +418,36 @@ function _renderProgDetailView(prog, container) {
   const NUTRITION_LABELS = { masse:'💪 Prise de masse', perte:'🔥 Perte de poids', healthy:'🥗 Santé / Équilibre', performance:'⚡ Performance', maintien:'⚖️ Maintien' };
 
   // For ATHX fixed program — inject the full programme.html content
-  if(prog.migratedFrom === 'athx_legacy' || prog.subtype === 'fixed') {
-    const athxContent = document.getElementById('programme')?.innerHTML || '';
-    container.innerHTML = `
-      <div class="wiz-header">
-        <div class="wiz-header-top">
-          <div>
-            <div class="wiz-header-title">${esc(prog.name)}</div>
-            <div class="wiz-header-sub">Programme compétition · 17 semaines</div>
-          </div>
-          <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
-        </div>
-      </div>
-      <div>${athxContent}</div>`;
-    // Re-activate first tab (copied content has no active state)
+    if(prog.migratedFrom === 'athx_legacy' || prog.subtype === 'fixed') {
+    // Get ATHX HTML and prefix all IDs to avoid duplicates with hidden #programme
+    const progSection = document.getElementById('programme');
+    if(!progSection) return;
+
+    // Get raw HTML and prefix all id= and targets
+    let athxHtml = progSection.innerHTML;
+    // Prefix IDs: id="nutrition" → id="athx-nutrition"
+    athxHtml = athxHtml.replace(/ id="/g, ' id="athx-');
+    // Prefix showProg calls: showProg('nutrition') → showProgAthx('nutrition')
+    athxHtml = athxHtml.replace(/showProg\('([^']+)'\)/g, "showProgAthx('$1')");
+
+    container.innerHTML =
+      '<div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);margin-bottom:8px">' +
+        '<div>' +
+          '<div style="font-size:15px;font-weight:700">' + esc(prog.name) + '</div>' +
+          '<div style="font-size:11px;color:var(--text3)">Programme compétition · 17 semaines</div>' +
+        '</div>' +
+        '<button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>' +
+      '</div>' +
+      '<div class="athx-content">' + athxHtml + '</div>';
+
+    // Show first tab
     requestAnimationFrame(() => {
-      container.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
-      container.querySelector('.prog-tab')?.classList.add('active');
-      container.querySelectorAll('.prog-top-nav button').forEach(b => b.classList.remove('active'));
-      container.querySelector('.prog-top-nav button')?.classList.add('active');
+      const tabs = container.querySelectorAll('.prog-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      tabs[0]?.classList.add('active');
+      const btns = container.querySelectorAll('.prog-top-nav button');
+      btns.forEach(b => b.classList.remove('active'));
+      btns[0]?.classList.add('active');
     });
     return;
   }

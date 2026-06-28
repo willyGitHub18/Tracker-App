@@ -32,7 +32,7 @@ header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono);di
 
 /* MAIN */
 .main{max-width:var(--max-w);margin:0 auto;padding:24px 20px 60px}
-.section-panel{display:none}.section-panel.active{display:block}
+.section-panel{display:none;overflow-x:hidden}.section-panel.active{display:block;overflow-x:hidden;max-width:100%}
 
 /* musculaire s'étend à toute la largeur disponible dans .main */
 #musculaire{padding:0}
