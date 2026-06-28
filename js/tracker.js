@@ -1004,7 +1004,14 @@ function _updateLegacyCheckmarks(week, dayName) {
   const exs = EXERCISES.filter(e => e.day === dayName);
   exs.forEach(ex => {
     const scheme = ex.repScheme[week - 1];
-    const nSets  = parseSets(scheme) || 4;
+    // For deload/taper: use previous non-null sets count (matches grid rendering)
+    let nSets;
+    if(scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos') {
+      nSets = 4;
+      if(ex.sets) { for(let w = week-2; w >= 0; w--) { if(ex.sets[w] != null) { nSets = ex.sets[w]; break; } } }
+    } else {
+      nSets = parseSets(scheme) || 4;
+    }
     let filledSets = 0;
 
     for(let s = 0; s < nSets; s++) {
@@ -1057,5 +1064,24 @@ function _refreshAnalysisBlock(exId, week, ex) {
       const col = s.type==='good'?'var(--green)':s.type==='warn'?'var(--amber)':s.type==='danger'?'var(--red)':'var(--text2)';
       return `<div style="display:flex;gap:6px;margin-bottom:2px"><span style="color:${col};font-weight:600;flex-shrink:0">${ic}</span><span>${esc(s.text)}</span></div>`;
     }).join('');
+  }
+
+  // Update next-rec-block (suggestion S+1)
+  if(recContainer && adj) {
+    try {
+      const nxt = getNextPlan(ex, week);
+      if(nxt?.kg) {
+        const delta = nxt.kg - (ex.plan?.[week-1] || nxt.kg);
+        const deltaStr = delta > 0 ? `+${delta} kg` : delta < 0 ? `${delta} kg` : '=';
+        const deltaCls = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--red)' : 'var(--text3)';
+        const outcomeClass = adj.type?.includes('behind') ? 'next-rec-back'
+          : adj.type?.includes('ahead') ? 'next-rec-ok' : 'next-rec-hold';
+        recContainer.className = `next-rec-block ${outcomeClass}`;
+        recContainer.innerHTML =
+          `<div class="rec-line">S${week+1} recommandé : <strong>${nxt.kg} ${ex.unit||'kg'} × ${ex.repScheme?.[week]||'?'} reps</strong>` +
+          (delta !== 0 ? `<span style="color:${deltaCls};font-size:11px;margin-left:6px">(${deltaStr} vs plan)</span>` : '') +
+          `</div><div class="reason">${esc(nxt.rule||'')}</div>`;
+      }
+    } catch(e) { /* silently skip if getNextPlan not available */ }
   }
 }

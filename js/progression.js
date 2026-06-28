@@ -72,6 +72,39 @@ export function consecutivePlateaux(ex, beforeWeek) {
 export function getNextPlan(ex, week) {
   if(week >= 17) return null;
 
+  const scheme = ex.repScheme?.[week - 1] || '';
+  const isDeloadWeek = scheme === 'Deload' || scheme === 'Taper';
+
+  // If this is a structural deload/taper week, base S+1 on last normal week
+  // (the deload session kg is intentionally reduced and should not drive progression)
+  if(isDeloadWeek) {
+    // Find last non-deload week with data
+    let refWeek = week - 1;
+    while(refWeek >= 1) {
+      const refScheme = ex.repScheme?.[refWeek - 1] || '';
+      if(refScheme !== 'Deload' && refScheme !== 'Taper' && refScheme !== 'Repos') {
+        const refRec = normRecord(getRecord(ex.id, refWeek));
+        if(refRec?.sets?.some(s => s?.kg)) break;
+      }
+      refWeek--;
+    }
+    if(refWeek >= 1 && refWeek !== week) {
+      // Compute S+1 based on last normal week
+      const refResult = getNextPlan(ex, refWeek);
+      if(refResult) {
+        return {
+          ...refResult,
+          rule: `Basé sur S${refWeek} (dernière semaine normale) — ${refResult.rule}`,
+          deloadRef: true,
+        };
+      }
+    }
+    // Fallback: use official plan
+    const planNext = ex.plan[week];
+    if(planNext) return { kg: planNext, rule: 'Plan officiel S+1 (semaine de deload).', outcome: 'deload', plateauCount: 0 };
+    return null;
+  }
+
   const rec       = normRecord(getRecord(ex.id, week));
   const currentKg = rec ? (Math.max(...(rec.sets || []).map(s => s?.kg || 0).filter(v => v > 0)) || rec.kg) : null;
   if(!currentKg) return ex.plan[week] ? { kg: ex.plan[week], rule: 'Aucune donnée — plan officiel appliqué.', outcome: 'nodata', plateauCount: 0 } : null;
@@ -140,8 +173,12 @@ export function calcAdj(ex, week) {
              avgReps: null, repRatio: null, setPct: null, skipped: true, hyrox: false, deload: false };
   }
   if(status === 'deload') {
-    return { type: 'deload', signals: [{ type: 'neutral', text: 'Séance deload — aucune analyse de performance.' }],
-             nextBonus: 0, bk: null, avgRpe: null, avgReps: null, repRatio: null, setPct: null,
+    const rec = normRecord(getRecord(ex.id, week));
+    const bk  = rec ? Math.max(...(rec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0)) : null;
+    return { type: 'deload', signals: [
+      { type: 'neutral', text: 'Séance deload — pas d\'analyse de performance.' },
+      ...(bk ? [{ type: 'good', text: `Charge effectuée : ${bk} kg — progression S+1 basée sur S${week-1}.` }] : []),
+    ], nextBonus: 0, bk, avgRpe: null, avgReps: null, repRatio: null, setPct: null,
              skipped: false, hyrox: false, deload: true };
   }
 
