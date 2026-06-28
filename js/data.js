@@ -319,3 +319,206 @@ export const POSTNATAL_PHASES = [
   { id:'s12-24',  label:'3–6 mois · Remise en forme',      desc:'Gainage progressif, cardio léger, renfo global' },
   { id:'6m+',     label:'6 mois+ · Programme standard',    desc:'Retour à un programme normal adapté à ton niveau' },
 ];
+
+// ── Objectifs nutrition ───────────────────────────────────────────────────────
+
+export const NUTRITION_OBJECTIFS = [
+  { id:'masse',       icon:'💪', label:'Prise de masse',    desc:"Surplus calorique, priorité protéines et glucides" },
+  { id:'perte',       icon:'🔥', label:'Perte de poids',    desc:"Déficit calorique contrôlé, maintien masse musculaire" },
+  { id:'healthy',     icon:'🥗', label:'Santé / Équilibre', desc:"Alimentation équilibrée, énergie stable, bien-être" },
+  { id:'performance', icon:'⚡', label:'Performance',       desc:"Optimisation énergie et récupération pour l'effort" },
+  { id:'maintien',    icon:'⚖️', label:'Maintien',          desc:"Stabilité pondérale, composition corporelle constante" },
+];
+
+export const NUTRITION_PLANS = {
+  masse: {
+    label: 'Prise de masse',
+    surplus: "+300 à +500 kcal/jour vs dépense totale",
+    proteines: "1.8–2.2 g / kg de poids corporel",
+    glucides: "4–6 g / kg — carburant principal de l'effort",
+    lipides: "0.8–1.2 g / kg — hormones et récupération",
+    preSeance: {
+      timing: "60–90 min avant l'entraînement",
+      conseils: [
+        "Repas complet : glucides complexes + protéines maigres",
+        "Exemple : riz + blanc de poulet + légumes cuits",
+        "Éviter les graisses en excès (ralentissent la digestion)",
+        "Hydratation : 500 ml d'eau 2h avant",
+      ]
+    },
+    postSeance: {
+      timing: "Dans les 30–60 min après l'entraînement",
+      conseils: [
+        "Fenêtre anabolique : protéines + glucides rapides",
+        "Exemple : yaourt grec + banane + flocons d'avoine",
+        "Protéines : 25–40 g minimum (whey ou alimentaire)",
+        "Glucides : 0.5–1 g/kg pour reconstituer le glycogène",
+      ]
+    },
+    reposActif: {
+      conseils: [
+        "Maintenir les apports protéiques même sans entraînement",
+        "Réduire légèrement les glucides (activité moindre)",
+        "Augmenter les légumes et fibres",
+        "Ne pas sauter de repas — la croissance musculaire est continue",
+      ]
+    },
+    tips: [
+      "💡 Mange 4–5 repas par jour pour maximiser la synthèse protéique",
+      "💡 La créatine monohydrate (3–5 g/j) est le complément le plus validé scientifiquement",
+      "⚠️ Un surplus trop important (> 500 kcal) favorise le stockage de gras",
+    ]
+  },
+  perte: {
+    label: 'Perte de poids',
+    surplus: "−300 à −500 kcal/jour (déficit modéré)",
+    proteines: "2.0–2.4 g / kg — essentiel pour préserver le muscle",
+    glucides: "2–4 g / kg — privilégier avant l'entraînement",
+    lipides: "0.8–1.0 g / kg — ne pas trop réduire",
+    preSeance: {
+      timing: "45–60 min avant",
+      conseils: [
+        "Repas léger : protéines + glucides modérés",
+        "Exemple : blanc d'oeuf + flocons d'avoine + fruits rouges",
+        "Éviter d'entraîner à jeun si objectif maintien musculaire",
+        "Café noir acceptable pour la mobilisation des graisses",
+      ]
+    },
+    postSeance: {
+      timing: "Dans les 45 min",
+      conseils: [
+        "Priorité aux protéines, glucides modérés",
+        "Exemple : blanc de poulet + légumes vapeur + quinoa",
+        "Protéines : 30–40 g pour limiter le catabolisme",
+        "Éviter les sucres rapides sauf si entraînement très intense",
+      ]
+    },
+    reposActif: {
+      conseils: [
+        "Journées de repos = journées de déficit plus faciles à tenir",
+        "Augmenter les légumes et les fibres (satiété)",
+        "Maintenir les protéines élevées — le muscle consomme des calories",
+        "Hydratation : 2–3 L/jour — la déshydratation masque la faim",
+      ]
+    },
+    tips: [
+      "💡 Un déficit de 300–500 kcal/j permet de perdre 0.3–0.5 kg/semaine sans perte musculaire",
+      "💡 Peser ses aliments les 2 premières semaines pour calibrer ses portions",
+      "⚠️ Pas de repas à moins de 1200 kcal (femmes) / 1500 kcal (hommes) — risque carences",
+    ]
+  },
+  healthy: {
+    label: "Santé / Équilibre",
+    surplus: "Équilibre — ni surplus ni déficit",
+    proteines: "1.4–1.8 g / kg",
+    glucides: "3–5 g / kg — variés et complets",
+    lipides: "1.0–1.2 g / kg — bons acides gras",
+    preSeance: {
+      timing: "60–90 min avant",
+      conseils: [
+        "Repas équilibré et digeste",
+        "Exemple : salade de lentilles + oeufs durs + légumes",
+        "Limiter les aliments ultra-transformés",
+        "Hydratation régulière tout au long de la journée",
+      ]
+    },
+    postSeance: {
+      timing: "Dans l'heure",
+      conseils: [
+        "Repas complet et équilibré",
+        "Exemple : poisson + patate douce + légumes verts",
+        "Pas besoin d'optimiser à la minute — régularité > précision",
+        "Favoriser les aliments entiers, peu transformés",
+      ]
+    },
+    reposActif: {
+      conseils: [
+        "Maintenir 3 repas structurés + 1–2 collations si besoin",
+        "Légumes à chaque repas — visez 5 portions/jour",
+        "Limiter alcool, sucres ajoutés, sel en excès",
+        "Bien dormir — le sommeil est clé pour la récupération",
+      ]
+    },
+    tips: [
+      "💡 La règle des 80/20 : 80% d'aliments nutritifs, 20% de plaisir sans culpabilité",
+      "💡 Cuisiner soi-même est le levier le plus puissant pour une alimentation saine",
+      "⚠️ La régularité sur 80% du temps vaut mieux que la perfection sur 50%",
+    ]
+  },
+  performance: {
+    label: 'Performance sportive',
+    surplus: "Léger surplus les jours d'entraînement intense (+200–300 kcal)",
+    proteines: "1.8–2.2 g / kg",
+    glucides: "5–7 g / kg les jours d'entraînement, 3–4 g les jours de repos",
+    lipides: "1.0–1.2 g / kg — acides gras essentiels",
+    preSeance: {
+      timing: "2–3h avant pour repas complet, 30–45 min pour collation",
+      conseils: [
+        "Repas riche en glucides complexes + protéines modérées",
+        "Exemple : pâtes complètes + sauce thon + légumes",
+        "Collation 30 min avant : banane + quelques amandes",
+        "Hydratation : 500 ml d'eau dans l'heure précédant l'effort",
+      ]
+    },
+    postSeance: {
+      timing: "Immédiatement après — fenêtre de 30 min",
+      conseils: [
+        "Ratio glucides/protéines = 3:1 pour les efforts longs",
+        "Exemple : smoothie banane + lait + whey + flocons d'avoine",
+        "Protéines : 25–40 g pour la réparation musculaire",
+        "Électrolytes si effort > 60 min ou forte sudation",
+      ]
+    },
+    reposActif: {
+      conseils: [
+        "Jours de repos = jours de reconstruction — ne pas négliger l'alimentation",
+        "Réduire les glucides, maintenir protéines et lipides",
+        "Anti-inflammatoires naturels : curcuma, oméga-3, fruits rouges",
+        "Sommeil 7–9h — principal vecteur de récupération",
+      ]
+    },
+    tips: [
+      "💡 La caféine (3–6 mg/kg, 45 min avant) améliore la performance de 3–7%",
+      "💡 Bêta-alanine + créatine = les deux seuls compléments validés pour la performance",
+      "⚠️ Pas d'expérimentation nutritionnelle le jour d'une compétition",
+    ]
+  },
+  maintien: {
+    label: 'Maintien',
+    surplus: "Équilibre strict — calories = dépense totale",
+    proteines: "1.6–2.0 g / kg",
+    glucides: "3–5 g / kg selon le volume d'entraînement",
+    lipides: "0.8–1.0 g / kg",
+    preSeance: {
+      timing: "60–90 min avant",
+      conseils: [
+        "Repas équilibré et habituel — pas de changement brutal",
+        "Exemple : riz + légumineuses + légumes + huile d'olive",
+        "Maintenir les mêmes horaires de repas",
+        "Hydratation : 1.5–2 L/jour minimum",
+      ]
+    },
+    postSeance: {
+      timing: "Dans l'heure",
+      conseils: [
+        "Repas complet et protéiné",
+        "Exemple : oeufs + légumes sautés + pain complet",
+        "La régularité est plus importante que l'optimisation",
+        "Écouter ses signaux de faim et satiété",
+      ]
+    },
+    reposActif: {
+      conseils: [
+        "Manger légèrement moins les jours sans entraînement (−100 à −200 kcal)",
+        "Maintenir les protéines constantes 7j/7",
+        "Varier les sources alimentaires pour couvrir tous les micronutriments",
+        "Peser régulièrement (1×/semaine, mêmes conditions) pour vérifier la stabilité",
+      ]
+    },
+    tips: [
+      "💡 Le maintien demande autant d'attention que la prise de masse ou la perte de poids",
+      "💡 Ajustements progressifs de ±100 kcal si le poids dérive sur 2–3 semaines",
+      "⚠️ Éviter les fluctuations extrêmes — le corps préfère la stabilité",
+    ]
+  },
+};

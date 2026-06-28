@@ -3,7 +3,7 @@
  */
 
 import { loadExercisesDB, searchExercises, FALLBACK_EXERCISES } from './exercises-db.js';
-import { AGE_TRANCHES, AGE_MODIFIERS, GROSSESSE_MOIS_CONFIG, POSTNATAL_PHASES } from './data.js';
+import { AGE_TRANCHES, AGE_MODIFIERS, GROSSESSE_MOIS_CONFIG, POSTNATAL_PHASES, NUTRITION_OBJECTIFS, NUTRITION_PLANS } from './data.js';
 import { generateProgram }  from './generator.js';
 import { saveProgram, setActiveProgram, newProgramId } from './programs.js';
 import { getPrograms }      from './programs.js';
@@ -13,7 +13,7 @@ import { esc }              from './security.js';
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let _step = 1;
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 9;
 
 const _config = {
   domaine:          null,
@@ -29,9 +29,11 @@ const _config = {
   name:             '',
   orm:              {},
   // Grossesse specific
-  grossesse_type:   null, // 'prenatal' | 'postnatal'
+  grossesse_type:   null,
   mois_grossesse:   5,
   postnatal_phase:  null,
+  // Nutrition
+  nutrition:        null,
 };
 
 // ── Domain labels ─────────────────────────────────────────────────────────────
@@ -77,6 +79,7 @@ export async function initWizard() {
   Object.assign(_config, {
     domaine: null, niveau: null, age: null, seancesParSemaine: 3,
     grossesse_type: null, mois_grossesse: 5, postnatal_phase: null,
+    nutrition: null,
     dureeSeance: 60, materiel: [], exercicesForces: [], exercicesExclus: [],
     duree: 12, competition: null, name: '', orm: {},
   });
@@ -84,11 +87,12 @@ export async function initWizard() {
   // Pre-fill ORM from existing tracker data
   _prefillOrm();
 
-  // Load exercises in background
-  loadExercisesDB().then(({ fromApi, fromFallback }) => {
-  });
-
+  _wizardEventsInit = false;
   renderStep();
+  _initWizardEvents();
+
+  // Load exercises in background
+  loadExercisesDB();
 }
 
 function _prefillOrm() {
@@ -116,8 +120,8 @@ export function renderStep() {
   // Grossesse has its own flow: 1 → grossesse_setup → 7
   const isGrossesse = _config.domaine === 'grossesse';
   const renderers = isGrossesse
-    ? [null, step1, step_grossesse, null, null, null, null, null, step7]
-    : [null, step1, step2, step2b, step3, step4, step5, step6, step7];
+    ? [null, step1, step_grossesse, null, null, null, null, null, null, step7]
+    : [null, step1, step2, step2b, step3, step4b, step4, step5, step6, step7];
   const stepFn = renderers[_step];
   const html = stepFn ? stepFn() : '';
 
@@ -138,7 +142,6 @@ export function renderStep() {
     </div>
   `;
 
-  _bindStepEvents();
 }
 
 // ── Step 1 — Domaine ──────────────────────────────────────────────────────────
@@ -293,7 +296,24 @@ function step3() {
     </div>`;
 }
 
-// ── Step 4 — Matériel ─────────────────────────────────────────────────────────
+// ── Step 4b — Nutrition ──────────────────────────────────────────────────────
+
+function step4b() {
+  return `
+    <div class="wiz-title">Quel est ton objectif nutrition ?</div>
+    <div class="wiz-subtitle">Adapte ton alimentation à ton programme</div>
+    <div class="wiz-cards">
+      ${NUTRITION_OBJECTIFS.map(n => `
+        <div class="wiz-card ${_config.nutrition === n.id ? 'selected' : ''}"
+             data-select="nutrition" data-value="${n.id}">
+          <span class="wiz-card-icon">${n.icon}</span>
+          <span class="wiz-card-label">${n.label}</span>
+          <span class="wiz-card-desc">${n.desc}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── Step 4 — Matériel ──────────────────────────────────────────────────────
 
 function step4() {
   return `
@@ -420,6 +440,7 @@ function step7() {
       <div class="wiz-recap-row"><span>Durée</span><strong>${_config.duree} semaines</strong></div>
       ${_config.competition ? `<div class="wiz-recap-row"><span>Compétition</span><strong>${_config.competition.type || 'Oui'} · ${_fmtDate(_config.competition.date)}</strong></div>` : ''}
       ${_config.exercicesForces.length ? `<div class="wiz-recap-row"><span>Exercices forcés</span><strong>${_config.exercicesForces.map(e=>e.name).join(', ')}</strong></div>` : ''}
+      ${_config.nutrition ? `<div class="wiz-recap-row"><span>Nutrition</span><strong>${NUTRITION_OBJECTIFS.find(n=>n.id===_config.nutrition)?.icon} ${NUTRITION_OBJECTIFS.find(n=>n.id===_config.nutrition)?.label||'—'}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'prenatal' ? `<div class="wiz-recap-row"><span>Mois de grossesse</span><strong>${GROSSESSE_MOIS_CONFIG[_config.mois_grossesse]?.label}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'postnatal' ? `<div class="wiz-recap-row"><span>Phase post-natale</span><strong>${POSTNATAL_PHASES.find(p=>p.id===_config.postnatal_phase)?.label||'—'}</strong></div>` : ''}
     </div>
@@ -458,14 +479,14 @@ export function wizNext() {
   // Grossesse special flow: step 1 → step 2 (grossesse setup) → step 7 (recap)
   if(_config.domaine === 'grossesse') {
     if(_step === 1) { _step = 2; renderStep(); return; }
-    if(_step === 2) { _step = 8; renderStep(); return; } // skip to step 7 (index 8 = step7)
+    if(_step === 2) { _step = 9; renderStep(); return; } // skip to recap
   }
 
   if(_step < TOTAL_STEPS) { _step++; renderStep(); }
 }
 
 export function wizBack() {
-  if(_config.domaine === 'grossesse' && _step === 8) { _step = 2; renderStep(); return; }
+  if(_config.domaine === 'grossesse' && _step === 9) { _step = 2; renderStep(); return; }
   if(_step > 1) { _step--; renderStep(); }
 }
 
@@ -505,7 +526,7 @@ function _validateStep() {
     _showError('Sélectionne un objectif pour continuer.');
     return false;
   }
-  if(_step === 2 && !_config.niveau) {
+  if(_step === 2 && !_config.niveau && _config.domaine !== 'grossesse') {
     _showError('Sélectionne ton niveau pour continuer.');
     return false;
   }
@@ -518,7 +539,7 @@ function _validateStep() {
     if(_config.grossesse_type === 'postnatal' && !_config.postnatal_phase) { _showError('Sélectionne ta phase post-natale.'); return false; }
     return true;
   }
-  if(_step === 5 && _config.materiel.length === 0) {
+  if(_step === 6 && _config.materiel.length === 0) {
     _showError('Sélectionne au moins un type de matériel.');
     return false;
   }
@@ -548,7 +569,7 @@ function _collectStep() {
       };
     }
   }
-  if(_step === 7) {
+  if(_step === 7 || _step === 8 || _step === 9) {
     const nameEl = document.getElementById('progName');
     if(nameEl) _config.name = nameEl.value.trim();
     ['press','squat','deadlift'].forEach(id => {
@@ -562,67 +583,73 @@ function _collectStep() {
 // ── Event binding ─────────────────────────────────────────────────────────────
 
 function _bindStepEvents() {
-  const body = document.getElementById('wizardContent');
-  if(!body) return;
+  // No-op: events are bound once in _initWizardEvents()
+}
 
-  // Card selection (single)
-  body.addEventListener('click', e => {
+let _wizardEventsInit = false;
+function _initWizardEvents() {
+  if(_wizardEventsInit) return;
+  _wizardEventsInit = true;
+  // Attach to stable parent — wizardContent innerHTML is replaced on each step
+  // so we must use a parent that persists across renders
+  const stable = document.getElementById('wizard-view') || document.getElementById('programmes') || document.body;
+
+  stable.addEventListener('click', e => {
+    // Only handle clicks inside wizardContent
+    if(!e.target.closest('#wizardContent')) return;
+    // Card selection (single)
     const card = e.target.closest('[data-select]');
-    if(!card) return;
-    const { select, value } = card.dataset;
-    _config[select] = value;
-    renderStep();
-  });
-
-  // Chip selection
-  body.addEventListener('click', e => {
+    if(card) {
+      const { select, value } = card.dataset;
+      _config[select] = value;
+      renderStep(); return;
+    }
+    // Chip
     const chip = e.target.closest('[data-chip]');
-    if(!chip) return;
-    const { chip: key, value } = chip.dataset;
-    if(key === 'hasCompet') {
-      _config.competition = value === 'oui' ? { date: '', type: '' } : null;
-    } else {
-      const parsed = isNaN(Number(value)) ? value : Number(value);
-      _config[key] = parsed;
+    if(chip) {
+      const { chip: key, value } = chip.dataset;
+      if(key === 'hasCompet') {
+        _config.competition = value === 'oui' ? { date: '', type: '' } : null;
+      } else {
+        const parsed = isNaN(Number(value)) ? value : Number(value);
+        _config[key] = parsed;
+      }
+      renderStep(); return;
     }
-    renderStep();
-  });
-
-  // Materiel toggle (multi)
-  body.addEventListener('click', e => {
-    const item = e.target.closest('[data-toggle]');
-    if(!item) return;
-    const value = item.dataset.value;
-    const idx   = _config.materiel.indexOf(value);
-    if(idx >= 0) _config.materiel.splice(idx, 1);
-    else _config.materiel.push(value);
-    renderStep();
-  });
-
-  // Remove forced/exclu
-  body.addEventListener('click', e => {
-    const btn = e.target.closest('[data-remove-forced]');
-    if(btn) { _config.exercicesForces.splice(parseInt(btn.dataset.removeForced), 1); renderStep(); return; }
-    const btn2 = e.target.closest('[data-remove-exclu]');
-    if(btn2) { _config.exercicesExclus.splice(parseInt(btn2.dataset.removeExclu), 1); renderStep(); return; }
-  });
-
-  // Add from search results
-  body.addEventListener('click', e => {
-    const res = e.target.closest('[data-add-forced]');
-    if(res) {
-      _config.exercicesForces.push({ id: res.dataset.addForced, name: res.dataset.name });
-      document.getElementById('exSearchForced').value = '';
-      document.getElementById('exResultsForced').innerHTML = '';
-      renderStep();
-      return;
+    // Materiel toggle (multi) — must check BEFORE generic click
+    const item = e.target.closest('[data-toggle="materiel"]');
+    if(item) {
+      const value = item.dataset.value;
+      const idx   = _config.materiel.indexOf(value);
+      if(idx >= 0) _config.materiel.splice(idx, 1);
+      else _config.materiel.push(value);
+      renderStep(); return;
     }
-    const res2 = e.target.closest('[data-add-exclu]');
-    if(res2) {
-      _config.exercicesExclus.push({ id: res2.dataset.addExclu, name: res2.dataset.name });
-      document.getElementById('exSearchExclu').value = '';
-      document.getElementById('exResultsExclu').innerHTML = '';
-      renderStep();
+    // Remove forced
+    const btnF = e.target.closest('[data-remove-forced]');
+    if(btnF) { _config.exercicesForces.splice(parseInt(btnF.dataset.removeForced), 1); renderStep(); return; }
+    // Remove exclu
+    const btnE = e.target.closest('[data-remove-exclu]');
+    if(btnE) { _config.exercicesExclus.splice(parseInt(btnE.dataset.removeExclu), 1); renderStep(); return; }
+    // Add forced from search
+    const resF = e.target.closest('[data-add-forced]');
+    if(resF) {
+      _config.exercicesForces.push({ id: resF.dataset.addForced, name: resF.dataset.name });
+      const inp = document.getElementById('exSearchForced');
+      if(inp) inp.value = '';
+      const res = document.getElementById('exResultsForced');
+      if(res) res.innerHTML = '';
+      renderStep(); return;
+    }
+    // Add exclu from search
+    const resE = e.target.closest('[data-add-exclu]');
+    if(resE) {
+      _config.exercicesExclus.push({ id: resE.dataset.addExclu, name: resE.dataset.name });
+      const inp = document.getElementById('exSearchExclu');
+      if(inp) inp.value = '';
+      const res = document.getElementById('exResultsExclu');
+      if(res) res.innerHTML = '';
+      renderStep(); return;
     }
   });
 }

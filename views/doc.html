@@ -63,18 +63,9 @@
           <p class="doc-p">Une coche verte ✓ apparaît sur chaque série dès que charge + reps sont renseignées. L'analyse et la recommandation S+1 se mettent à jour à l'enregistrement.</p>
 
           <div class="doc-h2">Onglets du tracker</div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">✏️</div>
-            <div class="doc-rule-body"><strong>Saisie semaine</strong> <span>— formulaire principal. Sélectionner la semaine en haut, saisir les séries, enregistrer par jour.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">📈</div>
-            <div class="doc-rule-body"><strong>Progression</strong> <span>— vue graphique de la meilleure charge atteinte par exercice vs objectif de fin de programme.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">📋</div>
-            <div class="doc-rule-body"><strong>Historique</strong> <span>— tableau de toutes les séances avec charge, reps, RPE, signal d'analyse et recommandation S+1.</span></div>
-          </div>
+          <div class="doc-list-item">✏️ <strong>Saisie semaine</strong> <span>— formulaire principal. Sélectionner la semaine en haut, saisir les séries, enregistrer par jour.</span></div>
+          <div class="doc-list-item">📈 <strong>Progression</strong> <span>— vue graphique de la meilleure charge atteinte par exercice vs objectif de fin de programme.</span></div>
+          <div class="doc-list-item">📋 <strong>Historique</strong> <span>— tableau de toutes les séances avec charge, reps, RPE, signal d'analyse et recommandation S+1.</span></div>
         </div>
       </div>
 
@@ -85,26 +76,11 @@
           <p class="doc-p">La logique de recommandation S+1 s'inspire de la <strong>méthode Lafay</strong>, adaptée au contexte force/RPE. Le principe central : on ne progresse que quand la séance est pleinement validée. Toute séance incomplète entraîne une répétition de la même charge.</p>
 
           <div class="doc-h2">Règles de décision</div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">✅</div>
-            <div class="doc-rule-body"><strong>Progression (+1 palier)</strong><br><span>Toutes les séries complètes + toutes les reps ≥ 95% du plan + RPE ≤ 8.5. La charge augmente d'un palier la semaine suivante (+2.5 kg squat/deadlift, +1.25 kg press).</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">⏸️</div>
-            <div class="doc-rule-body"><strong>Consolidation (même charge)</strong><br><span>Séries complètes mais RPE entre 8.5 et 9.5 — effort trop élevé pour progresser en sécurité. Ou reps entre 80% et 95% du plan — progression prématurée.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">⏳</div>
-            <div class="doc-rule-body"><strong>Plateau prolongé → recul (-1 palier)</strong><br><span>Après 3 semaines consécutives de consolidation sans progression, la charge recule d'un palier. Règle directement tirée de Lafay. Les semaines sautées et Post-Hyrox ne comptent pas dans le plateau.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">⚠️</div>
-            <div class="doc-rule-body"><strong>Surcharge → recul (-1 palier)</strong><br><span>RPE &gt; 9.5 sur la séance — la charge est excessive. Recul immédiat d'un palier.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">🔴</div>
-            <div class="doc-rule-body"><strong>Effondrement → recul (-2 paliers)</strong><br><span>Reps réalisées &lt; 80% du plan — la charge est franchement trop lourde. Recul de deux paliers (réinitialisation Lafay).</span></div>
-          </div>
+          <div class="doc-list-item">✅ <strong>Progression (+1 palier)</strong><br><span>Toutes les séries complètes + toutes les reps ≥ 95% du plan + RPE ≤ 8.5. La charge augmente d'un palier la semaine suivante (+2.5 kg squat/deadlift, +1.25 kg press).</span></div>
+          <div class="doc-list-item">⏸️ <strong>Consolidation (même charge)</strong><br><span>Séries complètes mais RPE entre 8.5 et 9.5 — effort trop élevé pour progresser en sécurité. Ou reps entre 80% et 95% du plan — progression prématurée.</span></div>
+          <div class="doc-list-item">⏳ <strong>Plateau prolongé → recul (-1 palier)</strong><br><span>Après 3 semaines consécutives de consolidation sans progression, la charge recule d'un palier. Règle directement tirée de Lafay. Les semaines sautées et Post-Hyrox ne comptent pas dans le plateau.</span></div>
+          <div class="doc-list-item">⚠️ <strong>Surcharge → recul (-1 palier)</strong><br><span>RPE &gt; 9.5 sur la séance — la charge est excessive. Recul immédiat d'un palier.</span></div>
+          <div class="doc-list-item">🔴 <strong>Effondrement → recul (-2 paliers)</strong><br><span>Reps réalisées &lt; 80% du plan — la charge est franchement trop lourde. Recul de deux paliers (réinitialisation Lafay).</span></div>
 
           <div class="doc-h2">Compteur de plateau</div>
           <p class="doc-p">La recommandation affiche le compteur de plateau en temps réel (<strong>Plateau : 2/3 sem.</strong>) pour anticiper la décharge avant qu'elle arrive. À 3/3, la décharge est automatique la semaine suivante.</p>
@@ -134,18 +110,9 @@
           <p class="doc-p">À utiliser quand l'exercice a été réalisé dans le cadre d'une compétition Hyrox, d'une séance cardio haute intensité préalable, ou de tout effort qui a affecté la qualité de la séance sans que ça soit apparent dans le RPE ressenti.</p>
           <div class="doc-formula">RPE effectif = RPE ressenti + 1.5<br>(fatigue résiduelle non perçue à chaud)</div>
           <p class="doc-p">En mode Post-Hyrox :</p>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">📊</div>
-            <div class="doc-rule-body"><strong>Analyse vs historique personnel</strong> <span>— la séance est comparée à ta moyenne habituelle (kg, reps, RPE) sur les séances normales passées, pas au plan de la semaine.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">🚫</div>
-            <div class="doc-rule-body"><strong>Aucune recommandation de charge</strong> <span>— la séance n'influence pas le calcul S+1. Le plan de la semaine suivante reste inchangé.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">🧬</div>
-            <div class="doc-rule-body"><strong>Fatigue musculaire comptabilisée</strong> <span>— la charge et les reps alimentent quand même le suivi de fatigue musculaire pour refléter l'effort réel.</span></div>
-          </div>
+          <div class="doc-list-item">📊 <strong>Analyse vs historique personnel</strong> <span>— la séance est comparée à ta moyenne habituelle (kg, reps, RPE) sur les séances normales passées, pas au plan de la semaine.</span></div>
+          <div class="doc-list-item">🚫 <strong>Aucune recommandation de charge</strong> <span>— la séance n'influence pas le calcul S+1. Le plan de la semaine suivante reste inchangé.</span></div>
+          <div class="doc-list-item">🧬 <strong>Fatigue musculaire comptabilisée</strong> <span>— la charge et les reps alimentent quand même le suivi de fatigue musculaire pour refléter l'effort réel.</span></div>
 
           <div class="doc-h2">Séance sautée</div>
           <p class="doc-p">Aucune saisie possible. La semaine ne compte pas dans le compteur de plateau. La recommandation S+1 est identique au plan officiel de la semaine suivante — comme si la séance n'avait pas eu lieu.</p>
@@ -279,22 +246,21 @@
         <div class="doc-card">
           <h3>🗣️ Intensité — test de la parole (référence officielle)</h3>
           <p>L'<strong>ACOG (2020)</strong> recommande d'utiliser uniquement le <strong>test de la parole</strong> pour surveiller l'intensité pendant la grossesse :</p>
-          <div class="doc-rule">
-            <div class="doc-rule-row"><span class="doc-rule-label">Bonne intensité</span><span>Tu peux parler normalement mais pas chanter</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Trop intense</span><span>Tu ne peux plus tenir une conversation → ralentir immédiatement</span></div>
-          </div>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><strong>Bonne intensité</strong> — Tu peux parler normalement mais pas chanter</div>
+            <div class="doc-list-item"><strong>Trop intense</strong> — Tu ne peux plus tenir une conversation → ralentir immédiatement</div>
+            </div>
           <div class="doc-warn">⚠️ La limite de 145 bpm (ou 140 bpm) est une recommandation <strong>obsolète depuis les années 1990</strong> (ACOG 1985, abandonnée). Les réponses cardiaques varient individuellement pendant la grossesse — la fréquence cardiaque n'est pas un indicateur fiable d'intensité.</div>
         </div>
 
         <div class="doc-card">
           <h3>✅ Volume recommandé</h3>
           <table class="doc-table">
-            <thead><tr><th>Recommandation</th><th>Source</th></tr></thead>
             <tbody>
-              <tr><td>150 min/semaine d'activité modérée minimum</td><td>ACOG 2020, SOGC/CSEP 2019, HAS 2019</td></tr>
-              <tr><td>Au moins 3 jours/semaine, idéalement tous les jours</td><td>SOGC/CSEP 2019</td></tr>
-              <tr><td>Séances de 20–30 min minimum</td><td>ACOG 2020</td></tr>
-              <tr><td>Pas de limite supérieure établie pour les femmes sans complications</td><td>ACOG 2020</td></tr>
+              <tr><td>✓ 150 min/semaine d'activité modérée minimum <em style="color:var(--text3);font-size:11px">· ACOG 2020, SOGC/CSEP 2019, HAS 2019</em></td></tr>
+              <tr><td>✓ Au moins 3 jours/semaine, idéalement tous les jours <em style="color:var(--text3);font-size:11px">· SOGC/CSEP 2019</em></td></tr>
+              <tr><td>✓ Séances de 20–30 min minimum <em style="color:var(--text3);font-size:11px">· ACOG 2020</em></td></tr>
+              <tr><td>✓ Pas de limite supérieure établie pour les femmes sans complications <em style="color:var(--text3);font-size:11px">· ACOG 2020</em></td></tr>
             </tbody>
           </table>
           <p style="font-size:12px;color:var(--text3)">Notre programme vise 5–6 activités/semaine de 15–30 min selon le mois — conforme et au-dessus du minimum recommandé.</p>
@@ -302,26 +268,26 @@
 
         <div class="doc-card">
           <h3>✅ Activités recommandées (ACOG 2020)</h3>
-          <div class="doc-rule">
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Marche</span><span>Excellente tout au long de la grossesse</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Natation</span><span>Recommandée — portance de l'eau, pas de choc</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Vélo stationnaire</span><span>Safe — pas de risque de chute</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Yoga/Pilates modifiés</span><span>Recommandés — éviter le hot yoga</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Renforcement musculaire doux</span><span>Validé avec sage-femme ou médecin</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Jogging léger</span><span>Si pratiqué avant la grossesse et grossesse non compliquée</span></div>
+          <div class="doc-list-simple">
+            <div class="doc-list-item doc-list-ok">✓ <strong>Marche</strong> — Excellente tout au long de la grossesse</div>
+            <div class="doc-list-item doc-list-ok">✓ <strong>Natation</strong> — Recommandée, portance de l'eau, pas de choc</div>
+            <div class="doc-list-item doc-list-ok">✓ <strong>Vélo stationnaire</strong> — Safe, pas de risque de chute</div>
+            <div class="doc-list-item doc-list-ok">✓ <strong>Yoga / Pilates modifiés</strong> — Recommandés, éviter le hot yoga</div>
+            <div class="doc-list-item doc-list-ok">✓ <strong>Renforcement musculaire doux</strong> — Validé avec sage-femme ou médecin</div>
+            <div class="doc-list-item doc-list-ok">✓ <strong>Jogging léger</strong> — Si pratiqué avant la grossesse et grossesse non compliquée</div>
           </div>
         </div>
 
         <div class="doc-card">
           <h3>🚫 Activités à éviter</h3>
-          <div class="doc-rule">
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Sports de contact</span><span>Rugby, boxe, hockey, arts martiaux</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Risque de chute</span><span>Ski alpin, équitation, vélo en extérieur, gymnastique</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Plongée sous-marine</span><span>Risque d'embolie gazeuse pour le fœtus</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Hot yoga / Hot Pilates</span><span>Hyperthermie maternelle dangereuse</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Position allongée sur le dos</span><span>Après le 4ème mois — compression veine cave</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Abdominaux classiques</span><span>Crunchs, sit-ups — pression abdominale excessive</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Brasse jambes larges</span><span>Si douleur pubienne (SPD)</span></div>
+          <div class="doc-list-simple">
+            <div class="doc-list-item doc-list-no">✗ <strong>Sports de contact</strong> — Rugby, boxe, hockey, arts martiaux</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Risque de chute</strong> — Ski alpin, équitation, vélo en extérieur, gymnastique</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Plongée sous-marine</strong> — Risque d'embolie gazeuse pour le fœtus</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Hot yoga / Hot Pilates</strong> — Hyperthermie maternelle dangereuse</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Position allongée sur le dos</strong> — Après le 4ème mois, compression veine cave</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Abdominaux classiques</strong> — Crunchs, sit-ups, pression abdominale excessive</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Brasse jambes larges</strong> — Si douleur pubienne (SPD)</div>
           </div>
         </div>
 
@@ -386,70 +352,61 @@
         <div class="doc-card">
           <h3>🦴 Douleur pubienne (SPD — Symphyse Pubienne Douloureuse)</h3>
           <p>Très fréquente à partir du 5ème mois. Elle est due à la relaxine qui assouplit les ligaments pelviens.</p>
-          <div class="doc-rule">
-            <div class="doc-rule-row"><span class="doc-rule-label">Symptôme</span><span>Douleur à l'avant du pubis, parfois irradiant vers l'intérieur des cuisses</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Éviter</span><span>Squats profonds, fentes, jambes très écartées, brasse jambes larges en natation</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Remplacer par</span><span>Pont fessier latéral couché sur le côté gauche, Kegel, marche douce</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Consulter</span><span>Sage-femme ou kiné spécialisée périnée si la douleur persiste</span></div>
-          </div>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><strong>Symptôme</strong> — Douleur à l'avant du pubis, parfois irradiant vers l'intérieur des cuisses</div>
+            <div class="doc-list-item doc-list-no"><strong>Éviter</strong> — Squats profonds, fentes, jambes très écartées, brasse jambes larges en natation</div>
+            <div class="doc-list-item doc-list-ok"><strong>Remplacer par</strong> — Pont fessier latéral couché sur le côté gauche, Kegel, marche douce</div>
+            <div class="doc-list-item doc-list-ok"><strong>Consulter</strong> — Sage-femme ou kiné spécialisée périnée si la douleur persiste</div>
+            </div>
         </div>
 
         <div class="doc-card">
           <h3>🎯 Kegel — périnée</h3>
           <p>Les exercices de périnée sont l'un des investissements les plus importants pour l'accouchement et la récupération post-partum.</p>
-          <div class="doc-rule">
-            <div class="doc-rule-row"><span class="doc-rule-label">Technique</span><span>Contracter le périnée (comme pour retenir les urines) pendant 8–10 s, relâcher 5 s, répéter 10 fois</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Fréquence</span><span>Plusieurs fois par jour — pas seulement en séance</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Astuce</span><span>Associe-les à une habitude : café du matin, brossage de dents, téléphone</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Position</span><span>Assise, allongée sur le côté, debout — toutes les positions fonctionnent</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Ne pas</span><span>Contracter les fesses ou les abdominaux, bloquer la respiration</span></div>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><strong>Technique</strong> — Contracter le périnée 8–10 s, relâcher 5 s, répéter 10 fois</div>
+            <div class="doc-list-item"><strong>Fréquence</strong> — Plusieurs fois par jour, pas seulement en séance</div>
+            <div class="doc-list-item doc-list-ok">💡 <strong>Astuce</strong> — Associe-les à une habitude : café, brossage de dents, téléphone</div>
+            <div class="doc-list-item"><strong>Position</strong> — Assise, allongée, debout — toutes les positions fonctionnent</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Ne pas</strong> — Contracter les fesses ou abdominaux, bloquer la respiration</div>
           </div>
           <p>En Pilates : synchronisation expiration + contraction périnée = approche recommandée pour les renforcer ensemble.</p>
         </div>
 
         <div class="doc-card">
           <h3>📅 Adaptations par mois de grossesse</h3>
-          <table class="doc-table">
-            <thead><tr><th>Mois</th><th>Durée séances</th><th>Squat</th><th>Extension 4 pattes</th><th>Psoas</th></tr></thead>
-            <tbody>
-              <tr><td>4–5</td><td>20–30 min</td><td>3 × 12</td><td>✓</td><td>✓</td></tr>
-              <tr><td>6</td><td>20 min</td><td>2 × 10</td><td>✓</td><td>✓</td></tr>
-              <tr><td>7</td><td>15–20 min</td><td>2 × 8 · 60° max</td><td>✓</td><td>✓</td></tr>
-              <tr><td>8</td><td>15 min</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td></tr>
-              <tr><td>9</td><td>10–15 min</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td></tr>
-            </tbody>
-          </table>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><strong>Mois 4–5</strong> — 20–30 min · Squat 3×12 · Extension ✓ · Psoas ✓</div>
+            <div class="doc-list-item"><strong>Mois 6</strong> — 20 min · Squat 2×10 · Extension ✓ · Psoas ✓</div>
+            <div class="doc-list-item"><strong>Mois 7</strong> — 15–20 min · Squat 2×8 (60° max) · Extension ✓ · Psoas ✓</div>
+            <div class="doc-list-item doc-list-no"><strong>Mois 8</strong> — 15 min · Squat ⛔ · Extension ⛔ · Psoas ⛔</div>
+            <div class="doc-list-item doc-list-no"><strong>Mois 9</strong> — 10–15 min · Squat ⛔ · Extension ⛔ · Psoas ⛔</div>
+          </div>
           <p style="font-size:11px;color:var(--text3)">La suspension du squat et de l'extension à partir du 8ème mois est une précaution supplémentaire raisonnable — les recommandations officielles ne fixent pas de limite par mois mais laissent la décision à la sage-femme et à la femme enceinte selon son ressenti.</p>
         </div>
 
         <div class="doc-card">
           <h3>👶 Post-natal — reprise progressive</h3>
-          <table class="doc-table">
-            <thead><tr><th>Phase</th><th>Durée</th><th>Activités</th></tr></thead>
-            <tbody>
-              <tr><td>S1–S6 · Récupération</td><td>6 premières semaines</td><td>Kegel très doux, respiration abdominale, marche très courte si accord médecin</td></tr>
-              <tr><td>S6–S12 · Reprise douce</td><td>6 à 12 semaines</td><td>Kegel progressif, pont fessier, chat/vache, marche 15–20 min. Pas de course.</td></tr>
-              <tr><td>3–6 mois · Remise en forme</td><td>3 à 6 mois</td><td>Gainage progressif (vérifier diastase), squats, cardio léger. Course avec accord kiné.</td></tr>
-              <tr><td>6 mois+ · Programme standard</td><td>Après 6 mois</td><td>Retour à un programme normal via le wizard. Allaitement = apports caloriques accrus.</td></tr>
-            </tbody>
-          </table>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><strong>S1–S6 · Récupération</strong> (6 premières semaines) — Kegel très doux, respiration abdominale, marche très courte si accord médecin</div>
+            <div class="doc-list-item"><strong>S6–S12 · Reprise douce</strong> (6 à 12 semaines) — Kegel progressif, pont fessier, chat/vache, marche 15–20 min. Pas de course.</div>
+            <div class="doc-list-item"><strong>3–6 mois · Remise en forme</strong> — Gainage progressif (vérifier diastase), squats, cardio léger. Course avec accord kiné.</div>
+            <div class="doc-list-item doc-list-ok"><strong>6 mois+ · Programme standard</strong> — Retour à un programme normal via le wizard. Allaitement = apports caloriques accrus.</div>
+          </div>
           <div class="doc-warn">⚕️ Attendre impérativement la visite post-natale (6 semaines) et l'accord du médecin ou sage-femme avant toute reprise sportive structurée. En cas de diastase des grands droits, consulter une kiné spécialisée périnée avant tout gainage.</div>
         </div>
 
         <div class="doc-card">
           <h3>📚 Sources et références</h3>
-          <table class="doc-table">
-            <thead><tr><th>Source</th><th>Document</th></tr></thead>
-            <tbody>
-              <tr><td>ACOG</td><td>Committee Opinion No. 804 — Physical Activity and Exercise During Pregnancy and the Postpartum Period, 2020</td></tr>
-              <tr><td>HAS</td><td>Prescription d'activité physique et sportive — Grossesse et post-partum, juillet 2019</td></tr>
-              <tr><td>CNSF</td><td>Recommandations de pratique clinique — Activité physique périnatale, mars 2021</td></tr>
-              <tr><td>SOGC/CSEP</td><td>Canadian Guideline for Physical Activity Throughout Pregnancy, British Journal of Sports Medicine 2018;52:1339-46</td></tr>
-              <tr><td>ANSES</td><td>Actualisation des repères du PNNS — Révisions des repères relatifs à l'activité physique et à la sédentarité, 2016</td></tr>
-              <tr><td>Ameli.fr</td><td>Grossesse et sport — recommandations pratiques</td></tr>
-              <tr><td>NaîtreetGrandir.ca</td><td>L'activité physique pendant la grossesse</td></tr>
-            </tbody>
-          </table>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><a href="https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2020/04/physical-activity-and-exercise-during-pregnancy-and-the-postpartum-period" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>ACOG 2020</strong></a> — Committee Opinion No. 804 — Physical Activity and Exercise During Pregnancy and the Postpartum Period</div>
+            <div class="doc-list-item"><a href="https://www.has-sante.fr/jcms/p_3261806/fr/prescription-d-activite-physique-et-sportive-grossesse-et-post-partum" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>HAS 2019</strong></a> — Prescription d'activité physique et sportive — Grossesse et post-partum, juillet 2019</div>
+            <div class="doc-list-item"><a href="https://www.cnsf.asso.fr/grossesse-et-activite-physique-les-nouveaux-outils-du-cnsf/" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>CNSF 2021</strong></a> — Recommandations de pratique clinique — Activité physique périnatale, mars 2021</div>
+            <div class="doc-list-item"><a href="https://www.researchgate.net/publication/328367267_2019_Canadian_guideline_for_physical_activity_throughout_pregnancy" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>SOGC/CSEP</strong></a> — Canadian Guideline for Physical Activity Throughout Pregnancy, Br J Sports Med 2018;52:1339-46</div>
+            <div class="doc-list-item"><a href="https://www.anses.fr/fr/content/plus-activite-physique-et-moins-de-sedentarite-une-meilleure-sante" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>ANSES 2016</strong></a> — Actualisation des repères du PNNS relatifs à l'activité physique et à la sédentarité</div>
+            <div class="doc-list-item"><a href="https://www.ameli.fr/assure/sante/devenir-parent/grossesse/grossesse-en-bonne-sante/grossesse-activite-physique/grossesse-choix-activite-physique" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>Ameli.fr</strong></a> — Grossesse et sport — recommandations pratiques</div>
+            <div class="doc-list-item"><a href="https://naitreetgrandir.com/fr/grossesse/sante-bien-etre/activite-physique-durant-grossesse/" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>NaîtreetGrandir</strong></a> — L'activité physique pendant la grossesse</div>
+            </div>
         </div>
 
       </div><!-- /doc-grossesse -->

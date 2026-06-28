@@ -38,7 +38,7 @@ export function setCurrentProgram(id) {
 
 export function initWeekSel() {
   const prog  = getCurrentProgram();
-  const total = prog ? prog.totalWeeks : 17;
+  const total = prog ? (prog.totalWeeks || prog.semaines?.length || 17) : 17;
   const sel   = document.getElementById('weekSel');
   if(!sel) return;
 
@@ -46,15 +46,34 @@ export function initWeekSel() {
   for(let w = 1; w <= total; w++) {
     const o = document.createElement('option');
     o.value = w;
-    o.textContent = `Semaine ${w}`;
+    // Mark skipped weeks with badge
+    try {
+      if(prog?.semaines) {
+        const sem = prog.semaines[w-1];
+        const allSkipped = sem?.jours?.length && sem.jours.every(day =>
+          day.exercices?.every(ex => getProgExStatus(prog.id, ex.id, w) === 'skipped')
+        );
+        o.textContent = allSkipped ? `Semaine ${w} 🏖` : `Semaine ${w}`;
+      } else {
+        o.textContent = `Semaine ${w}`;
+      }
+    } catch(e) {
+      o.textContent = `Semaine ${w}`;
+    }
     sel.appendChild(o);
   }
 
-  // Latest week with data
-  const latest = prog
-    ? getProgLatestWeek(prog.id, prog)
-    : getLatestWeek(EXERCISES);
-  sel.value = Math.min(latest, total);
+  // Set to latest week with data
+  try {
+    const latest = prog
+      ? getProgLatestWeek(prog.id, prog)
+      : getLatestWeek(EXERCISES);
+    sel.value = Math.min(Math.max(latest, 1), total);
+  } catch(e) {
+    sel.value = 1;
+  }
+
+  renderSaisie();
 }
 
 // ── Main render ───────────────────────────────────────────────────────────────
@@ -81,9 +100,13 @@ function _renderProgSaisie(prog) {
     return;
   }
 
-  const week    = parseInt(document.getElementById('weekSel').value, 10);
+  const week    = parseInt(document.getElementById('weekSel').value, 10) || 1;
   const semaine = prog.semaines?.[week - 1];
-  if(!semaine) return;
+  if(!semaine) {
+    // weekSel may not be populated yet — retry after DOM update
+    requestAnimationFrame(() => renderSaisie());
+    return;
+  }
 
   const badge = document.getElementById('phaseBadge');
   const phaseColors = {
@@ -137,7 +160,7 @@ function _renderProgSaisie(prog) {
       const btnD = exStatus === 'deload'  ? ' active-deload'  : '';
       const btnS = exStatus === 'skipped' ? ' active-skipped' : '';
 
-      html += `<div class="ex-block">
+      html += `<div class="ex-block" data-exid="${ex.id}">
         <div class="ex-top">
           <span class="ex-name-t">${esc(ex.nom)}</span>
           <span class="ex-scheme">${esc(scheme || '—')}</span>
@@ -242,7 +265,7 @@ function _renderProgSaisie(prog) {
         if(rec?.sets?.some(s=>s?.kg)) {
           const done   = (rec.sets||[]).filter(s=>s?.reps);
           const avgRpe = done.length ? Math.round(done.reduce((a,s)=>a+(parseFloat(s.rpe)||0),0)/done.length*10)/10 : null;
-          html += `<div class="sets-summary"><strong>${done.length}</strong> série${done.length>1?'s':''} · ${avgRpe?`RPE moy. <strong>${avgRpe}</strong> · `:''}Meilleure : <strong>${bestKg(rec)} ${ex.unit||'kg'}</strong></div>`;
+          html += `<div class="sets-summary" data-ex="${ex.id}"><strong>${done.length}</strong> série${done.length>1?'s':''} · ${avgRpe?`RPE moy. <strong>${avgRpe}</strong> · `:''}Meilleure : <strong>${bestKg(rec)} ${ex.unit||'kg'}</strong></div>`;
         }
       }
 
@@ -269,13 +292,19 @@ function _bindProgSaisieEvents(prog, week) {
     if(!btn) return;
     const { progex, ex, status } = btn.dataset;
     setProgExStatus(progex, ex, parseInt(btn.dataset.week), status);
-    renderSaisie();
-  }, { once: true });
+    // Update button styles without re-rendering the whole form
+    const week_n = parseInt(btn.dataset.week);
+    btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
+      b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
+    });
+  });
 
   // Auto-fill
   content.addEventListener('input', e => {
     const inp = e.target.closest('.set-inp[data-idx="0"]');
     if(!inp) return;
+    const val = parseFloat(inp.value);
+    if(!val || val <= 0) return; // Only auto-fill with valid numeric values
     const { ex, nsets } = inp.dataset;
     for(let i = 1; i < parseInt(nsets); i++) {
       const el = document.getElementById(`pkg_${ex}_${i}`);
@@ -323,8 +352,8 @@ function _saveProgSaisie(prog, week, dayName) {
   });
 
   _showSaveToast(`✓ ${dayName} enregistré`);
-  renderSaisie();
   repaintMuscles();
+  _updateSetCheckmarks(prog, week, dayName);
 }
 
 // ── Generic analysis helpers ──────────────────────────────────────────────────
@@ -409,8 +438,8 @@ function _getNextPlanGeneric(prog, ex, week, semaine) {
 // ── Legacy ATHX tracker (unchanged logic) ────────────────────────────────────
 
 function _renderLegacySaisie() {
-  const week  = parseInt(document.getElementById('weekSel').value, 10);
-  const ph    = PHASES[week - 1];
+  const week  = parseInt(document.getElementById('weekSel').value, 10) || 1;
+  const ph    = PHASES[week - 1] || PHASES[0];
   const badge = document.getElementById('phaseBadge');
   badge.textContent      = PHASE_LABELS[ph];
   badge.style.background = PHASE_STYLE[ph].bg;
@@ -431,9 +460,19 @@ function _renderLegacySaisie() {
       const plan     = ex.plan[week - 1];
       const scheme   = ex.repScheme[week - 1];
       const rec      = normRecord(getRecord(ex.id, week));
-      const nSets    = (scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos')
-        ? (ex.sets?.[week-1] || 4)
-        : (parseSets(scheme) || 4);
+      // For deload/taper: use previous normal week's set count
+      const nSets = (() => {
+        if(scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos') {
+          // Find last non-null sets count for this exercise
+          if(ex.sets) {
+            for(let w = week-2; w >= 0; w--) {
+              if(ex.sets[w] != null) return ex.sets[w];
+            }
+          }
+          return 4;
+        }
+        return parseSets(scheme) || 4;
+      })();
       const planReps = parseReps(scheme);
       const exStatus = getExStatus(ex.id, week);
 
@@ -442,7 +481,7 @@ function _renderLegacySaisie() {
       const btnD = exStatus==='deload' ?' active-deload' :'';
       const btnS = exStatus==='skipped'?' active-skipped':'';
 
-      html += `<div class="ex-block">
+      html += `<div class="ex-block" data-exid="${ex.id}">
         <div class="ex-top">
           <span class="ex-name-t">${ex.name}</span>
           <span class="ex-scheme">${scheme}</span>
@@ -511,7 +550,7 @@ function _renderLegacySaisie() {
           html += `<tr>
             <td class="set-num">S${s+1}</td>
             <td><input class="set-inp" type="number" id="kg_${ex.id}_${s}" step="1.25" min="0"
-                value="${sr.kg||''}" placeholder="${deloadKg||plan}"
+                value="${sr.kg||''}" placeholder="${deloadKg||plan||''}"
                 data-ex="${ex.id}" data-idx="${s}" data-nsets="${nSets}"></td>
             <td><input class="set-inp reps-inp" type="number" id="reps_${ex.id}_${s}"
                 min="0" max="30" step="1" value="${sr.reps||''}" placeholder="${planReps||'—'}"></td>
@@ -525,7 +564,7 @@ function _renderLegacySaisie() {
         if(rec?.sets?.some(s=>s?.kg)) {
           const done   = (rec.sets||[]).filter(s=>s?.reps);
           const avgRpe = done.length?Math.round(done.reduce((a,s)=>a+(parseFloat(s.rpe)||0),0)/done.length*10)/10:null;
-          html += `<div class="sets-summary"><strong>${done.length}</strong> série${done.length>1?'s':''} · ${avgRpe?`RPE moy. <strong>${avgRpe}</strong> · `:''}Meilleure charge : <strong>${bestKg(rec)} ${ex.unit}</strong></div>`;
+          html += `<div class="sets-summary" data-ex="${ex.id}"><strong>${done.length}</strong> série${done.length>1?'s':''} · ${avgRpe?`RPE moy. <strong>${avgRpe}</strong> · `:''}Meilleure charge : <strong>${bestKg(rec)} ${ex.unit}</strong></div>`;
         }
       }
 
@@ -549,12 +588,17 @@ function _bindLegacyEvents(week) {
     if(!btn) return;
     const { ex, status } = btn.dataset;
     setExStatus(ex, week, status);
-    renderSaisie();
-  }, { once: true });
+    // Update button styles without re-rendering
+    btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
+      b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
+    });
+  });
 
   document.getElementById('saisieContent').addEventListener('input', e => {
     const inp = e.target.closest('.set-inp[data-idx="0"]');
     if(!inp) return;
+    const val = parseFloat(inp.value);
+    if(!val || val <= 0) return;
     const { ex, nsets } = inp.dataset;
     for(let i=1;i<parseInt(nsets);i++) {
       const el = document.getElementById(`kg_${ex}_${i}`);
@@ -592,8 +636,8 @@ export function saveSaisie(week, day) {
   });
 
   _showSaveToast(`✓ ${day} enregistré`);
-  renderSaisie();
   repaintMuscles();
+  _updateLegacyCheckmarks(week, day);
 }
 
 // ── Vacances UI (shared) ──────────────────────────────────────────────────────
@@ -909,4 +953,109 @@ function _showSaveToast(msg) {
     toast.style.opacity = '0';
     toast.style.transform = 'translateX(-50%) translateY(20px)';
   }, 2500);
+}
+
+// ── Lightweight post-save updates (avoid full re-render) ─────────────────────
+function _updateSetCheckmarks(prog, week, dayName) {
+  const semaine = prog.semaines?.[week - 1];
+  const day = semaine?.jours?.find(d => d.nom === dayName);
+  if(!day) return;
+  day.exercices.forEach(ex => {
+    const nSets = Math.max(_parseSetsGeneric(ex.scheme), 4);
+    let filled = 0;
+    for(let s = 0; s < nSets; s++) {
+      const kgEl   = document.getElementById(`pkg_${ex.id}_${s}`);
+      const repsEl = document.getElementById(`preps_${ex.id}_${s}`);
+      const cell   = kgEl?.closest('tr')?.querySelector('.set-status');
+      if(cell && kgEl?.value && repsEl?.value) {
+        cell.textContent = '✓';
+        cell.style.color = 'var(--green)';
+        filled++;
+      }
+    }
+    // Update summary
+    const rec = normRecord(getProgRecord(prog.id, ex.id, week));
+    const bk  = bestKg(rec);
+    if(bk && filled > 0) {
+      const summary = document.querySelector(`.sets-summary[data-ex="prog_${ex.id}"]`);
+      if(summary) summary.innerHTML = `<strong>${filled}</strong> série${filled>1?'s':''} · Meilleure : <strong>${bk} kg</strong>`;
+    }
+
+    // Refresh analysis blocks
+    const adj = _calcAdjGeneric(prog, ex, week, semaine);
+    const exBlock = document.querySelector(`.ex-block[data-exid="prog_${ex.id}"]`);
+    if(!exBlock || !adj?.signals?.length) return;
+
+    const adjContainer = exBlock.querySelector('.adj-box');
+    if(adjContainer) {
+      const cls = adj.type==='behind'?'adj-behind':adj.type==='slight_behind'?'adj-slight':'adj-ahead';
+      adjContainer.className = `adj-box ${cls}`;
+      adjContainer.style.padding = '8px 12px';
+      adjContainer.innerHTML = adj.signals.map(s=>{
+        const ic  = s.type==='good'?'✓ ':s.type==='warn'?'⚠ ':s.type==='danger'?'✗ ':'· ';
+        const col = s.type==='good'?'var(--green)':s.type==='warn'?'var(--amber)':s.type==='danger'?'var(--red)':'var(--text2)';
+        return `<div style="display:flex;gap:6px;margin-bottom:2px"><span style="color:${col};font-weight:600;flex-shrink:0">${ic}</span><span>${esc(s.text)}</span></div>`;
+      }).join('');
+    }
+  });
+}
+
+function _updateLegacyCheckmarks(week, dayName) {
+  const exs = EXERCISES.filter(e => e.day === dayName);
+  exs.forEach(ex => {
+    const scheme = ex.repScheme[week - 1];
+    const nSets  = parseSets(scheme) || 4;
+    let filledSets = 0;
+
+    for(let s = 0; s < nSets; s++) {
+      const kgEl   = document.getElementById(`kg_${ex.id}_${s}`);
+      const repsEl = document.getElementById(`reps_${ex.id}_${s}`);
+      const cell   = kgEl?.closest('tr')?.querySelector('.set-status');
+      if(cell && kgEl?.value && repsEl?.value) {
+        cell.textContent = '✓';
+        cell.style.color = 'var(--green)';
+        filledSets++;
+      }
+    }
+
+    // Update summary line
+    const summary = document.querySelector(`.sets-summary[data-ex="${ex.id}"]`);
+    if(summary && filledSets > 0) {
+      const rec = normRecord(getRecord(ex.id, week));
+      const bk  = bestKg(rec);
+      summary.textContent = `${filledSets} série${filledSets>1?'s':''} · Meilleure charge : ${bk} ${ex.unit}`;
+    }
+
+    // Re-render analysis block
+    _refreshAnalysisBlock(ex.id, week, ex);
+  });
+}
+
+function _refreshAnalysisBlock(exId, week, ex) {
+  const adjBox  = document.querySelector(`.adj-box[data-ex="${exId}"]`);
+  const recBox  = document.querySelector(`.next-rec-block[data-ex="${exId}"]`);
+  // If analysis elements exist and have data-ex, update them
+  // They don't have data-ex currently — use a wrapper div approach
+  // For now just trigger a partial re-render of the ex-block analysis section
+  const exBlock = document.querySelector(`.ex-block[data-exid="${exId}"]`);
+  if(!exBlock) return;
+
+  // Re-render only analysis portion
+  const rec = normRecord(getRecord(exId, week));
+  if(!rec?.sets?.some(s=>s?.kg)) return;
+
+  const adj = calcAdj(ex, week);
+  const adjContainer = exBlock.querySelector('.adj-box');
+  const recContainer = exBlock.querySelector('.next-rec-block');
+
+  if(adj?.signals?.length && adjContainer) {
+    const cls = adj.type==='ok'?'adj-ok':adj.type.includes('ahead')?'adj-ahead':(adj.type.includes('behind')&&!adj.type.includes('slight'))?'adj-behind':'adj-slight';
+    adjContainer.className = `adj-box ${cls}`;
+    adjContainer.style.padding = '8px 12px';
+    adjContainer.innerHTML = adj.signals.map(s=>{
+      const ic  = s.type==='good'?'✓ ':s.type==='warn'?'⚠ ':s.type==='danger'?'✗ ':'· ';
+      const col = s.type==='good'?'var(--green)':s.type==='warn'?'var(--amber)':s.type==='danger'?'var(--red)':'var(--text2)';
+      return `<div style="display:flex;gap:6px;margin-bottom:2px"><span style="color:${col};font-weight:600;flex-shrink:0">${ic}</span><span>${esc(s.text)}</span></div>`;
+    }).join('');
+  }
 }

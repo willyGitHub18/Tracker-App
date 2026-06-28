@@ -102,7 +102,7 @@ export function generateProgram(config, newProgramId) {
   const {
     domaine, niveau, age, seancesParSemaine, dureeSeance,
     materiel, exercicesForces, exercicesExclus, duree, competition, orm,
-    name,
+    name, nutrition,
   } = config;
 
   // ── Grossesse: special generation ──────────────────────────────────────────
@@ -128,10 +128,12 @@ export function generateProgram(config, newProgramId) {
   });
 
   // Ensure forced exercises are included
-  const forcedExercises = (exercicesForces || []).map(id => {
-    const ex = pool.find(e => e.id === id) || { id, name: id };
-    return ex;
-  });
+  // exercicesForces is [{id, name}] from wizard — extract id
+  const forcedIds = (exercicesForces || []).map(f => (typeof f === 'object' ? f.id : f));
+  const forcedExercises = forcedIds.map(id => {
+    const ex = pool.find(e => e.id === id);
+    return ex || null;
+  }).filter(Boolean);
 
   // 4. Get volume params (age-adjusted)
   const vol = getVolume(niveau, age || '30-39');
@@ -168,11 +170,13 @@ export function generateProgram(config, newProgramId) {
           const pct  = isDeload ? 0.60 : isTaper ? 0.65 : phase.intensite;
           const kg   = orm ? _calcKg(ex.id, pct, orm) : null;
 
+          const seriesCount = isDeload || isTaper ? Math.max(2, vol.series - 2) : vol.series;
           return {
             id:       ex.id,
             nom:      ex.name,
-            series:   isDeload || isTaper ? Math.max(2, vol.series - 2) : vol.series,
+            series:   seriesCount,
             reps,
+            scheme:   `${seriesCount}×${reps}`,
             pct1rm:   Math.round(pct * 100),
             kgPlan:   kg,
             muscles:  ex.muscles || [],
@@ -199,6 +203,7 @@ export function generateProgram(config, newProgramId) {
   return {
     id:        newProgramId,
     name:      name || `Programme ${domaine === 'mixte' ? 'Mixte' : domaine} ${duree} sem.`,
+    status:    'active',
     createdAt: Date.now(),
     config,
     phases:    phases.map(p => ({

@@ -161,3 +161,38 @@
 .prog-phase-name{flex:1;font-weight:500;color:var(--text)}
 .prog-phase-weeks{font-family:var(--mono);font-size:11px;color:var(--text3)}
 .prog-phase-int{font-family:var(--mono);font-size:11px;color:var(--text2);min-width:36px;text-align:right}
+
+/* ── Programme detail rich view ── */
+.pd-panel{display:none}.pd-panel.active{display:block}
+.prog-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px;margin-top:16px}
+.prog-section-sub{font-size:11px;color:var(--text3);margin-bottom:10px}
+.prog-phase-badge-sm{font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;white-space:nowrap}
+.prog-phase-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.prog-phase-row:last-child{border-bottom:none}
+.prog-phase-weeks{color:var(--text3);font-family:var(--mono);font-size:11px;flex-shrink:0}
+.prog-phase-int{color:var(--text2);font-size:11px;margin-left:auto;text-align:right}
+.prog-day-detail-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:10px;overflow:hidden}
+.prog-day-detail-header{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.prog-day-detail-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text)}
+.prog-day-detail-split{font-size:11px;color:var(--blue);font-weight:500}
+.prog-ex-detail-list{padding:8px 14px;display:flex;flex-direction:column;gap:6px}
+.prog-ex-detail-item{display:flex;flex-direction:column;gap:3px;padding:5px 0;border-bottom:1px solid var(--border)}
+.prog-ex-detail-item:last-child{border-bottom:none}
+.prog-ex-detail-name{font-size:13px;font-weight:500;color:var(--text)}
+.prog-ex-detail-scheme{display:flex;gap:5px;flex-wrap:wrap}
+.prog-ex-tag{font-size:11px;font-weight:600;background:var(--surface2);border-radius:6px;padding:2px 7px;color:var(--text2);font-family:var(--mono)}
+.prog-ex-muscles{font-size:10px;color:var(--text3);letter-spacing:.02em}
+
+/* ── Nutrition ── */
+.nutri-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:14px}
+.nutri-title{font-size:16px;font-weight:600;margin-bottom:10px}
+.nutri-macros{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.nutri-macro-item{background:var(--surface2);border-radius:var(--radius);padding:8px 10px}
+.nutri-macro-label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:2px}
+.nutri-macro-val{font-size:11px;color:var(--text);font-weight:500;line-height:1.4}
+.nutri-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px}
+.nutri-block-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px}
+.nutri-tip{font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);line-height:1.5}
+.nutri-tip:last-child{border-bottom:none}
+.nutri-tips-block{background:var(--amber-bg);border-color:rgba(124,74,0,.2)}
+.nutri-tips-block .nutri-block-title{color:#7c4a00}

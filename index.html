@@ -1,18 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Just2Train">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1a1a18">
-<link rel="canonical" href="https://willygithub18.github.io/Tracker-App/">
-<title>Just2Train</title>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Just2Train"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1a1a18"><link rel="canonical" href="https://willygithub18.github.io/Tracker-App/"><title>Just2Train</title><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icons/icon-180.png"><style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 
 
@@ -30,6 +19,7 @@
   --radius:10px;--radius-lg:14px;
   --max-w:900px;
 }
+button,select,input,[data-select],[data-toggle],[data-chip]{touch-action:manipulation;}
 body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
 
 /* HEADER */
@@ -261,6 +251,24 @@ tr:last-child td{border-bottom:none}
 .conseil-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px}
 .conseil-card{font-size:12px;color:var(--text2);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;line-height:1.6}
 
+/* ── Progression section ── */
+.prog-bench-header{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.prog-bench-header label{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.prog-bench-header select{font-size:13px;border:1px solid var(--border-md);border-radius:var(--radius);padding:4px 8px;background:var(--surface);color:var(--text);font-family:var(--sans)}
+.prog-filter-note{font-size:11px;color:var(--text3);margin-top:2px}
+.prog-pct-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.pct-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:12px;display:flex;flex-direction:column;gap:4px}
+.pct-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-bottom:2px}
+.pct-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
+.pct-val{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.pct-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.prog-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-top:10px}
+.prog-chart-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:2px}
+.prog-chart-sub{font-size:11px;color:var(--text3);margin-bottom:10px}
+.prog-legend{display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+.prog-legend span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.pleg-line{display:inline-block;width:18px;height:3px;border-radius:2px}
+
 /* ── SUIVI MUSCULAIRE ── */
 .musc-layout{display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:flex-start}
 @media(max-width:860px){.musc-layout{grid-template-columns:260px 1fr;gap:18px}}
@@ -381,12 +389,7 @@ tr:last-child td{border-bottom:none}
 .doc-badge.blue{background:#e8f0fc;color:#1a5fb4}
 .doc-badge.grey{background:var(--surface2);color:var(--text2)}
 .doc-formula{font-family:var(--mono);font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin:8px 0;line-height:1.8;color:var(--text)}
-.doc-rule{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start}
-.doc-rule:last-child{border-bottom:none}
-.doc-rule-icon{font-size:16px;flex-shrink:0;width:24px;text-align:center}
-.doc-rule-body{font-size:13px;line-height:1.6}
-.doc-rule-body strong{color:var(--text);font-weight:600}
-.doc-rule-body span{color:var(--text2)}
+/* doc-rule icon layout removed — use doc-list-simple */
 
 /* ── Doc grossesse additions ── */
 .doc-warn{background:var(--amber-bg);border:1px solid rgba(124,74,0,.25);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:#7c4a00;margin-top:12px;line-height:1.6}
@@ -407,6 +410,20 @@ tr:last-child td{border-bottom:none}
   .doc-nav-item{border-radius:var(--radius);border:none;background:transparent;text-align:left;padding:6px 10px}
   .doc-nav-item.active{background:var(--text);color:#fff}
 }
+
+/* ── Doc simple list (replaces multi-column tables) ── */
+.doc-list-simple{background:var(--surface2);border-radius:var(--radius-lg);overflow:hidden;margin:10px 0}
+.doc-list-item{padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.6;color:var(--text2)}
+.doc-list-item:last-child{border-bottom:none}
+.doc-list-item strong{color:var(--text)}
+.doc-list-ok{color:var(--green)}
+.doc-list-ok strong{color:#1b6b45}
+.doc-list-no{color:var(--red)}
+.doc-list-no strong{color:#9c2222}
+
+.doc-link{color:var(--blue);text-decoration:none;font-weight:inherit}
+.doc-link:hover{text-decoration:underline}
+.doc-link strong{color:var(--blue)}
 
 /* ══════════════════════════════════════════════
    WIZARD & PROGRAMMES
@@ -572,19 +589,43 @@ tr:last-child td{border-bottom:none}
 .prog-phase-weeks{font-family:var(--mono);font-size:11px;color:var(--text3)}
 .prog-phase-int{font-family:var(--mono);font-size:11px;color:var(--text2);min-width:36px;text-align:right}
 
+/* ── Programme detail rich view ── */
+.pd-panel{display:none}.pd-panel.active{display:block}
+.prog-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px;margin-top:16px}
+.prog-section-sub{font-size:11px;color:var(--text3);margin-bottom:10px}
+.prog-phase-badge-sm{font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;white-space:nowrap}
+.prog-phase-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.prog-phase-row:last-child{border-bottom:none}
+.prog-phase-weeks{color:var(--text3);font-family:var(--mono);font-size:11px;flex-shrink:0}
+.prog-phase-int{color:var(--text2);font-size:11px;margin-left:auto;text-align:right}
+.prog-day-detail-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:10px;overflow:hidden}
+.prog-day-detail-header{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.prog-day-detail-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text)}
+.prog-day-detail-split{font-size:11px;color:var(--blue);font-weight:500}
+.prog-ex-detail-list{padding:8px 14px;display:flex;flex-direction:column;gap:6px}
+.prog-ex-detail-item{display:flex;flex-direction:column;gap:3px;padding:5px 0;border-bottom:1px solid var(--border)}
+.prog-ex-detail-item:last-child{border-bottom:none}
+.prog-ex-detail-name{font-size:13px;font-weight:500;color:var(--text)}
+.prog-ex-detail-scheme{display:flex;gap:5px;flex-wrap:wrap}
+.prog-ex-tag{font-size:11px;font-weight:600;background:var(--surface2);border-radius:6px;padding:2px 7px;color:var(--text2);font-family:var(--mono)}
+.prog-ex-muscles{font-size:10px;color:var(--text3);letter-spacing:.02em}
+
+/* ── Nutrition ── */
+.nutri-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:14px}
+.nutri-title{font-size:16px;font-weight:600;margin-bottom:10px}
+.nutri-macros{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.nutri-macro-item{background:var(--surface2);border-radius:var(--radius);padding:8px 10px}
+.nutri-macro-label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:2px}
+.nutri-macro-val{font-size:11px;color:var(--text);font-weight:500;line-height:1.4}
+.nutri-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px}
+.nutri-block-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px}
+.nutri-tip{font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);line-height:1.5}
+.nutri-tip:last-child{border-bottom:none}
+.nutri-tips-block{background:var(--amber-bg);border-color:rgba(124,74,0,.2)}
+.nutri-tips-block .nutri-block-title{color:#7c4a00}
+
 .top-nav-btn:nth-child(3){display:none}
-</style>
-</head>
-<body>
-<header><h1>Just2Train</h1><span class="sub">Ton entraînement, ton programme</span></header>
-<div class="top-nav">
-  <button class="top-nav-btn active" onclick="showSection('tracker')">&#x1F4CA; Tracker</button>
-  <button class="top-nav-btn" onclick="showSection('musculaire');renderMusculaire()">&#x1F9AC; Muscles</button>
-  <button class="top-nav-btn" onclick="showSection('programme')">&#x1F4CB; Programme</button>
-  <button class="top-nav-btn" onclick="showSection('programmes')">&#x1F3AF; Programmes</button>
-  <button class="top-nav-btn" onclick="showSection('doc')">&#x1F4D6; Docs</button>
-</div>
-<div class="main">
+</style></head><body><header><h1>Just2Train</h1><span class="sub">Ton entraînement, ton programme</span></header><div class="top-nav"><button class="top-nav-btn active" onclick="showSection('tracker')">&#x1F4CA; Tracker</button><button class="top-nav-btn" onclick="showSection('musculaire');renderMusculaire()">&#x1F9AC; Muscles</button><button class="top-nav-btn" onclick="showSection('programme')">&#x1F4CB; Programme</button><button class="top-nav-btn" onclick="showSection('programmes')">&#x1F3AF; Programmes</button><button class="top-nav-btn" onclick="showSection('doc')">&#x1F4D6; Docs</button></div><div class="main">
 <div id="tracker" class="section-panel active">
   <div class="tabs">
     <button class="tab-btn active" onclick="showTracker('saisie')">Saisie semaine</button>
@@ -1330,18 +1371,9 @@ tr:last-child td{border-bottom:none}
           <p class="doc-p">Une coche verte ✓ apparaît sur chaque série dès que charge + reps sont renseignées. L'analyse et la recommandation S+1 se mettent à jour à l'enregistrement.</p>
 
           <div class="doc-h2">Onglets du tracker</div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">✏️</div>
-            <div class="doc-rule-body"><strong>Saisie semaine</strong> <span>— formulaire principal. Sélectionner la semaine en haut, saisir les séries, enregistrer par jour.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">📈</div>
-            <div class="doc-rule-body"><strong>Progression</strong> <span>— vue graphique de la meilleure charge atteinte par exercice vs objectif de fin de programme.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">📋</div>
-            <div class="doc-rule-body"><strong>Historique</strong> <span>— tableau de toutes les séances avec charge, reps, RPE, signal d'analyse et recommandation S+1.</span></div>
-          </div>
+          <div class="doc-list-item">✏️ <strong>Saisie semaine</strong> <span>— formulaire principal. Sélectionner la semaine en haut, saisir les séries, enregistrer par jour.</span></div>
+          <div class="doc-list-item">📈 <strong>Progression</strong> <span>— vue graphique de la meilleure charge atteinte par exercice vs objectif de fin de programme.</span></div>
+          <div class="doc-list-item">📋 <strong>Historique</strong> <span>— tableau de toutes les séances avec charge, reps, RPE, signal d'analyse et recommandation S+1.</span></div>
         </div>
       </div>
 
@@ -1352,26 +1384,11 @@ tr:last-child td{border-bottom:none}
           <p class="doc-p">La logique de recommandation S+1 s'inspire de la <strong>méthode Lafay</strong>, adaptée au contexte force/RPE. Le principe central : on ne progresse que quand la séance est pleinement validée. Toute séance incomplète entraîne une répétition de la même charge.</p>
 
           <div class="doc-h2">Règles de décision</div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">✅</div>
-            <div class="doc-rule-body"><strong>Progression (+1 palier)</strong><br><span>Toutes les séries complètes + toutes les reps ≥ 95% du plan + RPE ≤ 8.5. La charge augmente d'un palier la semaine suivante (+2.5 kg squat/deadlift, +1.25 kg press).</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">⏸️</div>
-            <div class="doc-rule-body"><strong>Consolidation (même charge)</strong><br><span>Séries complètes mais RPE entre 8.5 et 9.5 — effort trop élevé pour progresser en sécurité. Ou reps entre 80% et 95% du plan — progression prématurée.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">⏳</div>
-            <div class="doc-rule-body"><strong>Plateau prolongé → recul (-1 palier)</strong><br><span>Après 3 semaines consécutives de consolidation sans progression, la charge recule d'un palier. Règle directement tirée de Lafay. Les semaines sautées et Post-Hyrox ne comptent pas dans le plateau.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">⚠️</div>
-            <div class="doc-rule-body"><strong>Surcharge → recul (-1 palier)</strong><br><span>RPE &gt; 9.5 sur la séance — la charge est excessive. Recul immédiat d'un palier.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">🔴</div>
-            <div class="doc-rule-body"><strong>Effondrement → recul (-2 paliers)</strong><br><span>Reps réalisées &lt; 80% du plan — la charge est franchement trop lourde. Recul de deux paliers (réinitialisation Lafay).</span></div>
-          </div>
+          <div class="doc-list-item">✅ <strong>Progression (+1 palier)</strong><br><span>Toutes les séries complètes + toutes les reps ≥ 95% du plan + RPE ≤ 8.5. La charge augmente d'un palier la semaine suivante (+2.5 kg squat/deadlift, +1.25 kg press).</span></div>
+          <div class="doc-list-item">⏸️ <strong>Consolidation (même charge)</strong><br><span>Séries complètes mais RPE entre 8.5 et 9.5 — effort trop élevé pour progresser en sécurité. Ou reps entre 80% et 95% du plan — progression prématurée.</span></div>
+          <div class="doc-list-item">⏳ <strong>Plateau prolongé → recul (-1 palier)</strong><br><span>Après 3 semaines consécutives de consolidation sans progression, la charge recule d'un palier. Règle directement tirée de Lafay. Les semaines sautées et Post-Hyrox ne comptent pas dans le plateau.</span></div>
+          <div class="doc-list-item">⚠️ <strong>Surcharge → recul (-1 palier)</strong><br><span>RPE &gt; 9.5 sur la séance — la charge est excessive. Recul immédiat d'un palier.</span></div>
+          <div class="doc-list-item">🔴 <strong>Effondrement → recul (-2 paliers)</strong><br><span>Reps réalisées &lt; 80% du plan — la charge est franchement trop lourde. Recul de deux paliers (réinitialisation Lafay).</span></div>
 
           <div class="doc-h2">Compteur de plateau</div>
           <p class="doc-p">La recommandation affiche le compteur de plateau en temps réel (<strong>Plateau : 2/3 sem.</strong>) pour anticiper la décharge avant qu'elle arrive. À 3/3, la décharge est automatique la semaine suivante.</p>
@@ -1401,18 +1418,9 @@ tr:last-child td{border-bottom:none}
           <p class="doc-p">À utiliser quand l'exercice a été réalisé dans le cadre d'une compétition Hyrox, d'une séance cardio haute intensité préalable, ou de tout effort qui a affecté la qualité de la séance sans que ça soit apparent dans le RPE ressenti.</p>
           <div class="doc-formula">RPE effectif = RPE ressenti + 1.5<br>(fatigue résiduelle non perçue à chaud)</div>
           <p class="doc-p">En mode Post-Hyrox :</p>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">📊</div>
-            <div class="doc-rule-body"><strong>Analyse vs historique personnel</strong> <span>— la séance est comparée à ta moyenne habituelle (kg, reps, RPE) sur les séances normales passées, pas au plan de la semaine.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">🚫</div>
-            <div class="doc-rule-body"><strong>Aucune recommandation de charge</strong> <span>— la séance n'influence pas le calcul S+1. Le plan de la semaine suivante reste inchangé.</span></div>
-          </div>
-          <div class="doc-rule">
-            <div class="doc-rule-icon">🧬</div>
-            <div class="doc-rule-body"><strong>Fatigue musculaire comptabilisée</strong> <span>— la charge et les reps alimentent quand même le suivi de fatigue musculaire pour refléter l'effort réel.</span></div>
-          </div>
+          <div class="doc-list-item">📊 <strong>Analyse vs historique personnel</strong> <span>— la séance est comparée à ta moyenne habituelle (kg, reps, RPE) sur les séances normales passées, pas au plan de la semaine.</span></div>
+          <div class="doc-list-item">🚫 <strong>Aucune recommandation de charge</strong> <span>— la séance n'influence pas le calcul S+1. Le plan de la semaine suivante reste inchangé.</span></div>
+          <div class="doc-list-item">🧬 <strong>Fatigue musculaire comptabilisée</strong> <span>— la charge et les reps alimentent quand même le suivi de fatigue musculaire pour refléter l'effort réel.</span></div>
 
           <div class="doc-h2">Séance sautée</div>
           <p class="doc-p">Aucune saisie possible. La semaine ne compte pas dans le compteur de plateau. La recommandation S+1 est identique au plan officiel de la semaine suivante — comme si la séance n'avait pas eu lieu.</p>
@@ -1546,22 +1554,21 @@ tr:last-child td{border-bottom:none}
         <div class="doc-card">
           <h3>🗣️ Intensité — test de la parole (référence officielle)</h3>
           <p>L'<strong>ACOG (2020)</strong> recommande d'utiliser uniquement le <strong>test de la parole</strong> pour surveiller l'intensité pendant la grossesse :</p>
-          <div class="doc-rule">
-            <div class="doc-rule-row"><span class="doc-rule-label">Bonne intensité</span><span>Tu peux parler normalement mais pas chanter</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Trop intense</span><span>Tu ne peux plus tenir une conversation → ralentir immédiatement</span></div>
-          </div>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><strong>Bonne intensité</strong> — Tu peux parler normalement mais pas chanter</div>
+            <div class="doc-list-item"><strong>Trop intense</strong> — Tu ne peux plus tenir une conversation → ralentir immédiatement</div>
+            </div>
           <div class="doc-warn">⚠️ La limite de 145 bpm (ou 140 bpm) est une recommandation <strong>obsolète depuis les années 1990</strong> (ACOG 1985, abandonnée). Les réponses cardiaques varient individuellement pendant la grossesse — la fréquence cardiaque n'est pas un indicateur fiable d'intensité.</div>
         </div>
 
         <div class="doc-card">
           <h3>✅ Volume recommandé</h3>
           <table class="doc-table">
-            <thead><tr><th>Recommandation</th><th>Source</th></tr></thead>
             <tbody>
-              <tr><td>150 min/semaine d'activité modérée minimum</td><td>ACOG 2020, SOGC/CSEP 2019, HAS 2019</td></tr>
-              <tr><td>Au moins 3 jours/semaine, idéalement tous les jours</td><td>SOGC/CSEP 2019</td></tr>
-              <tr><td>Séances de 20–30 min minimum</td><td>ACOG 2020</td></tr>
-              <tr><td>Pas de limite supérieure établie pour les femmes sans complications</td><td>ACOG 2020</td></tr>
+              <tr><td>✓ 150 min/semaine d'activité modérée minimum <em style="color:var(--text3);font-size:11px">· ACOG 2020, SOGC/CSEP 2019, HAS 2019</em></td></tr>
+              <tr><td>✓ Au moins 3 jours/semaine, idéalement tous les jours <em style="color:var(--text3);font-size:11px">· SOGC/CSEP 2019</em></td></tr>
+              <tr><td>✓ Séances de 20–30 min minimum <em style="color:var(--text3);font-size:11px">· ACOG 2020</em></td></tr>
+              <tr><td>✓ Pas de limite supérieure établie pour les femmes sans complications <em style="color:var(--text3);font-size:11px">· ACOG 2020</em></td></tr>
             </tbody>
           </table>
           <p style="font-size:12px;color:var(--text3)">Notre programme vise 5–6 activités/semaine de 15–30 min selon le mois — conforme et au-dessus du minimum recommandé.</p>
@@ -1569,26 +1576,26 @@ tr:last-child td{border-bottom:none}
 
         <div class="doc-card">
           <h3>✅ Activités recommandées (ACOG 2020)</h3>
-          <div class="doc-rule">
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Marche</span><span>Excellente tout au long de la grossesse</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Natation</span><span>Recommandée — portance de l'eau, pas de choc</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Vélo stationnaire</span><span>Safe — pas de risque de chute</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Yoga/Pilates modifiés</span><span>Recommandés — éviter le hot yoga</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Renforcement musculaire doux</span><span>Validé avec sage-femme ou médecin</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✓ Jogging léger</span><span>Si pratiqué avant la grossesse et grossesse non compliquée</span></div>
+          <div class="doc-list-simple">
+            <div class="doc-list-item doc-list-ok">✓ <strong>Marche</strong> — Excellente tout au long de la grossesse</div>
+            <div class="doc-list-item doc-list-ok">✓ <strong>Natation</strong> — Recommandée, portance de l'eau, pas de choc</div>
+            <div class="doc-list-item doc-list-ok">✓ <strong>Vélo stationnaire</strong> — Safe, pas de risque de chute</div>
+            <div class="doc-list-item doc-list-ok">✓ <strong>Yoga / Pilates modifiés</strong> — Recommandés, éviter le hot yoga</div>
+            <div class="doc-list-item doc-list-ok">✓ <strong>Renforcement musculaire doux</strong> — Validé avec sage-femme ou médecin</div>
+            <div class="doc-list-item doc-list-ok">✓ <strong>Jogging léger</strong> — Si pratiqué avant la grossesse et grossesse non compliquée</div>
           </div>
         </div>
 
         <div class="doc-card">
           <h3>🚫 Activités à éviter</h3>
-          <div class="doc-rule">
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Sports de contact</span><span>Rugby, boxe, hockey, arts martiaux</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Risque de chute</span><span>Ski alpin, équitation, vélo en extérieur, gymnastique</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Plongée sous-marine</span><span>Risque d'embolie gazeuse pour le fœtus</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Hot yoga / Hot Pilates</span><span>Hyperthermie maternelle dangereuse</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Position allongée sur le dos</span><span>Après le 4ème mois — compression veine cave</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Abdominaux classiques</span><span>Crunchs, sit-ups — pression abdominale excessive</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">✗ Brasse jambes larges</span><span>Si douleur pubienne (SPD)</span></div>
+          <div class="doc-list-simple">
+            <div class="doc-list-item doc-list-no">✗ <strong>Sports de contact</strong> — Rugby, boxe, hockey, arts martiaux</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Risque de chute</strong> — Ski alpin, équitation, vélo en extérieur, gymnastique</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Plongée sous-marine</strong> — Risque d'embolie gazeuse pour le fœtus</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Hot yoga / Hot Pilates</strong> — Hyperthermie maternelle dangereuse</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Position allongée sur le dos</strong> — Après le 4ème mois, compression veine cave</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Abdominaux classiques</strong> — Crunchs, sit-ups, pression abdominale excessive</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Brasse jambes larges</strong> — Si douleur pubienne (SPD)</div>
           </div>
         </div>
 
@@ -1653,79 +1660,68 @@ tr:last-child td{border-bottom:none}
         <div class="doc-card">
           <h3>🦴 Douleur pubienne (SPD — Symphyse Pubienne Douloureuse)</h3>
           <p>Très fréquente à partir du 5ème mois. Elle est due à la relaxine qui assouplit les ligaments pelviens.</p>
-          <div class="doc-rule">
-            <div class="doc-rule-row"><span class="doc-rule-label">Symptôme</span><span>Douleur à l'avant du pubis, parfois irradiant vers l'intérieur des cuisses</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Éviter</span><span>Squats profonds, fentes, jambes très écartées, brasse jambes larges en natation</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Remplacer par</span><span>Pont fessier latéral couché sur le côté gauche, Kegel, marche douce</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Consulter</span><span>Sage-femme ou kiné spécialisée périnée si la douleur persiste</span></div>
-          </div>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><strong>Symptôme</strong> — Douleur à l'avant du pubis, parfois irradiant vers l'intérieur des cuisses</div>
+            <div class="doc-list-item doc-list-no"><strong>Éviter</strong> — Squats profonds, fentes, jambes très écartées, brasse jambes larges en natation</div>
+            <div class="doc-list-item doc-list-ok"><strong>Remplacer par</strong> — Pont fessier latéral couché sur le côté gauche, Kegel, marche douce</div>
+            <div class="doc-list-item doc-list-ok"><strong>Consulter</strong> — Sage-femme ou kiné spécialisée périnée si la douleur persiste</div>
+            </div>
         </div>
 
         <div class="doc-card">
           <h3>🎯 Kegel — périnée</h3>
           <p>Les exercices de périnée sont l'un des investissements les plus importants pour l'accouchement et la récupération post-partum.</p>
-          <div class="doc-rule">
-            <div class="doc-rule-row"><span class="doc-rule-label">Technique</span><span>Contracter le périnée (comme pour retenir les urines) pendant 8–10 s, relâcher 5 s, répéter 10 fois</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Fréquence</span><span>Plusieurs fois par jour — pas seulement en séance</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Astuce</span><span>Associe-les à une habitude : café du matin, brossage de dents, téléphone</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Position</span><span>Assise, allongée sur le côté, debout — toutes les positions fonctionnent</span></div>
-            <div class="doc-rule-row"><span class="doc-rule-label">Ne pas</span><span>Contracter les fesses ou les abdominaux, bloquer la respiration</span></div>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><strong>Technique</strong> — Contracter le périnée 8–10 s, relâcher 5 s, répéter 10 fois</div>
+            <div class="doc-list-item"><strong>Fréquence</strong> — Plusieurs fois par jour, pas seulement en séance</div>
+            <div class="doc-list-item doc-list-ok">💡 <strong>Astuce</strong> — Associe-les à une habitude : café, brossage de dents, téléphone</div>
+            <div class="doc-list-item"><strong>Position</strong> — Assise, allongée, debout — toutes les positions fonctionnent</div>
+            <div class="doc-list-item doc-list-no">✗ <strong>Ne pas</strong> — Contracter les fesses ou abdominaux, bloquer la respiration</div>
           </div>
           <p>En Pilates : synchronisation expiration + contraction périnée = approche recommandée pour les renforcer ensemble.</p>
         </div>
 
         <div class="doc-card">
           <h3>📅 Adaptations par mois de grossesse</h3>
-          <table class="doc-table">
-            <thead><tr><th>Mois</th><th>Durée séances</th><th>Squat</th><th>Extension 4 pattes</th><th>Psoas</th></tr></thead>
-            <tbody>
-              <tr><td>4–5</td><td>20–30 min</td><td>3 × 12</td><td>✓</td><td>✓</td></tr>
-              <tr><td>6</td><td>20 min</td><td>2 × 10</td><td>✓</td><td>✓</td></tr>
-              <tr><td>7</td><td>15–20 min</td><td>2 × 8 · 60° max</td><td>✓</td><td>✓</td></tr>
-              <tr><td>8</td><td>15 min</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td></tr>
-              <tr><td>9</td><td>10–15 min</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td><td>⛔ Suspendu</td></tr>
-            </tbody>
-          </table>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><strong>Mois 4–5</strong> — 20–30 min · Squat 3×12 · Extension ✓ · Psoas ✓</div>
+            <div class="doc-list-item"><strong>Mois 6</strong> — 20 min · Squat 2×10 · Extension ✓ · Psoas ✓</div>
+            <div class="doc-list-item"><strong>Mois 7</strong> — 15–20 min · Squat 2×8 (60° max) · Extension ✓ · Psoas ✓</div>
+            <div class="doc-list-item doc-list-no"><strong>Mois 8</strong> — 15 min · Squat ⛔ · Extension ⛔ · Psoas ⛔</div>
+            <div class="doc-list-item doc-list-no"><strong>Mois 9</strong> — 10–15 min · Squat ⛔ · Extension ⛔ · Psoas ⛔</div>
+          </div>
           <p style="font-size:11px;color:var(--text3)">La suspension du squat et de l'extension à partir du 8ème mois est une précaution supplémentaire raisonnable — les recommandations officielles ne fixent pas de limite par mois mais laissent la décision à la sage-femme et à la femme enceinte selon son ressenti.</p>
         </div>
 
         <div class="doc-card">
           <h3>👶 Post-natal — reprise progressive</h3>
-          <table class="doc-table">
-            <thead><tr><th>Phase</th><th>Durée</th><th>Activités</th></tr></thead>
-            <tbody>
-              <tr><td>S1–S6 · Récupération</td><td>6 premières semaines</td><td>Kegel très doux, respiration abdominale, marche très courte si accord médecin</td></tr>
-              <tr><td>S6–S12 · Reprise douce</td><td>6 à 12 semaines</td><td>Kegel progressif, pont fessier, chat/vache, marche 15–20 min. Pas de course.</td></tr>
-              <tr><td>3–6 mois · Remise en forme</td><td>3 à 6 mois</td><td>Gainage progressif (vérifier diastase), squats, cardio léger. Course avec accord kiné.</td></tr>
-              <tr><td>6 mois+ · Programme standard</td><td>Après 6 mois</td><td>Retour à un programme normal via le wizard. Allaitement = apports caloriques accrus.</td></tr>
-            </tbody>
-          </table>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><strong>S1–S6 · Récupération</strong> (6 premières semaines) — Kegel très doux, respiration abdominale, marche très courte si accord médecin</div>
+            <div class="doc-list-item"><strong>S6–S12 · Reprise douce</strong> (6 à 12 semaines) — Kegel progressif, pont fessier, chat/vache, marche 15–20 min. Pas de course.</div>
+            <div class="doc-list-item"><strong>3–6 mois · Remise en forme</strong> — Gainage progressif (vérifier diastase), squats, cardio léger. Course avec accord kiné.</div>
+            <div class="doc-list-item doc-list-ok"><strong>6 mois+ · Programme standard</strong> — Retour à un programme normal via le wizard. Allaitement = apports caloriques accrus.</div>
+          </div>
           <div class="doc-warn">⚕️ Attendre impérativement la visite post-natale (6 semaines) et l'accord du médecin ou sage-femme avant toute reprise sportive structurée. En cas de diastase des grands droits, consulter une kiné spécialisée périnée avant tout gainage.</div>
         </div>
 
         <div class="doc-card">
           <h3>📚 Sources et références</h3>
-          <table class="doc-table">
-            <thead><tr><th>Source</th><th>Document</th></tr></thead>
-            <tbody>
-              <tr><td>ACOG</td><td>Committee Opinion No. 804 — Physical Activity and Exercise During Pregnancy and the Postpartum Period, 2020</td></tr>
-              <tr><td>HAS</td><td>Prescription d'activité physique et sportive — Grossesse et post-partum, juillet 2019</td></tr>
-              <tr><td>CNSF</td><td>Recommandations de pratique clinique — Activité physique périnatale, mars 2021</td></tr>
-              <tr><td>SOGC/CSEP</td><td>Canadian Guideline for Physical Activity Throughout Pregnancy, British Journal of Sports Medicine 2018;52:1339-46</td></tr>
-              <tr><td>ANSES</td><td>Actualisation des repères du PNNS — Révisions des repères relatifs à l'activité physique et à la sédentarité, 2016</td></tr>
-              <tr><td>Ameli.fr</td><td>Grossesse et sport — recommandations pratiques</td></tr>
-              <tr><td>NaîtreetGrandir.ca</td><td>L'activité physique pendant la grossesse</td></tr>
-            </tbody>
-          </table>
+          <div class="doc-list-simple">
+            <div class="doc-list-item"><a href="https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2020/04/physical-activity-and-exercise-during-pregnancy-and-the-postpartum-period" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>ACOG 2020</strong></a> — Committee Opinion No. 804 — Physical Activity and Exercise During Pregnancy and the Postpartum Period</div>
+            <div class="doc-list-item"><a href="https://www.has-sante.fr/jcms/p_3261806/fr/prescription-d-activite-physique-et-sportive-grossesse-et-post-partum" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>HAS 2019</strong></a> — Prescription d'activité physique et sportive — Grossesse et post-partum, juillet 2019</div>
+            <div class="doc-list-item"><a href="https://www.cnsf.asso.fr/grossesse-et-activite-physique-les-nouveaux-outils-du-cnsf/" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>CNSF 2021</strong></a> — Recommandations de pratique clinique — Activité physique périnatale, mars 2021</div>
+            <div class="doc-list-item"><a href="https://www.researchgate.net/publication/328367267_2019_Canadian_guideline_for_physical_activity_throughout_pregnancy" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>SOGC/CSEP</strong></a> — Canadian Guideline for Physical Activity Throughout Pregnancy, Br J Sports Med 2018;52:1339-46</div>
+            <div class="doc-list-item"><a href="https://www.anses.fr/fr/content/plus-activite-physique-et-moins-de-sedentarite-une-meilleure-sante" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>ANSES 2016</strong></a> — Actualisation des repères du PNNS relatifs à l'activité physique et à la sédentarité</div>
+            <div class="doc-list-item"><a href="https://www.ameli.fr/assure/sante/devenir-parent/grossesse/grossesse-en-bonne-sante/grossesse-activite-physique/grossesse-choix-activite-physique" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>Ameli.fr</strong></a> — Grossesse et sport — recommandations pratiques</div>
+            <div class="doc-list-item"><a href="https://naitreetgrandir.com/fr/grossesse/sante-bien-etre/activite-physique-durant-grossesse/" target="_blank" rel="noopener noreferrer" class="doc-link"><strong>NaîtreetGrandir</strong></a> — L'activité physique pendant la grossesse</div>
+            </div>
         </div>
 
       </div><!-- /doc-grossesse -->
     </div><!-- /doc-content -->
   </div><!-- /doc-layout -->
 </div>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script>
+</div><script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script><script>
 /* -- db.js -- */
 /**
  * db.js — IndexedDB storage layer
@@ -2266,6 +2262,209 @@ const POSTNATAL_PHASES = [
   { id:'s12-24',  label:'3–6 mois · Remise en forme',      desc:'Gainage progressif, cardio léger, renfo global' },
   { id:'6m+',     label:'6 mois+ · Programme standard',    desc:'Retour à un programme normal adapté à ton niveau' },
 ];
+
+// ── Objectifs nutrition ───────────────────────────────────────────────────────
+
+const NUTRITION_OBJECTIFS = [
+  { id:'masse',       icon:'💪', label:'Prise de masse',    desc:"Surplus calorique, priorité protéines et glucides" },
+  { id:'perte',       icon:'🔥', label:'Perte de poids',    desc:"Déficit calorique contrôlé, maintien masse musculaire" },
+  { id:'healthy',     icon:'🥗', label:'Santé / Équilibre', desc:"Alimentation équilibrée, énergie stable, bien-être" },
+  { id:'performance', icon:'⚡', label:'Performance',       desc:"Optimisation énergie et récupération pour l'effort" },
+  { id:'maintien',    icon:'⚖️', label:'Maintien',          desc:"Stabilité pondérale, composition corporelle constante" },
+];
+
+const NUTRITION_PLANS = {
+  masse: {
+    label: 'Prise de masse',
+    surplus: "+300 à +500 kcal/jour vs dépense totale",
+    proteines: "1.8–2.2 g / kg de poids corporel",
+    glucides: "4–6 g / kg — carburant principal de l'effort",
+    lipides: "0.8–1.2 g / kg — hormones et récupération",
+    preSeance: {
+      timing: "60–90 min avant l'entraînement",
+      conseils: [
+        "Repas complet : glucides complexes + protéines maigres",
+        "Exemple : riz + blanc de poulet + légumes cuits",
+        "Éviter les graisses en excès (ralentissent la digestion)",
+        "Hydratation : 500 ml d'eau 2h avant",
+      ]
+    },
+    postSeance: {
+      timing: "Dans les 30–60 min après l'entraînement",
+      conseils: [
+        "Fenêtre anabolique : protéines + glucides rapides",
+        "Exemple : yaourt grec + banane + flocons d'avoine",
+        "Protéines : 25–40 g minimum (whey ou alimentaire)",
+        "Glucides : 0.5–1 g/kg pour reconstituer le glycogène",
+      ]
+    },
+    reposActif: {
+      conseils: [
+        "Maintenir les apports protéiques même sans entraînement",
+        "Réduire légèrement les glucides (activité moindre)",
+        "Augmenter les légumes et fibres",
+        "Ne pas sauter de repas — la croissance musculaire est continue",
+      ]
+    },
+    tips: [
+      "💡 Mange 4–5 repas par jour pour maximiser la synthèse protéique",
+      "💡 La créatine monohydrate (3–5 g/j) est le complément le plus validé scientifiquement",
+      "⚠️ Un surplus trop important (> 500 kcal) favorise le stockage de gras",
+    ]
+  },
+  perte: {
+    label: 'Perte de poids',
+    surplus: "−300 à −500 kcal/jour (déficit modéré)",
+    proteines: "2.0–2.4 g / kg — essentiel pour préserver le muscle",
+    glucides: "2–4 g / kg — privilégier avant l'entraînement",
+    lipides: "0.8–1.0 g / kg — ne pas trop réduire",
+    preSeance: {
+      timing: "45–60 min avant",
+      conseils: [
+        "Repas léger : protéines + glucides modérés",
+        "Exemple : blanc d'oeuf + flocons d'avoine + fruits rouges",
+        "Éviter d'entraîner à jeun si objectif maintien musculaire",
+        "Café noir acceptable pour la mobilisation des graisses",
+      ]
+    },
+    postSeance: {
+      timing: "Dans les 45 min",
+      conseils: [
+        "Priorité aux protéines, glucides modérés",
+        "Exemple : blanc de poulet + légumes vapeur + quinoa",
+        "Protéines : 30–40 g pour limiter le catabolisme",
+        "Éviter les sucres rapides sauf si entraînement très intense",
+      ]
+    },
+    reposActif: {
+      conseils: [
+        "Journées de repos = journées de déficit plus faciles à tenir",
+        "Augmenter les légumes et les fibres (satiété)",
+        "Maintenir les protéines élevées — le muscle consomme des calories",
+        "Hydratation : 2–3 L/jour — la déshydratation masque la faim",
+      ]
+    },
+    tips: [
+      "💡 Un déficit de 300–500 kcal/j permet de perdre 0.3–0.5 kg/semaine sans perte musculaire",
+      "💡 Peser ses aliments les 2 premières semaines pour calibrer ses portions",
+      "⚠️ Pas de repas à moins de 1200 kcal (femmes) / 1500 kcal (hommes) — risque carences",
+    ]
+  },
+  healthy: {
+    label: "Santé / Équilibre",
+    surplus: "Équilibre — ni surplus ni déficit",
+    proteines: "1.4–1.8 g / kg",
+    glucides: "3–5 g / kg — variés et complets",
+    lipides: "1.0–1.2 g / kg — bons acides gras",
+    preSeance: {
+      timing: "60–90 min avant",
+      conseils: [
+        "Repas équilibré et digeste",
+        "Exemple : salade de lentilles + oeufs durs + légumes",
+        "Limiter les aliments ultra-transformés",
+        "Hydratation régulière tout au long de la journée",
+      ]
+    },
+    postSeance: {
+      timing: "Dans l'heure",
+      conseils: [
+        "Repas complet et équilibré",
+        "Exemple : poisson + patate douce + légumes verts",
+        "Pas besoin d'optimiser à la minute — régularité > précision",
+        "Favoriser les aliments entiers, peu transformés",
+      ]
+    },
+    reposActif: {
+      conseils: [
+        "Maintenir 3 repas structurés + 1–2 collations si besoin",
+        "Légumes à chaque repas — visez 5 portions/jour",
+        "Limiter alcool, sucres ajoutés, sel en excès",
+        "Bien dormir — le sommeil est clé pour la récupération",
+      ]
+    },
+    tips: [
+      "💡 La règle des 80/20 : 80% d'aliments nutritifs, 20% de plaisir sans culpabilité",
+      "💡 Cuisiner soi-même est le levier le plus puissant pour une alimentation saine",
+      "⚠️ La régularité sur 80% du temps vaut mieux que la perfection sur 50%",
+    ]
+  },
+  performance: {
+    label: 'Performance sportive',
+    surplus: "Léger surplus les jours d'entraînement intense (+200–300 kcal)",
+    proteines: "1.8–2.2 g / kg",
+    glucides: "5–7 g / kg les jours d'entraînement, 3–4 g les jours de repos",
+    lipides: "1.0–1.2 g / kg — acides gras essentiels",
+    preSeance: {
+      timing: "2–3h avant pour repas complet, 30–45 min pour collation",
+      conseils: [
+        "Repas riche en glucides complexes + protéines modérées",
+        "Exemple : pâtes complètes + sauce thon + légumes",
+        "Collation 30 min avant : banane + quelques amandes",
+        "Hydratation : 500 ml d'eau dans l'heure précédant l'effort",
+      ]
+    },
+    postSeance: {
+      timing: "Immédiatement après — fenêtre de 30 min",
+      conseils: [
+        "Ratio glucides/protéines = 3:1 pour les efforts longs",
+        "Exemple : smoothie banane + lait + whey + flocons d'avoine",
+        "Protéines : 25–40 g pour la réparation musculaire",
+        "Électrolytes si effort > 60 min ou forte sudation",
+      ]
+    },
+    reposActif: {
+      conseils: [
+        "Jours de repos = jours de reconstruction — ne pas négliger l'alimentation",
+        "Réduire les glucides, maintenir protéines et lipides",
+        "Anti-inflammatoires naturels : curcuma, oméga-3, fruits rouges",
+        "Sommeil 7–9h — principal vecteur de récupération",
+      ]
+    },
+    tips: [
+      "💡 La caféine (3–6 mg/kg, 45 min avant) améliore la performance de 3–7%",
+      "💡 Bêta-alanine + créatine = les deux seuls compléments validés pour la performance",
+      "⚠️ Pas d'expérimentation nutritionnelle le jour d'une compétition",
+    ]
+  },
+  maintien: {
+    label: 'Maintien',
+    surplus: "Équilibre strict — calories = dépense totale",
+    proteines: "1.6–2.0 g / kg",
+    glucides: "3–5 g / kg selon le volume d'entraînement",
+    lipides: "0.8–1.0 g / kg",
+    preSeance: {
+      timing: "60–90 min avant",
+      conseils: [
+        "Repas équilibré et habituel — pas de changement brutal",
+        "Exemple : riz + légumineuses + légumes + huile d'olive",
+        "Maintenir les mêmes horaires de repas",
+        "Hydratation : 1.5–2 L/jour minimum",
+      ]
+    },
+    postSeance: {
+      timing: "Dans l'heure",
+      conseils: [
+        "Repas complet et protéiné",
+        "Exemple : oeufs + légumes sautés + pain complet",
+        "La régularité est plus importante que l'optimisation",
+        "Écouter ses signaux de faim et satiété",
+      ]
+    },
+    reposActif: {
+      conseils: [
+        "Manger légèrement moins les jours sans entraînement (−100 à −200 kcal)",
+        "Maintenir les protéines constantes 7j/7",
+        "Varier les sources alimentaires pour couvrir tous les micronutriments",
+        "Peser régulièrement (1×/semaine, mêmes conditions) pour vérifier la stabilité",
+      ]
+    },
+    tips: [
+      "💡 Le maintien demande autant d'attention que la prise de masse ou la perte de poids",
+      "💡 Ajustements progressifs de ±100 kcal si le poids dérive sur 2–3 semaines",
+      "⚠️ Éviter les fluctuations extrêmes — le corps préfère la stabilité",
+    ]
+  },
+};
 
 
 /* -- store.js -- */
@@ -2812,7 +3011,7 @@ function setCurrentProgram(id) {
 
 function initWeekSel() {
   const prog  = getCurrentProgram();
-  const total = prog ? prog.totalWeeks : 17;
+  const total = prog ? (prog.totalWeeks || prog.semaines?.length || 17) : 17;
   const sel   = document.getElementById('weekSel');
   if(!sel) return;
 
@@ -2820,15 +3019,34 @@ function initWeekSel() {
   for(let w = 1; w <= total; w++) {
     const o = document.createElement('option');
     o.value = w;
-    o.textContent = `Semaine ${w}`;
+    // Mark skipped weeks with badge
+    try {
+      if(prog?.semaines) {
+        const sem = prog.semaines[w-1];
+        const allSkipped = sem?.jours?.length && sem.jours.every(day =>
+          day.exercices?.every(ex => getProgExStatus(prog.id, ex.id, w) === 'skipped')
+        );
+        o.textContent = allSkipped ? `Semaine ${w} 🏖` : `Semaine ${w}`;
+      } else {
+        o.textContent = `Semaine ${w}`;
+      }
+    } catch(e) {
+      o.textContent = `Semaine ${w}`;
+    }
     sel.appendChild(o);
   }
 
-  // Latest week with data
-  const latest = prog
-    ? getProgLatestWeek(prog.id, prog)
-    : getLatestWeek(EXERCISES);
-  sel.value = Math.min(latest, total);
+  // Set to latest week with data
+  try {
+    const latest = prog
+      ? getProgLatestWeek(prog.id, prog)
+      : getLatestWeek(EXERCISES);
+    sel.value = Math.min(Math.max(latest, 1), total);
+  } catch(e) {
+    sel.value = 1;
+  }
+
+  renderSaisie();
 }
 
 // ── Main render ───────────────────────────────────────────────────────────────
@@ -2855,9 +3073,13 @@ function _renderProgSaisie(prog) {
     return;
   }
 
-  const week    = parseInt(document.getElementById('weekSel').value, 10);
+  const week    = parseInt(document.getElementById('weekSel').value, 10) || 1;
   const semaine = prog.semaines?.[week - 1];
-  if(!semaine) return;
+  if(!semaine) {
+    // weekSel may not be populated yet — retry after DOM update
+    requestAnimationFrame(() => renderSaisie());
+    return;
+  }
 
   const badge = document.getElementById('phaseBadge');
   const phaseColors = {
@@ -2911,7 +3133,7 @@ function _renderProgSaisie(prog) {
       const btnD = exStatus === 'deload'  ? ' active-deload'  : '';
       const btnS = exStatus === 'skipped' ? ' active-skipped' : '';
 
-      html += `<div class="ex-block">
+      html += `<div class="ex-block" data-exid="${ex.id}">
         <div class="ex-top">
           <span class="ex-name-t">${esc(ex.nom)}</span>
           <span class="ex-scheme">${esc(scheme || '—')}</span>
@@ -3016,7 +3238,7 @@ function _renderProgSaisie(prog) {
         if(rec?.sets?.some(s=>s?.kg)) {
           const done   = (rec.sets||[]).filter(s=>s?.reps);
           const avgRpe = done.length ? Math.round(done.reduce((a,s)=>a+(parseFloat(s.rpe)||0),0)/done.length*10)/10 : null;
-          html += `<div class="sets-summary"><strong>${done.length}</strong> série${done.length>1?'s':''} · ${avgRpe?`RPE moy. <strong>${avgRpe}</strong> · `:''}Meilleure : <strong>${bestKg(rec)} ${ex.unit||'kg'}</strong></div>`;
+          html += `<div class="sets-summary" data-ex="${ex.id}"><strong>${done.length}</strong> série${done.length>1?'s':''} · ${avgRpe?`RPE moy. <strong>${avgRpe}</strong> · `:''}Meilleure : <strong>${bestKg(rec)} ${ex.unit||'kg'}</strong></div>`;
         }
       }
 
@@ -3043,13 +3265,19 @@ function _bindProgSaisieEvents(prog, week) {
     if(!btn) return;
     const { progex, ex, status } = btn.dataset;
     setProgExStatus(progex, ex, parseInt(btn.dataset.week), status);
-    renderSaisie();
-  }, { once: true });
+    // Update button styles without re-rendering the whole form
+    const week_n = parseInt(btn.dataset.week);
+    btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
+      b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
+    });
+  });
 
   // Auto-fill
   content.addEventListener('input', e => {
     const inp = e.target.closest('.set-inp[data-idx="0"]');
     if(!inp) return;
+    const val = parseFloat(inp.value);
+    if(!val || val <= 0) return; // Only auto-fill with valid numeric values
     const { ex, nsets } = inp.dataset;
     for(let i = 1; i < parseInt(nsets); i++) {
       const el = document.getElementById(`pkg_${ex}_${i}`);
@@ -3097,8 +3325,8 @@ function _saveProgSaisie(prog, week, dayName) {
   });
 
   _showSaveToast(`✓ ${dayName} enregistré`);
-  renderSaisie();
   repaintMuscles();
+  _updateSetCheckmarks(prog, week, dayName);
 }
 
 // ── Generic analysis helpers ──────────────────────────────────────────────────
@@ -3183,8 +3411,8 @@ function _getNextPlanGeneric(prog, ex, week, semaine) {
 // ── Legacy ATHX tracker (unchanged logic) ────────────────────────────────────
 
 function _renderLegacySaisie() {
-  const week  = parseInt(document.getElementById('weekSel').value, 10);
-  const ph    = PHASES[week - 1];
+  const week  = parseInt(document.getElementById('weekSel').value, 10) || 1;
+  const ph    = PHASES[week - 1] || PHASES[0];
   const badge = document.getElementById('phaseBadge');
   badge.textContent      = PHASE_LABELS[ph];
   badge.style.background = PHASE_STYLE[ph].bg;
@@ -3205,9 +3433,19 @@ function _renderLegacySaisie() {
       const plan     = ex.plan[week - 1];
       const scheme   = ex.repScheme[week - 1];
       const rec      = normRecord(getRecord(ex.id, week));
-      const nSets    = (scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos')
-        ? (ex.sets?.[week-1] || 4)
-        : (parseSets(scheme) || 4);
+      // For deload/taper: use previous normal week's set count
+      const nSets = (() => {
+        if(scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos') {
+          // Find last non-null sets count for this exercise
+          if(ex.sets) {
+            for(let w = week-2; w >= 0; w--) {
+              if(ex.sets[w] != null) return ex.sets[w];
+            }
+          }
+          return 4;
+        }
+        return parseSets(scheme) || 4;
+      })();
       const planReps = parseReps(scheme);
       const exStatus = getExStatus(ex.id, week);
 
@@ -3216,7 +3454,7 @@ function _renderLegacySaisie() {
       const btnD = exStatus==='deload' ?' active-deload' :'';
       const btnS = exStatus==='skipped'?' active-skipped':'';
 
-      html += `<div class="ex-block">
+      html += `<div class="ex-block" data-exid="${ex.id}">
         <div class="ex-top">
           <span class="ex-name-t">${ex.name}</span>
           <span class="ex-scheme">${scheme}</span>
@@ -3285,7 +3523,7 @@ function _renderLegacySaisie() {
           html += `<tr>
             <td class="set-num">S${s+1}</td>
             <td><input class="set-inp" type="number" id="kg_${ex.id}_${s}" step="1.25" min="0"
-                value="${sr.kg||''}" placeholder="${deloadKg||plan}"
+                value="${sr.kg||''}" placeholder="${deloadKg||plan||''}"
                 data-ex="${ex.id}" data-idx="${s}" data-nsets="${nSets}"></td>
             <td><input class="set-inp reps-inp" type="number" id="reps_${ex.id}_${s}"
                 min="0" max="30" step="1" value="${sr.reps||''}" placeholder="${planReps||'—'}"></td>
@@ -3299,7 +3537,7 @@ function _renderLegacySaisie() {
         if(rec?.sets?.some(s=>s?.kg)) {
           const done   = (rec.sets||[]).filter(s=>s?.reps);
           const avgRpe = done.length?Math.round(done.reduce((a,s)=>a+(parseFloat(s.rpe)||0),0)/done.length*10)/10:null;
-          html += `<div class="sets-summary"><strong>${done.length}</strong> série${done.length>1?'s':''} · ${avgRpe?`RPE moy. <strong>${avgRpe}</strong> · `:''}Meilleure charge : <strong>${bestKg(rec)} ${ex.unit}</strong></div>`;
+          html += `<div class="sets-summary" data-ex="${ex.id}"><strong>${done.length}</strong> série${done.length>1?'s':''} · ${avgRpe?`RPE moy. <strong>${avgRpe}</strong> · `:''}Meilleure charge : <strong>${bestKg(rec)} ${ex.unit}</strong></div>`;
         }
       }
 
@@ -3323,12 +3561,17 @@ function _bindLegacyEvents(week) {
     if(!btn) return;
     const { ex, status } = btn.dataset;
     setExStatus(ex, week, status);
-    renderSaisie();
-  }, { once: true });
+    // Update button styles without re-rendering
+    btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
+      b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
+    });
+  });
 
   document.getElementById('saisieContent').addEventListener('input', e => {
     const inp = e.target.closest('.set-inp[data-idx="0"]');
     if(!inp) return;
+    const val = parseFloat(inp.value);
+    if(!val || val <= 0) return;
     const { ex, nsets } = inp.dataset;
     for(let i=1;i<parseInt(nsets);i++) {
       const el = document.getElementById(`kg_${ex}_${i}`);
@@ -3366,8 +3609,8 @@ function saveSaisie(week, day) {
   });
 
   _showSaveToast(`✓ ${day} enregistré`);
-  renderSaisie();
   repaintMuscles();
+  _updateLegacyCheckmarks(week, day);
 }
 
 // ── Vacances UI (shared) ──────────────────────────────────────────────────────
@@ -3683,6 +3926,111 @@ function _showSaveToast(msg) {
     toast.style.opacity = '0';
     toast.style.transform = 'translateX(-50%) translateY(20px)';
   }, 2500);
+}
+
+// ── Lightweight post-save updates (avoid full re-render) ─────────────────────
+function _updateSetCheckmarks(prog, week, dayName) {
+  const semaine = prog.semaines?.[week - 1];
+  const day = semaine?.jours?.find(d => d.nom === dayName);
+  if(!day) return;
+  day.exercices.forEach(ex => {
+    const nSets = Math.max(_parseSetsGeneric(ex.scheme), 4);
+    let filled = 0;
+    for(let s = 0; s < nSets; s++) {
+      const kgEl   = document.getElementById(`pkg_${ex.id}_${s}`);
+      const repsEl = document.getElementById(`preps_${ex.id}_${s}`);
+      const cell   = kgEl?.closest('tr')?.querySelector('.set-status');
+      if(cell && kgEl?.value && repsEl?.value) {
+        cell.textContent = '✓';
+        cell.style.color = 'var(--green)';
+        filled++;
+      }
+    }
+    // Update summary
+    const rec = normRecord(getProgRecord(prog.id, ex.id, week));
+    const bk  = bestKg(rec);
+    if(bk && filled > 0) {
+      const summary = document.querySelector(`.sets-summary[data-ex="prog_${ex.id}"]`);
+      if(summary) summary.innerHTML = `<strong>${filled}</strong> série${filled>1?'s':''} · Meilleure : <strong>${bk} kg</strong>`;
+    }
+
+    // Refresh analysis blocks
+    const adj = _calcAdjGeneric(prog, ex, week, semaine);
+    const exBlock = document.querySelector(`.ex-block[data-exid="prog_${ex.id}"]`);
+    if(!exBlock || !adj?.signals?.length) return;
+
+    const adjContainer = exBlock.querySelector('.adj-box');
+    if(adjContainer) {
+      const cls = adj.type==='behind'?'adj-behind':adj.type==='slight_behind'?'adj-slight':'adj-ahead';
+      adjContainer.className = `adj-box ${cls}`;
+      adjContainer.style.padding = '8px 12px';
+      adjContainer.innerHTML = adj.signals.map(s=>{
+        const ic  = s.type==='good'?'✓ ':s.type==='warn'?'⚠ ':s.type==='danger'?'✗ ':'· ';
+        const col = s.type==='good'?'var(--green)':s.type==='warn'?'var(--amber)':s.type==='danger'?'var(--red)':'var(--text2)';
+        return `<div style="display:flex;gap:6px;margin-bottom:2px"><span style="color:${col};font-weight:600;flex-shrink:0">${ic}</span><span>${esc(s.text)}</span></div>`;
+      }).join('');
+    }
+  });
+}
+
+function _updateLegacyCheckmarks(week, dayName) {
+  const exs = EXERCISES.filter(e => e.day === dayName);
+  exs.forEach(ex => {
+    const scheme = ex.repScheme[week - 1];
+    const nSets  = parseSets(scheme) || 4;
+    let filledSets = 0;
+
+    for(let s = 0; s < nSets; s++) {
+      const kgEl   = document.getElementById(`kg_${ex.id}_${s}`);
+      const repsEl = document.getElementById(`reps_${ex.id}_${s}`);
+      const cell   = kgEl?.closest('tr')?.querySelector('.set-status');
+      if(cell && kgEl?.value && repsEl?.value) {
+        cell.textContent = '✓';
+        cell.style.color = 'var(--green)';
+        filledSets++;
+      }
+    }
+
+    // Update summary line
+    const summary = document.querySelector(`.sets-summary[data-ex="${ex.id}"]`);
+    if(summary && filledSets > 0) {
+      const rec = normRecord(getRecord(ex.id, week));
+      const bk  = bestKg(rec);
+      summary.textContent = `${filledSets} série${filledSets>1?'s':''} · Meilleure charge : ${bk} ${ex.unit}`;
+    }
+
+    // Re-render analysis block
+    _refreshAnalysisBlock(ex.id, week, ex);
+  });
+}
+
+function _refreshAnalysisBlock(exId, week, ex) {
+  const adjBox  = document.querySelector(`.adj-box[data-ex="${exId}"]`);
+  const recBox  = document.querySelector(`.next-rec-block[data-ex="${exId}"]`);
+  // If analysis elements exist and have data-ex, update them
+  // They don't have data-ex currently — use a wrapper div approach
+  // For now just trigger a partial re-render of the ex-block analysis section
+  const exBlock = document.querySelector(`.ex-block[data-exid="${exId}"]`);
+  if(!exBlock) return;
+
+  // Re-render only analysis portion
+  const rec = normRecord(getRecord(exId, week));
+  if(!rec?.sets?.some(s=>s?.kg)) return;
+
+  const adj = calcAdj(ex, week);
+  const adjContainer = exBlock.querySelector('.adj-box');
+  const recContainer = exBlock.querySelector('.next-rec-block');
+
+  if(adj?.signals?.length && adjContainer) {
+    const cls = adj.type==='ok'?'adj-ok':adj.type.includes('ahead')?'adj-ahead':(adj.type.includes('behind')&&!adj.type.includes('slight'))?'adj-behind':'adj-slight';
+    adjContainer.className = `adj-box ${cls}`;
+    adjContainer.style.padding = '8px 12px';
+    adjContainer.innerHTML = adj.signals.map(s=>{
+      const ic  = s.type==='good'?'✓ ':s.type==='warn'?'⚠ ':s.type==='danger'?'✗ ':'· ';
+      const col = s.type==='good'?'var(--green)':s.type==='warn'?'var(--amber)':s.type==='danger'?'var(--red)':'var(--text2)';
+      return `<div style="display:flex;gap:6px;margin-bottom:2px"><span style="color:${col};font-weight:600;flex-shrink:0">${ic}</span><span>${esc(s.text)}</span></div>`;
+    }).join('');
+  }
 }
 
 
@@ -4758,7 +5106,7 @@ function generateProgram(config, newProgramId) {
   const {
     domaine, niveau, age, seancesParSemaine, dureeSeance,
     materiel, exercicesForces, exercicesExclus, duree, competition, orm,
-    name,
+    name, nutrition,
   } = config;
 
   // ── Grossesse: special generation ──────────────────────────────────────────
@@ -4784,10 +5132,12 @@ function generateProgram(config, newProgramId) {
   });
 
   // Ensure forced exercises are included
-  const forcedExercises = (exercicesForces || []).map(id => {
-    const ex = pool.find(e => e.id === id) || { id, name: id };
-    return ex;
-  });
+  // exercicesForces is [{id, name}] from wizard — extract id
+  const forcedIds = (exercicesForces || []).map(f => (typeof f === 'object' ? f.id : f));
+  const forcedExercises = forcedIds.map(id => {
+    const ex = pool.find(e => e.id === id);
+    return ex || null;
+  }).filter(Boolean);
 
   // 4. Get volume params (age-adjusted)
   const vol = getVolume(niveau, age || '30-39');
@@ -4824,11 +5174,13 @@ function generateProgram(config, newProgramId) {
           const pct  = isDeload ? 0.60 : isTaper ? 0.65 : phase.intensite;
           const kg   = orm ? _calcKg(ex.id, pct, orm) : null;
 
+          const seriesCount = isDeload || isTaper ? Math.max(2, vol.series - 2) : vol.series;
           return {
             id:       ex.id,
             nom:      ex.name,
-            series:   isDeload || isTaper ? Math.max(2, vol.series - 2) : vol.series,
+            series:   seriesCount,
             reps,
+            scheme:   `${seriesCount}×${reps}`,
             pct1rm:   Math.round(pct * 100),
             kgPlan:   kg,
             muscles:  ex.muscles || [],
@@ -4855,6 +5207,7 @@ function generateProgram(config, newProgramId) {
   return {
     id:        newProgramId,
     name:      name || `Programme ${domaine === 'mixte' ? 'Mixte' : domaine} ${duree} sem.`,
+    status:    'active',
     createdAt: Date.now(),
     config,
     phases:    phases.map(p => ({
@@ -5456,7 +5809,7 @@ function _bannerColor(mois) {
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let _step = 1;
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 9;
 
 const _config = {
   domaine:          null,
@@ -5472,9 +5825,11 @@ const _config = {
   name:             '',
   orm:              {},
   // Grossesse specific
-  grossesse_type:   null, // 'prenatal' | 'postnatal'
+  grossesse_type:   null,
   mois_grossesse:   5,
   postnatal_phase:  null,
+  // Nutrition
+  nutrition:        null,
 };
 
 // ── Domain labels ─────────────────────────────────────────────────────────────
@@ -5520,6 +5875,7 @@ async function initWizard() {
   Object.assign(_config, {
     domaine: null, niveau: null, age: null, seancesParSemaine: 3,
     grossesse_type: null, mois_grossesse: 5, postnatal_phase: null,
+    nutrition: null,
     dureeSeance: 60, materiel: [], exercicesForces: [], exercicesExclus: [],
     duree: 12, competition: null, name: '', orm: {},
   });
@@ -5527,11 +5883,12 @@ async function initWizard() {
   // Pre-fill ORM from existing tracker data
   _prefillOrm();
 
-  // Load exercises in background
-  loadExercisesDB().then(({ fromApi, fromFallback }) => {
-  });
-
+  _wizardEventsInit = false;
   renderStep();
+  _initWizardEvents();
+
+  // Load exercises in background
+  loadExercisesDB();
 }
 
 function _prefillOrm() {
@@ -5559,8 +5916,8 @@ function renderStep() {
   // Grossesse has its own flow: 1 → grossesse_setup → 7
   const isGrossesse = _config.domaine === 'grossesse';
   const renderers = isGrossesse
-    ? [null, step1, step_grossesse, null, null, null, null, null, step7]
-    : [null, step1, step2, step2b, step3, step4, step5, step6, step7];
+    ? [null, step1, step_grossesse, null, null, null, null, null, null, step7]
+    : [null, step1, step2, step2b, step3, step4b, step4, step5, step6, step7];
   const stepFn = renderers[_step];
   const html = stepFn ? stepFn() : '';
 
@@ -5581,7 +5938,6 @@ function renderStep() {
     </div>
   `;
 
-  _bindStepEvents();
 }
 
 // ── Step 1 — Domaine ──────────────────────────────────────────────────────────
@@ -5736,7 +6092,24 @@ function step3() {
     </div>`;
 }
 
-// ── Step 4 — Matériel ─────────────────────────────────────────────────────────
+// ── Step 4b — Nutrition ──────────────────────────────────────────────────────
+
+function step4b() {
+  return `
+    <div class="wiz-title">Quel est ton objectif nutrition ?</div>
+    <div class="wiz-subtitle">Adapte ton alimentation à ton programme</div>
+    <div class="wiz-cards">
+      ${NUTRITION_OBJECTIFS.map(n => `
+        <div class="wiz-card ${_config.nutrition === n.id ? 'selected' : ''}"
+             data-select="nutrition" data-value="${n.id}">
+          <span class="wiz-card-icon">${n.icon}</span>
+          <span class="wiz-card-label">${n.label}</span>
+          <span class="wiz-card-desc">${n.desc}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── Step 4 — Matériel ──────────────────────────────────────────────────────
 
 function step4() {
   return `
@@ -5863,6 +6236,7 @@ function step7() {
       <div class="wiz-recap-row"><span>Durée</span><strong>${_config.duree} semaines</strong></div>
       ${_config.competition ? `<div class="wiz-recap-row"><span>Compétition</span><strong>${_config.competition.type || 'Oui'} · ${_fmtDate(_config.competition.date)}</strong></div>` : ''}
       ${_config.exercicesForces.length ? `<div class="wiz-recap-row"><span>Exercices forcés</span><strong>${_config.exercicesForces.map(e=>e.name).join(', ')}</strong></div>` : ''}
+      ${_config.nutrition ? `<div class="wiz-recap-row"><span>Nutrition</span><strong>${NUTRITION_OBJECTIFS.find(n=>n.id===_config.nutrition)?.icon} ${NUTRITION_OBJECTIFS.find(n=>n.id===_config.nutrition)?.label||'—'}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'prenatal' ? `<div class="wiz-recap-row"><span>Mois de grossesse</span><strong>${GROSSESSE_MOIS_CONFIG[_config.mois_grossesse]?.label}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'postnatal' ? `<div class="wiz-recap-row"><span>Phase post-natale</span><strong>${POSTNATAL_PHASES.find(p=>p.id===_config.postnatal_phase)?.label||'—'}</strong></div>` : ''}
     </div>
@@ -5901,14 +6275,14 @@ function wizNext() {
   // Grossesse special flow: step 1 → step 2 (grossesse setup) → step 7 (recap)
   if(_config.domaine === 'grossesse') {
     if(_step === 1) { _step = 2; renderStep(); return; }
-    if(_step === 2) { _step = 8; renderStep(); return; } // skip to step 7 (index 8 = step7)
+    if(_step === 2) { _step = 9; renderStep(); return; } // skip to recap
   }
 
   if(_step < TOTAL_STEPS) { _step++; renderStep(); }
 }
 
 function wizBack() {
-  if(_config.domaine === 'grossesse' && _step === 8) { _step = 2; renderStep(); return; }
+  if(_config.domaine === 'grossesse' && _step === 9) { _step = 2; renderStep(); return; }
   if(_step > 1) { _step--; renderStep(); }
 }
 
@@ -5948,7 +6322,7 @@ function _validateStep() {
     _showError('Sélectionne un objectif pour continuer.');
     return false;
   }
-  if(_step === 2 && !_config.niveau) {
+  if(_step === 2 && !_config.niveau && _config.domaine !== 'grossesse') {
     _showError('Sélectionne ton niveau pour continuer.');
     return false;
   }
@@ -5961,7 +6335,7 @@ function _validateStep() {
     if(_config.grossesse_type === 'postnatal' && !_config.postnatal_phase) { _showError('Sélectionne ta phase post-natale.'); return false; }
     return true;
   }
-  if(_step === 5 && _config.materiel.length === 0) {
+  if(_step === 6 && _config.materiel.length === 0) {
     _showError('Sélectionne au moins un type de matériel.');
     return false;
   }
@@ -5991,7 +6365,7 @@ function _collectStep() {
       };
     }
   }
-  if(_step === 7) {
+  if(_step === 7 || _step === 8 || _step === 9) {
     const nameEl = document.getElementById('progName');
     if(nameEl) _config.name = nameEl.value.trim();
     ['press','squat','deadlift'].forEach(id => {
@@ -6005,67 +6379,73 @@ function _collectStep() {
 // ── Event binding ─────────────────────────────────────────────────────────────
 
 function _bindStepEvents() {
-  const body = document.getElementById('wizardContent');
-  if(!body) return;
+  // No-op: events are bound once in _initWizardEvents()
+}
 
-  // Card selection (single)
-  body.addEventListener('click', e => {
+let _wizardEventsInit = false;
+function _initWizardEvents() {
+  if(_wizardEventsInit) return;
+  _wizardEventsInit = true;
+  // Attach to stable parent — wizardContent innerHTML is replaced on each step
+  // so we must use a parent that persists across renders
+  const stable = document.getElementById('wizard-view') || document.getElementById('programmes') || document.body;
+
+  stable.addEventListener('click', e => {
+    // Only handle clicks inside wizardContent
+    if(!e.target.closest('#wizardContent')) return;
+    // Card selection (single)
     const card = e.target.closest('[data-select]');
-    if(!card) return;
-    const { select, value } = card.dataset;
-    _config[select] = value;
-    renderStep();
-  });
-
-  // Chip selection
-  body.addEventListener('click', e => {
+    if(card) {
+      const { select, value } = card.dataset;
+      _config[select] = value;
+      renderStep(); return;
+    }
+    // Chip
     const chip = e.target.closest('[data-chip]');
-    if(!chip) return;
-    const { chip: key, value } = chip.dataset;
-    if(key === 'hasCompet') {
-      _config.competition = value === 'oui' ? { date: '', type: '' } : null;
-    } else {
-      const parsed = isNaN(Number(value)) ? value : Number(value);
-      _config[key] = parsed;
+    if(chip) {
+      const { chip: key, value } = chip.dataset;
+      if(key === 'hasCompet') {
+        _config.competition = value === 'oui' ? { date: '', type: '' } : null;
+      } else {
+        const parsed = isNaN(Number(value)) ? value : Number(value);
+        _config[key] = parsed;
+      }
+      renderStep(); return;
     }
-    renderStep();
-  });
-
-  // Materiel toggle (multi)
-  body.addEventListener('click', e => {
-    const item = e.target.closest('[data-toggle]');
-    if(!item) return;
-    const value = item.dataset.value;
-    const idx   = _config.materiel.indexOf(value);
-    if(idx >= 0) _config.materiel.splice(idx, 1);
-    else _config.materiel.push(value);
-    renderStep();
-  });
-
-  // Remove forced/exclu
-  body.addEventListener('click', e => {
-    const btn = e.target.closest('[data-remove-forced]');
-    if(btn) { _config.exercicesForces.splice(parseInt(btn.dataset.removeForced), 1); renderStep(); return; }
-    const btn2 = e.target.closest('[data-remove-exclu]');
-    if(btn2) { _config.exercicesExclus.splice(parseInt(btn2.dataset.removeExclu), 1); renderStep(); return; }
-  });
-
-  // Add from search results
-  body.addEventListener('click', e => {
-    const res = e.target.closest('[data-add-forced]');
-    if(res) {
-      _config.exercicesForces.push({ id: res.dataset.addForced, name: res.dataset.name });
-      document.getElementById('exSearchForced').value = '';
-      document.getElementById('exResultsForced').innerHTML = '';
-      renderStep();
-      return;
+    // Materiel toggle (multi) — must check BEFORE generic click
+    const item = e.target.closest('[data-toggle="materiel"]');
+    if(item) {
+      const value = item.dataset.value;
+      const idx   = _config.materiel.indexOf(value);
+      if(idx >= 0) _config.materiel.splice(idx, 1);
+      else _config.materiel.push(value);
+      renderStep(); return;
     }
-    const res2 = e.target.closest('[data-add-exclu]');
-    if(res2) {
-      _config.exercicesExclus.push({ id: res2.dataset.addExclu, name: res2.dataset.name });
-      document.getElementById('exSearchExclu').value = '';
-      document.getElementById('exResultsExclu').innerHTML = '';
-      renderStep();
+    // Remove forced
+    const btnF = e.target.closest('[data-remove-forced]');
+    if(btnF) { _config.exercicesForces.splice(parseInt(btnF.dataset.removeForced), 1); renderStep(); return; }
+    // Remove exclu
+    const btnE = e.target.closest('[data-remove-exclu]');
+    if(btnE) { _config.exercicesExclus.splice(parseInt(btnE.dataset.removeExclu), 1); renderStep(); return; }
+    // Add forced from search
+    const resF = e.target.closest('[data-add-forced]');
+    if(resF) {
+      _config.exercicesForces.push({ id: resF.dataset.addForced, name: resF.dataset.name });
+      const inp = document.getElementById('exSearchForced');
+      if(inp) inp.value = '';
+      const res = document.getElementById('exResultsForced');
+      if(res) res.innerHTML = '';
+      renderStep(); return;
+    }
+    // Add exclu from search
+    const resE = e.target.closest('[data-add-exclu]');
+    if(resE) {
+      _config.exercicesExclus.push({ id: resE.dataset.addExclu, name: resE.dataset.name });
+      const inp = document.getElementById('exSearchExclu');
+      if(inp) inp.value = '';
+      const res = document.getElementById('exResultsExclu');
+      if(res) res.innerHTML = '';
+      renderStep(); return;
     }
   });
 }
@@ -6085,6 +6465,28 @@ function _fmtDate(d) {
  */
 
 
+// ── Custom confirm modal (iOS PWA-safe) ─────────────────────────────────────
+function _confirmModal(message, actionLabel, onConfirm) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  const sheet = document.createElement('div');
+  sheet.style.cssText = 'background:var(--surface,#fff);border-radius:16px 16px 0 0;padding:24px 20px;width:100%;max-width:480px';
+  const msg = document.createElement('p');
+  msg.textContent = message;
+  msg.style.cssText = 'font-size:15px;text-align:center;margin:0 0 20px;line-height:1.5;color:var(--text,#111)';
+  const b1 = document.createElement('button');
+  b1.textContent = actionLabel;
+  b1.style.cssText = 'display:block;width:100%;padding:14px;background:#c0392b;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;touch-action:manipulation;margin-bottom:10px';
+  const b2 = document.createElement('button');
+  b2.textContent = 'Annuler';
+  b2.style.cssText = 'display:block;width:100%;padding:14px;background:#e8e6e0;color:#333;border:none;border-radius:12px;font-size:15px;cursor:pointer;touch-action:manipulation';
+  b1.onclick = () => { modal.remove(); onConfirm(); };
+  b2.onclick = () => modal.remove();
+  sheet.append(msg, b1, b2);
+  modal.appendChild(sheet);
+  document.body.appendChild(modal);
+}
+
 // ── Routing ───────────────────────────────────────────────────────────────────
 
 const SECTIONS   = ['tracker','musculaire','programme','programmes','doc'];
@@ -6098,6 +6500,7 @@ function showSection(id) {
   document.getElementById(id)?.classList.add('active');
   const idx = SECTIONS.indexOf(id);
   if(idx >= 0) document.querySelectorAll('.top-nav-btn')[idx]?.classList.add('active');
+  if(id === 'tracker')     { initWeekSel(); }
   if(id === 'musculaire')  renderMusculaire();
   if(id === 'programmes')  renderPrograms();
   if(id === 'programme') {
@@ -6122,9 +6525,14 @@ function showTracker(id) {
   if(id === 'historique')  renderHistorique();
 }
 
-function showProg(id) {
-  document.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('#progNav button').forEach(b => b.classList.remove('active'));
+function showProg(id, ctx) {
+  // Scope to the clicked button's container if possible
+  const container = ctx ? ctx.closest('[id]') : document;
+  (container === document
+    ? document.querySelectorAll('.prog-tab')
+    : document.querySelectorAll('.prog-tab')
+  ).forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#progNav button, .prog-top-nav button').forEach(b => b.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
   const idx = PROG_TABS.indexOf(id);
   if(idx >= 0) document.querySelectorAll('#progNav button')[idx]?.classList.add('active');
@@ -6154,6 +6562,7 @@ function showDoc(id) {
 // ── Window exposures ──────────────────────────────────────────────────────────
 
 window.showSection   = showSection;
+window._NUTRITION_PLANS = NUTRITION_PLANS;
 window._dbClear      = dbClear;
 window.showTracker   = showTracker;
 window.showProg      = showProg;
@@ -6177,9 +6586,67 @@ window.showWizard = function() {
   initWizard();
 };
 
+
+// ── Program card click handlers ──────────────────────────────────────────────
+window._viewProg = function(id) {
+  const prog = getProgram(id);
+  if(!prog) return;
+  document.querySelectorAll('.prog-view').forEach(v => v.classList.remove('active-view'));
+  const detailView = document.getElementById('program-detail-view');
+  if(!detailView) return;
+  detailView.innerHTML = '';
+  detailView.classList.add('active-view');
+  requestAnimationFrame(() => _renderProgDetailView(prog, detailView));
+};
+
+window._confirmReprise = function(repriseWeek) {
+  const prog = getActiveProgram();
+  let lastDataWeek = 0;
+
+  if(prog?.semaines) {
+    prog.semaines.forEach((sem, i) => {
+      sem.jours?.forEach(day => {
+        day.exercices?.forEach(ex => {
+          const rec = getProgRecord(prog.id, ex.id, i+1);
+          if(rec?.sets?.some(s => s?.kg)) lastDataWeek = Math.max(lastDataWeek, i+1);
+        });
+      });
+    });
+  } else {
+    const MAIN = ['press','squat','deadlift'];
+    const total = prog?.totalWeeks || 17;
+    for(let w = 1; w <= total; w++) {
+      if(MAIN.some(id => getRecord && getRecord(id, w)?.sets?.some(s => s?.kg))) lastDataWeek = w;
+    }
+  }
+
+  const weeksToSkip = [];
+  for(let w = lastDataWeek + 1; w < repriseWeek; w++) weeksToSkip.push(w);
+
+  if(weeksToSkip.length > 0) {
+    if(prog?.semaines) {
+      weeksToSkip.forEach(w => {
+        prog.semaines[w-1]?.jours?.forEach(day => {
+          day.exercices?.forEach(ex => setProgExStatus(prog.id, ex.id, w, 'skipped'));
+        });
+      });
+    }
+    _showSaveToast(`✓ S${weeksToSkip[0]}–S${weeksToSkip[weeksToSkip.length-1]} sautées · Reprise S${repriseWeek}`);
+  } else {
+    _showSaveToast(`✓ Reprise confirmée en S${repriseWeek}`);
+  }
+
+  const vac = getVacances();
+  if(vac.length) { vac[vac.length-1].repriseWeek = repriseWeek; setVacances(vac); }
+  renderSaisie();
+};
+
 window.showProgramsList = function() {
   document.querySelectorAll('.prog-view').forEach(v => v.classList.remove('active-view'));
   document.getElementById('programs-list-view')?.classList.add('active-view');
+  // Clear stale detail view
+  const dv = document.getElementById('program-detail-view');
+  if(dv) dv.innerHTML = '';
   _renderProgramsList();
 };
 
@@ -6195,10 +6662,18 @@ window.showArchivedPrograms = function() {
   _renderProgramsList(true);
 };
 
+window._switchProgram = function(id) {
+  setCurrentProgram(id);
+  initWeekSel();
+  renderSaisie();
+};
+
 window.activateProgram = function(id) {
   addActiveProgram(id);
   setCurrentProgram(id);
-  window.showActiveProgram(1);
+  _showSaveToast('✓ Programme activé');
+  renderPrograms();
+  initWeekSel();
 };
 
 window.setPrimaryProg = function(id) {
@@ -6210,16 +6685,15 @@ window.setPrimaryProg = function(id) {
 };
 
 window.closeProg = function(id, reason) {
-  const label = reason === 'completed' ? 'terminé' : 'abandonné';
-  if(confirm(`Marquer ce programme comme ${label} ? Les données seront archivées.`)) {
+  const msg = reason === 'completed'
+    ? 'Marquer ce programme comme terminé ?'
+    : 'Abandonner ce programme ?';
+  _confirmModal(msg, reason === 'completed' ? 'Terminer' : 'Abandonner', () => {
     closeProgram(id, reason);
-    // Switch to another active program if available
-    const remaining = getAllActivePrograms().filter(p => p.id !== id);
-    if(remaining.length) setCurrentProgram(remaining[0].id);
-    initWeekSel();
-    renderSaisie();
-    renderPrograms();
-  }
+    const rem = getAllActivePrograms().filter(p => p.id !== id);
+    if(rem.length) setCurrentProgram(rem[0].id);
+    renderPrograms(); initWeekSel();
+  });
 };
 
 window.archiveProg = function(id) {
@@ -6227,11 +6701,20 @@ window.archiveProg = function(id) {
   renderPrograms();
 };
 
+window.desarchiveProg = function(id) {
+  const prog = getProgram(id);
+  if(!prog) return;
+  prog.status = 'active';
+  delete prog.archivedAt;
+  saveProgram(prog);
+  renderPrograms();
+};
+
 window.deleteProg = function(id) {
-  if(confirm('Supprimer définitivement ? Cette action est irréversible.')) {
+  _confirmModal('Supprimer définitivement ? Cette action est irréversible.', 'Supprimer', () => {
     deleteProgram(id);
     renderPrograms();
-  }
+  });
 };
 
 window.exportProgMD = function(id) {
@@ -6266,41 +6749,97 @@ window._saveVacances = function() {
   const d = document.getElementById('vacDebut')?.value;
   const f = document.getElementById('vacFin')?.value;
   const a = document.getElementById('vacActivite')?.value || 'sedentaire';
-  if(d && f && new Date(f) >= new Date(d)) { addVacances(d,f,a); renderSaisie(); }
-  else alert('Dates invalides.');
-};
-window._removeVacances = function(idx) { removeVacances(idx); renderSaisie(); };
-window._clearVacances  = function() { if(confirm('Effacer toutes les périodes ?')){ clearAllVacances(); renderSaisie(); } };
+  if(!d || !f || new Date(f) < new Date(d)) { alert('Dates invalides.'); return; }
 
-// Program switcher (from tracker selector)
-window._switchProgram = function(id) { setCurrentProgram(id); };
+  addVacances(d, f, a);
 
-// Open program card — navigate to Programme tab showing this program
-window._openProgCard = function(e, id, status) {
-  if(e.target.closest('.prog-card-actions')) return; // let button handle it
-  window._viewProg(id);
-};
+  // Find last week with data to suggest reprise week
+  const prog = getActiveProgram();
+  const totalWeeks = prog?.totalWeeks || (prog?.semaines?.length) || 17;
+  let lastDataWeek = 0;
 
-window._viewProg = function(id) {
-  const prog = getProgram(id);
-  if(!prog) return;
-
-  // Show programme detail inside Programmes tab (not Programme tab)
-  document.querySelectorAll('.prog-view').forEach(v => v.classList.remove('active-view'));
-  const detailView = document.getElementById('program-detail-view');
-  if(detailView) {
-    detailView.classList.add('active-view');
-    _renderProgDetailView(prog, detailView);
+  if(prog?.semaines) {
+    // Generated program
+    prog.semaines.forEach((sem, i) => {
+      sem.jours?.forEach(day => {
+        day.exercices?.forEach(ex => {
+          const rec = getProgRecord(prog.id, ex.id, i+1);
+          if(rec?.sets?.some(s => s?.kg)) lastDataWeek = Math.max(lastDataWeek, i+1);
+        });
+      });
+    });
   } else {
-    // Fallback: show in active program view
-    showActiveProgram(1);
+    // ATHX legacy
+    const MAIN_LIFTS = ['press','squat','deadlift'];
+    for(let w = 1; w <= totalWeeks; w++) {
+      const hasData = MAIN_LIFTS.some(id => {
+        const rec = getRecord(id, w);
+        return rec?.sets?.some(s => s?.kg);
+      });
+      if(hasData) lastDataWeek = w;
+    }
   }
+
+  const suggestedReprise = Math.min(lastDataWeek + 1, totalWeeks);
+
+  // Show reprise dialog
+  _showRepriseDialog(suggestedReprise, totalWeeks, lastDataWeek, prog);
 };
+
+function _showRepriseDialog(suggested, total, lastData, prog) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+
+  const sheet = document.createElement('div');
+  sheet.style.cssText = 'background:var(--surface,#fff);border-radius:16px;padding:24px;max-width:340px;width:100%;box-shadow:0 16px 48px rgba(0,0,0,.3)';
+
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:16px;font-weight:700;margin-bottom:6px';
+  title.textContent = '🏖 Vacances enregistrées';
+
+  const subtitle = document.createElement('div');
+  subtitle.style.cssText = 'font-size:13px;color:var(--text2,#666);margin-bottom:16px';
+  subtitle.innerHTML = "Quelle semaine reprends-tu l'entraînement ?<br><span style='font-size:11px;color:var(--text3,#999)'>" + (lastData > 0 ? 'Dernière saisie : S' + lastData : 'Aucune saisie précédente') + '</span>';
+
+  const sel = document.createElement('select');
+  sel.style.cssText = 'width:100%;font-size:14px;padding:8px;border:1.5px solid var(--border-md,#ddd);border-radius:8px;background:var(--surface,#fff);color:var(--text,#111);margin-bottom:16px';
+  for(let w = 1; w <= total; w++) {
+    const o = document.createElement('option');
+    o.value = w;
+    o.textContent = w === suggested ? 'S' + w + ' (suggérée)' : 'S' + w;
+    if(w === suggested) o.selected = true;
+    sel.appendChild(o);
+  }
+
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px';
+
+  const btnIgnore = document.createElement('button');
+  btnIgnore.style.cssText = 'flex:1;padding:10px;border:1px solid var(--border-md,#ddd);border-radius:8px;background:transparent;color:var(--text2,#666);cursor:pointer;font-size:13px;touch-action:manipulation';
+  btnIgnore.textContent = 'Ignorer';
+  btnIgnore.onclick = () => { modal.remove(); renderSaisie(); };
+
+  const btnConfirm = document.createElement('button');
+  btnConfirm.style.cssText = 'flex:2;padding:10px;background:var(--text,#111);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;touch-action:manipulation';
+  btnConfirm.textContent = 'Confirmer la reprise';
+  btnConfirm.onclick = () => {
+    const week = parseInt(sel.value);
+    modal.remove();
+    window._confirmReprise(week);
+  };
+
+  row.append(btnIgnore, btnConfirm);
+  sheet.append(title, subtitle, sel, row);
+  modal.appendChild(sheet);
+  document.body.appendChild(modal);
+}
+
 
 function _renderProgDetailView(prog, container) {
   if(!prog || !container) return;
 
   const DOMAINES_LABELS = { hyrox:'🏟 Hyrox', force:'🏋 Force', gym:'💪 Gym', cardio:'🏃 Cardio', mobilite:'🧘 Mobilité', mixte:'⚡ Mixte', grossesse:'🤰 Grossesse' };
+  const NUTRITION_LABELS = { masse:'💪 Prise de masse', perte:'🔥 Perte de poids', healthy:'🥗 Santé / Équilibre', performance:'⚡ Performance', maintien:'⚖️ Maintien' };
 
   // For ATHX fixed program — inject the full programme.html content
   if(prog.migratedFrom === 'athx_legacy' || prog.subtype === 'fixed') {
@@ -6316,6 +6855,13 @@ function _renderProgDetailView(prog, container) {
         </div>
       </div>
       <div>${athxContent}</div>`;
+    // Re-activate first tab (copied content has no active state)
+    requestAnimationFrame(() => {
+      container.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
+      container.querySelector('.prog-tab')?.classList.add('active');
+      container.querySelectorAll('.prog-top-nav button').forEach(b => b.classList.remove('active'));
+      container.querySelector('.prog-top-nav button')?.classList.add('active');
+    });
     return;
   }
 
@@ -6334,87 +6880,181 @@ function _renderProgDetailView(prog, container) {
     return;
   }
 
-  // Generated programs — week-by-week schedule
-  const phasesHtml = prog.phases?.map(p =>
-    `<div class="prog-phase-row">
-      <span class="prog-phase-name">${esc(p.nom)}</span>
-      <span class="prog-phase-weeks">S${p.debut}–S${p.fin}</span>
-      <span class="prog-phase-int">${Math.round(p.intensite*100)}%</span>
-    </div>`
-  ).join('') || '';
+  // ── Generated program — rich view ────────────────────────────────────────────
+  const nutritionPlan = prog.nutrition ? window._NUTRITION_PLANS?.[prog.nutrition] : null;
 
+  // Phase colors
+  const phaseColors = {
+    'Base':'#e8f0fc','Construction':'#fdf0d8','Intensité':'#fdeaea',
+    'Pic':'#e0f4eb','Taper':'#f1efe8','Deload':'#e8e6e0',
+    'Bloc 1 — Base':'#e8f0fc','Bloc 2 — Intensité':'#fdf0d8','Bloc 3 — Simulation':'#e0f4eb',
+  };
+  const phaseTextColors = {
+    'Base':'#1a5fb4','Construction':'#7c4a00','Intensité':'#9c2222',
+    'Pic':'#1b6b45','Taper':'#444441','Deload':'#444441',
+    'Bloc 1 — Base':'#1a5fb4','Bloc 2 — Intensité':'#7c4a00','Bloc 3 — Simulation':'#1b6b45',
+  };
+
+  // Build tabs: Programme | Nutrition
+  const tabs = ['programme', nutritionPlan ? 'nutrition' : null].filter(Boolean);
+
+  // Semaine type = first non-deload week as reference
+  const refWeek = prog.semaines?.find(s => !s.isDeload && !s.isTaper) || prog.semaines?.[0];
+
+  // Week nav
   const weekNav = prog.semaines?.map((w,i) => {
     const cls = ['prog-week-btn', w.isDeload?'deload':'', w.isTaper?'taper':''].filter(Boolean).join(' ');
     return `<button class="${cls}" onclick="window._showDetailWeek(${i+1})">${'S'+(i+1)}</button>`;
   }).join('') || '';
+
+  // Phase summary
+  const phasesHtml = prog.phases?.map(p => {
+    const bg  = phaseColors[p.nom]  || '#f0f0ee';
+    const col = phaseTextColors[p.nom] || '#444';
+    return `<div class="prog-phase-row">
+      <span class="prog-phase-badge-sm" style="background:${bg};color:${col}">${esc(p.nom)}</span>
+      <span class="prog-phase-weeks">S${p.debut} → S${p.fin}</span>
+      <span class="prog-phase-int">${Math.round(p.intensite*100)}% · RPE ${esc(p.rpeTarget||'—')}</span>
+    </div>`;
+  }).join('') || '';
+
+  // Semaine type detail
+  const semaineTypeHtml = refWeek ? refWeek.jours.map(day => {
+    const exHtml = day.exercices.map(ex => `
+      <div class="prog-ex-detail-item">
+        <div class="prog-ex-detail-name">${esc(ex.nom||ex.id)}</div>
+        <div class="prog-ex-detail-scheme">
+          ${ex.series ? `<span class="prog-ex-tag">${ex.series} séries</span>` : ''}
+          ${ex.reps   ? `<span class="prog-ex-tag">${ex.reps} reps</span>` : ''}
+          ${ex.kgPlan ? `<span class="prog-ex-tag">${ex.kgPlan} kg</span>` : ex.pct1rm ? `<span class="prog-ex-tag">${ex.pct1rm}% 1RM</span>` : ''}
+        </div>
+        ${ex.muscles?.length ? `<div class="prog-ex-muscles">${ex.muscles.slice(0,3).map(m=>esc(m)).join(' · ')}</div>` : ''}
+      </div>`).join('');
+    return `<div class="prog-day-detail-card">
+      <div class="prog-day-detail-header">
+        <span class="prog-day-detail-name">${esc(day.nom)}</span>
+        <span class="prog-day-detail-split">${esc(day.split||'')}</span>
+      </div>
+      <div class="prog-ex-detail-list">${exHtml}</div>
+    </div>`;
+  }).join('') : '';
 
   container.innerHTML = `
     <div class="wiz-header">
       <div class="wiz-header-top">
         <div>
           <div class="wiz-header-title">${esc(prog.name)}</div>
-          <div class="wiz-header-sub">${DOMAINES_LABELS[prog.config?.domaine]||''} · ${prog.totalWeeks} semaines · ${prog.config?.seancesParSemaine||'?'}×/sem</div>
+          <div class="wiz-header-sub">${DOMAINES_LABELS[prog.config?.domaine]||''} · ${prog.totalWeeks} sem. · ${prog.config?.seancesParSemaine||'?'}×/sem · ${prog.config?.niveau||''}</div>
         </div>
         <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
       </div>
     </div>
-    ${phasesHtml ? `<div class="prog-phases-summary">${phasesHtml}</div>` : ''}
-    <div class="prog-week-nav" id="detailWeekNav">${weekNav}</div>
-    <div id="detailWeekContent"></div>`;
 
+    <!-- Tabs -->
+    <div class="g-tabs" style="margin-bottom:16px">
+      <button class="g-tab active" data-ptab="programme">📋 Programme</button>
+      ${nutritionPlan ? '<button class="g-tab" data-ptab="nutrition">🍽 Nutrition</button>' : ''}
+    </div>
+
+    <!-- Programme tab -->
+    <div id="pd-programme" class="pd-panel active">
+
+      <!-- Phases -->
+      <div class="prog-section-title">Phases du programme</div>
+      <div class="prog-phases-summary" style="margin-bottom:16px">${phasesHtml}</div>
+
+      <!-- Semaine type -->
+      <div class="prog-section-title">Semaine type</div>
+      <div class="prog-section-sub">Structure de référence · les charges s'adaptent à chaque phase</div>
+      <div style="margin-bottom:16px">${semaineTypeHtml}</div>
+
+      <!-- Navigation semaine par semaine -->
+      <div class="prog-section-title">Semaine par semaine</div>
+      <div class="prog-week-nav" id="detailWeekNav" style="margin-bottom:12px">${weekNav}</div>
+      <div id="detailWeekContent"></div>
+    </div>
+
+    <!-- Nutrition tab -->
+    ${nutritionPlan ? `<div id="pd-nutrition" class="pd-panel">
+      <div class="nutri-header">
+        <div class="nutri-title">${NUTRITION_LABELS[prog.nutrition]||''}</div>
+        <div class="nutri-macros">
+          <div class="nutri-macro-item"><span class="nutri-macro-label">Protéines</span><span class="nutri-macro-val">${esc(nutritionPlan.proteines)}</span></div>
+          <div class="nutri-macro-item"><span class="nutri-macro-label">Glucides</span><span class="nutri-macro-val">${esc(nutritionPlan.glucides)}</span></div>
+          <div class="nutri-macro-item"><span class="nutri-macro-label">Lipides</span><span class="nutri-macro-val">${esc(nutritionPlan.lipides)}</span></div>
+          <div class="nutri-macro-item"><span class="nutri-macro-label">Calories</span><span class="nutri-macro-val">${esc(nutritionPlan.surplus)}</span></div>
+        </div>
+      </div>
+
+      <div class="nutri-block">
+        <div class="nutri-block-title">⏰ ${esc(nutritionPlan.preSeance.timing)} — Pré-séance</div>
+        ${nutritionPlan.preSeance.conseils.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
+      </div>
+
+      <div class="nutri-block">
+        <div class="nutri-block-title">💪 ${esc(nutritionPlan.postSeance.timing)} — Post-séance</div>
+        ${nutritionPlan.postSeance.conseils.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
+      </div>
+
+      <div class="nutri-block">
+        <div class="nutri-block-title">🛋 Jours de repos</div>
+        ${nutritionPlan.reposActif.conseils.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
+      </div>
+
+      <div class="nutri-block nutri-tips-block">
+        <div class="nutri-block-title">💡 À retenir</div>
+        ${nutritionPlan.tips.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
+      </div>
+    </div>` : ''}`;
+
+  // Tab switching
+  container.querySelectorAll('[data-ptab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('[data-ptab]').forEach(b => b.classList.remove('active'));
+      container.querySelectorAll('.pd-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      container.querySelector(`#pd-${btn.dataset.ptab}`)?.classList.add('active');
+    });
+  });
+
+  // Week detail
   window._showDetailWeek = function(weekNum) {
     const week = prog.semaines?.[weekNum-1];
     if(!week) return;
     document.querySelectorAll('#detailWeekNav .prog-week-btn').forEach((b,i) =>
       b.classList.toggle('active', i+1===weekNum)
     );
-    const phaseColors = { 'Base':'#e8f0fc','Construction':'#fdf0d8','Intensité':'#fdeaea','Pic':'#e0f4eb','Taper':'#f1efe8','Deload':'#e8e6e0','Bloc 1 — Base':'#e8f0fc','Bloc 2 — Intensité':'#fdf0d8','Bloc 3 — Simulation':'#e0f4eb' };
-    const phaseTextColors = { 'Base':'#1a5fb4','Construction':'#7c4a00','Intensité':'#9c2222','Pic':'#1b6b45','Taper':'#444441','Deload':'#444441','Bloc 1 — Base':'#1a5fb4','Bloc 2 — Intensité':'#7c4a00','Bloc 3 — Simulation':'#1b6b45' };
     const bg  = phaseColors[week.phase]  || 'var(--surface2)';
     const col = phaseTextColors[week.phase] || 'var(--text2)';
     const daysHtml = week.jours?.map(day => `
-      <div class="prog-day-card">
-        <div class="prog-day-header">
-          <span class="prog-day-name">${day.nom}</span>
-          <span class="prog-day-split">${day.split&&day.split!==day.nom?esc(day.split):''}</span>
+      <div class="prog-day-detail-card">
+        <div class="prog-day-detail-header">
+          <span class="prog-day-detail-name">${esc(day.nom)}</span>
+          <span class="prog-day-detail-split">${esc(day.split&&day.split!==day.nom?day.split:'')}</span>
         </div>
-        <div class="prog-ex-list">
-          ${(day.exercices||[]).map(ex => `
-            <div class="prog-ex-item">
-              <span class="prog-ex-item-name">${esc(ex.nom||ex.name||ex.id)}</span>
-              <span class="prog-ex-item-scheme">${ex.series?ex.series+'×':'' }${ex.reps||ex.scheme||'?'}</span>
-              ${ex.kgPlan?`<span class="prog-ex-item-kg">${ex.kgPlan} kg</span>`:ex.pct1rm?`<span class="prog-ex-item-kg">${ex.pct1rm}% 1RM</span>`:''}
+        <div class="prog-ex-detail-list">
+          ${(day.exercices||[]).map(ex=>`
+            <div class="prog-ex-detail-item">
+              <div class="prog-ex-detail-name">${esc(ex.nom||ex.id)}</div>
+              <div class="prog-ex-detail-scheme">
+                ${ex.series?`<span class="prog-ex-tag">${ex.series}×</span>`:''}
+                ${ex.reps?`<span class="prog-ex-tag">${ex.reps} reps</span>`:''}
+                ${ex.kgPlan?`<span class="prog-ex-tag">${ex.kgPlan} kg</span>`:ex.pct1rm?`<span class="prog-ex-tag">${ex.pct1rm}% 1RM</span>`:''}
+              </div>
             </div>`).join('')}
         </div>
       </div>`).join('');
     document.getElementById('detailWeekContent').innerHTML = `
-      <span class="prog-phase-badge" style="background:${bg};color:${col}">
-        ${week.isDeload?'🔵 Deload · ':week.isTaper?'📉 Taper · `':`${week.phase}`}
+      <span class="prog-phase-badge" style="background:${bg};color:${col};display:inline-block;margin-bottom:8px">
+        ${week.isDeload?'🔵 Deload · ':week.isTaper?'📉 Taper · ':`${week.phase}`}
       </span>
-      <div class="prog-rpe-target">RPE cible : ${week.rpeTarget} · ${Math.round(week.intensite*100)}%</div>
+      <div class="prog-rpe-target" style="margin-bottom:12px">RPE cible : ${week.rpeTarget} · ${Math.round(week.intensite*100)}%</div>
       ${daysHtml}`;
   };
   window._showDetailWeek(1);
 }
-window._markGrossesseDone = function(progId, exId, week, done) {
-  const { setProgRecord, getProgRecord } = window._programs_mod || {};
-  // Direct import not possible here — use global programs tracking via dbSet
-  const all = window._db?.dbGet('programs_tracking') || {};
-  if(!all[progId]) all[progId] = {};
-  all[progId][`${exId}_w${week}`] = { done, ts: Date.now() };
-  window._db?.dbSet('programs_tracking', all);
-};
 
-window._setMoisGrossesse = function(m) {
-  // Update wizard config mois_grossesse and re-render step
-  if(typeof _config !== 'undefined') { _config.mois_grossesse = m; }
-  // Re-render via wizard renderStep
-  if(typeof renderStep === 'function') renderStep();
-};
 
-// ── Programs rendering ────────────────────────────────────────────────────────
-
-// Programme tab = active program full schedule view
 function _showProgrammeTab() {
   const active = getActiveProgram();
   // If an ATHX/fixed program is active, show its HTML schedule
@@ -6517,33 +7157,34 @@ function _renderProgrammeSchedule(prog) {
 }
 
 function renderPrograms() {
-  const active   = getActiveProgram();
   const current  = document.querySelector('.prog-view.active-view');
   const listView = document.getElementById('programs-list-view');
+  const detailView = document.getElementById('program-detail-view');
 
+  // If already showing list or detail, just re-render current view
   if(current === listView) { _renderProgramsList(); return; }
+  if(current === detailView) return; // don't interrupt detail view
 
-  if(active) {
-    document.querySelectorAll('.prog-view').forEach(v => v.classList.remove('active-view'));
-    document.getElementById('program-active-view')?.classList.add('active-view');
-    renderActiveProgramDetail(1);
-  } else {
-    const programs = getPrograms().filter(p => p.status === 'active');
-    document.querySelectorAll('.prog-view').forEach(v => v.classList.remove('active-view'));
-    if(programs.length) {
-      listView?.classList.add('active-view');
-      _renderProgramsList();
-    } else {
-      document.getElementById('wizard-view')?.classList.add('active-view');
-      initWizard();
-    }
-  }
+  // Always show list — let list handle empty state
+  document.querySelectorAll('.prog-view').forEach(v => v.classList.remove('active-view'));
+  listView?.classList.add('active-view');
+  _renderProgramsList();
 }
 
 function _renderProgramsList(showArchived = false) {
-  const active   = getActivePrograms();
-  const archived = getArchivedPrograms();
-  const show     = showArchived ? archived : active;
+  const all = getPrograms();
+  let show;
+  if(showArchived === false) {
+    show = all.filter(p => p.status === 'active');
+  } else if(showArchived === 'completed') {
+    show = all.filter(p => p.status === 'completed');
+  } else if(showArchived === 'abandoned') {
+    show = all.filter(p => p.status === 'abandoned');
+  } else if(showArchived === 'archived') {
+    show = all.filter(p => p.status === 'archived');
+  } else {
+    show = all.filter(p => p.status !== 'active');
+  }
   const el       = document.getElementById('programsListContent');
   if(!el) return;
 
@@ -6554,19 +7195,27 @@ function _renderProgramsList(showArchived = false) {
   const activeId        = getActiveProgramId();
   const activeIds       = new Set(getAllActivePrograms().map(p=>p.id));
 
-  const tabHtml = `<div style="display:flex;gap:8px;margin-bottom:16px">
-    <button class="wiz-chip ${!showArchived?'selected':''}" onclick="showProgramsList()">Actifs (${active.length})</button>
-    <button class="wiz-chip ${showArchived?'selected':''}" onclick="showArchivedPrograms()">Archivés (${archived.length})</button>
+  const activeCount    = getPrograms().filter(p => p.status === 'active').length;
+  const completedCount = getPrograms().filter(p => p.status === 'completed').length;
+  const abandonedCount = getPrograms().filter(p => p.status === 'abandoned').length;
+  const archivedCount  = getPrograms().filter(p => p.status === 'archived').length;
+
+  const tabHtml = `<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="wiz-chip ${showArchived===false?'selected':''}" onclick="_renderProgramsList(false)">Actifs (${activeCount})</button>
+    <button class="wiz-chip ${showArchived==='completed'?'selected':''}" onclick="_renderProgramsList('completed')">✓ Terminés (${completedCount})</button>
+    <button class="wiz-chip ${showArchived==='abandoned'?'selected':''}" onclick="_renderProgramsList('abandoned')">✗ Abandonnés (${abandonedCount})</button>
+    <button class="wiz-chip ${showArchived==='archived'?'selected':''}" onclick="_renderProgramsList('archived')">📦 Archivés (${archivedCount})</button>
   </div>`;
 
   if(!show.length) {
     el.innerHTML = tabHtml + `<div class="programs-empty">
-      <div class="programs-empty-icon">${showArchived ? '📦' : '🎯'}</div>
-      <div class="programs-empty-text">${showArchived ? 'Aucun programme archivé' : 'Aucun programme actif'}</div>
-      ${!showArchived ? `<button class="wiz-btn-next" onclick="showWizard()">Créer un programme</button>` : ''}
+      <div class="programs-empty-icon">${showArchived === false ? '🎯' : '📦'}</div>
+      <div class="programs-empty-text">${showArchived === false ? 'Aucun programme actif' : 'Aucun programme dans cette catégorie'}</div>
+      ${showArchived === false ? `<button class="wiz-btn-next" onclick="showWizard()">Créer un programme</button>` : ''}
     </div>`;
     return;
   }
+
 
   el.innerHTML = tabHtml + `<div class="programs-grid">
     ${show.map(p => {
@@ -6580,7 +7229,7 @@ function _renderProgramsList(showArchived = false) {
       const statusColor = STATUS_COLORS[p.status] || 'var(--text3)';
       const compet = p.config?.competition?.type ? ` · 🏆 ${p.config.competition.type}` : '';
 
-      return `<div class="program-card ${isActive?'active-program':''}" onclick="window._openProgCard(event,'${p.id}','${p.status}')">
+      return `<div class="program-card ${isActive?'active-program':''}">
         <div class="prog-card-top">
           <div class="prog-card-name">${esc(p.name||'Programme')}</div>
           <span style="font-size:11px;font-weight:600;color:${statusColor}">${statusLabel}</span>
@@ -6598,11 +7247,15 @@ function _renderProgramsList(showArchived = false) {
         <div class="prog-card-actions" onclick="event.stopPropagation()">
           ${p.status === 'active' ? `
             <button class="prog-action-btn primary" onclick="event.stopPropagation();window._viewProg('${p.id}')">📋 Voir</button>
-            <button class="prog-action-btn" onclick="event.stopPropagation();activateProgram('${p.id}')">${isActive ? '✓ Actif' : '+ Activer'}</button>
+            ${isActive
+  ? `<button class="prog-action-btn" style="background:var(--green-bg,#e0f4eb);color:var(--green,#1b6b45);border-color:var(--green,#1b6b45);cursor:default" onclick="event.stopPropagation()">✓ Actif</button>`
+  : `<button class="prog-action-btn primary" onclick="event.stopPropagation();activateProgram('${p.id}')">+ Activer</button>`
+}
             ${isActive && activeIds.size > 1 ? `<button class="prog-action-btn" onclick="event.stopPropagation();setPrimaryProg('${p.id}')">⭐</button>` : ''}
             <button class="prog-action-btn" onclick="event.stopPropagation();closeProg('${p.id}','completed')">✓ Terminer</button>
             <button class="prog-action-btn" onclick="event.stopPropagation();archiveProg('${p.id}')">📦 Archiver</button>
           ` : `
+            <button class="prog-action-btn" onclick="event.stopPropagation();desarchiveProg('${p.id}')">↩ Réactiver</button>
             <button class="prog-action-btn primary" onclick="event.stopPropagation();exportProgJSON('${p.id}')">⬇ JSON</button>
             <button class="prog-action-btn" onclick="event.stopPropagation();exportProgMD('${p.id}')">⬇ MD</button>
             <button class="prog-action-btn danger" onclick="event.stopPropagation();deleteProg('${p.id}')">🗑 Supprimer</button>
@@ -6733,8 +7386,7 @@ async function init() {
   _migrateAthxIfNeeded();
 
   // Init tracker
-  initWeekSel();
-  renderSaisie();
+  initWeekSel(); // initWeekSel calls renderSaisie() internally
 
   // Init body SVG
   initBodyDelegation();
@@ -6776,6 +7428,4 @@ function _showUpdateBanner() {
 
 document.addEventListener('DOMContentLoaded', init);
 
-</script>
-</body>
-</html>
+</script></body></html>

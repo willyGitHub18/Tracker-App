@@ -15,6 +15,7 @@
   --radius:10px;--radius-lg:14px;
   --max-w:900px;
 }
+button,select,input,[data-select],[data-toggle],[data-chip]{touch-action:manipulation;}
 body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
 
 /* HEADER */
