@@ -662,21 +662,27 @@ function _progSelectorUI() {
 
 
 function _getFirstSkippedWeek(vac) {
-  // Find lowest week number stored as 'skipped' for this vacance period
-  // Use repriseWeek - duration estimate, or look at skipped statuses
   if(!vac) return null;
-  const MAIN = ['press','squat','deadlift','gtoh','sandbag','lunges'];
   const rw = vac.repriseWeek || null;
   if(!rw) return null;
-  // Find first skipped week before repriseWeek
+
+  // Use directly stored value if available (set by _confirmReprise)
+  if(vac.firstSkippedWeek) return vac.firstSkippedWeek;
+
+  // Fallback: scan ATHX statuses
+  const MAIN = ['press','squat','deadlift','gtoh','sandbag','lunges'];
   for(let w = 1; w < rw; w++) {
-    const anySkipped = MAIN.some(id => {
-      const st = getExStatus ? getExStatus(id, w) : null;
-      return st === 'skipped';
-    });
+    const anySkipped = MAIN.some(id => getExStatus ? getExStatus(id, w) === 'skipped' : false);
     if(anySkipped) return w;
   }
-  return rw - 1; // fallback
+
+  // Last fallback: estimate from vacation dates
+  if(vac.debut && vac.fin) {
+    const dur = Math.max(1, Math.round((new Date(vac.fin) - new Date(vac.debut)) / 86400000 / 7));
+    return Math.max(1, rw - dur);
+  }
+
+  return rw - 1;
 }
 
 function _getVacBannerForWeek(list, week) {
@@ -696,6 +702,8 @@ function _vacancesUI() {
   const _rc   = repriseCoeff();
   const _stat = vacancesStatus();
   const _list = getVacancesList();
+  const _prog = getCurrentProgram ? getCurrentProgram() : null;
+  const _totalWeeks = _prog ? (_prog.totalWeeks || _prog.semaines?.length || 17) : 17;
   const _fmt  = d => d ? new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
   const _dur  = (d1,d2) => Math.max(0,Math.round((new Date(d2)-new Date(d1))/86400000));
 
@@ -757,6 +765,13 @@ function _vacancesUI() {
       <label>Activité</label>
       <select id="vacActivite" style="font-size:12px;padding:5px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text)">
         ${Object.entries(ACTIVITE_LABELS).map(([k,v])=>`<option value="${k}">${v.label}${v.bonus>0?' (+'+Math.round(v.bonus*100)+'%)':''}</option>`).join('')}
+      </select>
+    </div>
+    <div class="vacances-row" style="margin-top:6px;align-items:center">
+      <label style="white-space:nowrap">1ère sem. sautée</label>
+      <select id="vacFirstSkip" style="font-size:12px;padding:5px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+        <option value="">Auto (détection)</option>
+        ${Array.from({length: _totalWeeks}, (_,i)=>`<option value="${i+1}">S${i+1}</option>`).join('')}
       </select>
       <button class="save-btn" style="padding:5px 14px;font-size:12px" onclick="window._saveVacances()">+ Ajouter</button>
       ${_list.length?`<button class="vac-clear-btn" onclick="window._clearVacances()">Tout effacer</button>`:''}

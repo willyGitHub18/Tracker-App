@@ -66,10 +66,21 @@ export function importJSON(event) {
 
       importRecords(result.clean);
 
-      // Restore vacances periods if present
+      // Restore vacances periods if present (including repriseWeek + firstSkippedWeek)
       if(Array.isArray(parsed.vacances)) {
         parsed.vacances.forEach(v => {
-          if(v?.debut && v?.fin) addVacances(v.debut, v.fin, v.activite || 'sedentaire');
+          if(!v?.debut || !v?.fin) return;
+          addVacances(v.debut, v.fin, v.activite || 'sedentaire');
+          // Restore week metadata if present
+          if(v.repriseWeek || v.firstSkippedWeek) {
+            const list = getVacancesList();
+            const last = list[list.length - 1];
+            if(last) {
+              if(v.repriseWeek) last.repriseWeek = v.repriseWeek;
+              if(v.firstSkippedWeek) last.firstSkippedWeek = v.firstSkippedWeek;
+              setVacances(list);
+            }
+          }
         });
       }
 

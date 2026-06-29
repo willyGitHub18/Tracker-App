@@ -170,7 +170,7 @@ window._viewProg = function(id) {
   requestAnimationFrame(() => _renderProgDetailView(prog, detailView));
 };
 
-window._confirmReprise = function(repriseWeek) {
+window._confirmReprise = function(repriseWeek, manualFirstSkip) {
   const prog = getActiveProgram();
   let lastDataWeek = 0;
 
@@ -208,7 +208,13 @@ window._confirmReprise = function(repriseWeek) {
   }
 
   const vac = getVacances();
-  if(vac.length) { vac[vac.length-1].repriseWeek = repriseWeek; setVacances(vac); }
+  if(vac.length) {
+    const lastVac = vac[vac.length-1];
+    lastVac.repriseWeek = repriseWeek;
+    // Use manual firstSkippedWeek if provided, otherwise auto-detect
+    lastVac.firstSkippedWeek = manualFirstSkip || (weeksToSkip.length > 0 ? weeksToSkip[0] : repriseWeek - 1);
+    setVacances(vac);
+  }
   renderSaisie();
 };
 
@@ -377,10 +383,10 @@ window._clearVacances = function() {
   const suggestedReprise = Math.min(lastDataWeek + 1, totalWeeks);
 
   // Show reprise dialog
-  _showRepriseDialog(suggestedReprise, totalWeeks, lastDataWeek, prog);
+  _showRepriseDialog(suggestedReprise, totalWeeks, lastDataWeek, prog, manualFirstSkip);
 };
 
-function _showRepriseDialog(suggested, total, lastData, prog) {
+function _showRepriseDialog(suggested, total, lastData, prog, manualFirstSkip) {
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
 
@@ -419,7 +425,7 @@ function _showRepriseDialog(suggested, total, lastData, prog) {
   btnConfirm.onclick = () => {
     const week = parseInt(sel.value);
     modal.remove();
-    window._confirmReprise(week);
+    window._confirmReprise(week, manualFirstSkip);
   };
 
   row.append(btnIgnore, btnConfirm);
