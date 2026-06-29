@@ -690,7 +690,7 @@ function _getVacBannerForWeek(list, week) {
   for(const vac of list) {
     const rw = vac.repriseWeek;
     if(!rw) continue;
-    const sw = _getFirstSkippedWeek(vac) || (rw - 1);
+    const sw = _getFirstSkippedWeek(vac) ?? rw;
     if(week === rw) return 'reprise';
     if(week >= sw && week < rw) return 'en_cours';
     if(week === sw - 1 || week === sw - 2) return 'a_venir';
@@ -768,9 +768,10 @@ function _vacancesUI() {
       </select>
     </div>
     <div class="vacances-row" style="margin-top:6px;align-items:center">
-      <label style="white-space:nowrap">1ère sem. sautée</label>
+      <label style="white-space:nowrap">Dernière sem. entraînement</label>
       <select id="vacFirstSkip" style="font-size:12px;padding:5px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text)">
         <option value="">Auto (détection)</option>
+        <option value="0">Aucune (reprise directe)</option>
         ${Array.from({length: _totalWeeks}, (_,i)=>`<option value="${i+1}">S${i+1}</option>`).join('')}
       </select>
       <button class="save-btn" style="padding:5px 14px;font-size:12px" onclick="window._saveVacances()">+ Ajouter</button>

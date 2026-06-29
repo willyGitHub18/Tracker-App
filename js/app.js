@@ -47,10 +47,11 @@ const DOC_TABS   = ['doc-intro','doc-tracker','doc-progression','doc-statut','do
 
 export function showSection(id) {
   document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.top-nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
-  const idx = SECTIONS.indexOf(id);
-  if(idx >= 0) document.querySelectorAll('.top-nav-btn')[idx]?.classList.add('active');
+  // Activate bottom tab
+  document.querySelector(`.bottom-nav-btn[data-section="${id}"]`)?.classList.add('active');
   if(id === 'tracker')     { initWeekSel(); }
   if(id === 'musculaire')  renderMusculaire();
   if(id === 'programmes')  renderPrograms();
@@ -212,7 +213,7 @@ window._confirmReprise = function(repriseWeek, manualFirstSkip) {
     const lastVac = vac[vac.length-1];
     lastVac.repriseWeek = repriseWeek;
     // Use manual firstSkippedWeek if provided, otherwise auto-detect
-    lastVac.firstSkippedWeek = manualFirstSkip || (weeksToSkip.length > 0 ? weeksToSkip[0] : repriseWeek - 1);
+    lastVac.firstSkippedWeek = (manualFirstSkip === -1) ? repriseWeek : (manualFirstSkip || (weeksToSkip.length > 0 ? weeksToSkip[0] : repriseWeek));
     setVacances(vac);
   }
   renderSaisie();
@@ -1019,6 +1020,10 @@ async function init() {
         nw.addEventListener('statechange', () => {
           if(nw.state==='installed'&&navigator.serviceWorker.controller) _showUpdateBanner();
         });
+      });
+      // Listen for SW_UPDATED message from new service worker
+      navigator.serviceWorker.addEventListener('message', e => {
+        if(e.data?.type === 'SW_UPDATED') _showUpdateBanner();
       });
       document.addEventListener('visibilitychange', () => {
         if(document.visibilityState==='visible') reg.update();

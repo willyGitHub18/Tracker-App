@@ -42,6 +42,69 @@ header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono);di
 #musculaire{padding:0}
 
 
+/* ── Bottom Tab Bar iOS native ─────────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: calc(56px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  z-index: 200;
+  padding-bottom: env(safe-area-inset-bottom);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 6px 0 2px;
+  transition: color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav-btn .tab-icon {
+  font-size: 22px;
+  line-height: 1;
+  transition: transform .15s;
+}
+.bottom-nav-btn.active {
+  color: var(--text);
+}
+.bottom-nav-btn.active .tab-icon {
+  transform: scale(1.08);
+}
+.bottom-nav-btn:active { opacity: .6; }
+
+/* Push content above tab bar */
+.main {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Header compact */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #111110;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  padding: 10px 16px 8px;
+}
+header h1 { font-size: 17px; font-weight: 700; margin: 0; letter-spacing: -.02em; color: #fff; }
+header .sub { font-size: 11px; color: rgba(255,255,255,.45); display: block; }
+
 /* ── TRACKER STYLES ── */
 .tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px}
 .tab-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:7px 10px;border:none;border-radius:7px;background:transparent;color:var(--text2);cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
@@ -625,7 +688,10 @@ tr:last-child td{border-bottom:none}
 .nutri-tips-block .nutri-block-title{color:#7c4a00}
 
 .top-nav-btn:nth-child(3){display:none}
-</style></head><body><header><h1>Just2Train</h1><span class="sub">Ton entraînement, ton programme</span></header><div class="top-nav"><button class="top-nav-btn active" onclick="showSection('tracker')">&#x1F4CA; Tracker</button><button class="top-nav-btn" onclick="showSection('musculaire');renderMusculaire()">&#x1F9AC; Muscles</button><button class="top-nav-btn" onclick="showSection('programme')">&#x1F4CB; Programme</button><button class="top-nav-btn" onclick="showSection('programmes')">&#x1F3AF; Programmes</button><button class="top-nav-btn" onclick="showSection('doc')">&#x1F4D6; Docs</button></div><div class="main">
+</style></head><body>
+<header><h1>Just2Train</h1><span class="sub">Ton entraînement, ton programme</span></header>
+<div class="top-nav" style="display:none"><button class="top-nav-btn" onclick="showSection('tracker')">Tracker</button><button class="top-nav-btn" onclick="showSection('musculaire')">Muscles</button><button class="top-nav-btn" onclick="showSection('programme')">Programme</button><button class="top-nav-btn" onclick="showSection('programmes')">Programmes</button><button class="top-nav-btn" onclick="showSection('doc')">Docs</button></div>
+<div class="main">
 <div id="tracker" class="section-panel active">
   <div class="tabs">
     <button class="tab-btn active" onclick="showTracker('saisie')">Saisie semaine</button>
@@ -1721,7 +1787,23 @@ tr:last-child td{border-bottom:none}
     </div><!-- /doc-content -->
   </div><!-- /doc-layout -->
 </div>
-</div><script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script><script>
+</div>
+
+<nav class="bottom-nav">
+  <button class="bottom-nav-btn" data-section="programmes" onclick="showSection('programmes')">
+    <span class="tab-icon">🎯</span><span>Programmes</span>
+  </button>
+  <button class="bottom-nav-btn active" data-section="tracker" onclick="showSection('tracker')">
+    <span class="tab-icon">📊</span><span>Tracker</span>
+  </button>
+  <button class="bottom-nav-btn" data-section="musculaire" onclick="showSection('musculaire');renderMusculaire()">
+    <span class="tab-icon">🦬</span><span>Muscles</span>
+  </button>
+  <button class="bottom-nav-btn" data-section="doc" onclick="showSection('doc')">
+    <span class="tab-icon">📖</span><span>Docs</span>
+  </button>
+</nav>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script><script>
 /* -- db.js -- */
 /**
  * db.js — IndexedDB storage layer
@@ -3805,7 +3887,7 @@ function _getVacBannerForWeek(list, week) {
   for(const vac of list) {
     const rw = vac.repriseWeek;
     if(!rw) continue;
-    const sw = _getFirstSkippedWeek(vac) || (rw - 1);
+    const sw = _getFirstSkippedWeek(vac) ?? rw;
     if(week === rw) return 'reprise';
     if(week >= sw && week < rw) return 'en_cours';
     if(week === sw - 1 || week === sw - 2) return 'a_venir';
@@ -3883,9 +3965,10 @@ function _vacancesUI() {
       </select>
     </div>
     <div class="vacances-row" style="margin-top:6px;align-items:center">
-      <label style="white-space:nowrap">1ère sem. sautée</label>
+      <label style="white-space:nowrap">Dernière sem. entraînement</label>
       <select id="vacFirstSkip" style="font-size:12px;padding:5px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text)">
         <option value="">Auto (détection)</option>
+        <option value="0">Aucune (reprise directe)</option>
         ${Array.from({length: _totalWeeks}, (_,i)=>`<option value="${i+1}">S${i+1}</option>`).join('')}
       </select>
       <button class="save-btn" style="padding:5px 14px;font-size:12px" onclick="window._saveVacances()">+ Ajouter</button>
@@ -6760,10 +6843,11 @@ const DOC_TABS   = ['doc-intro','doc-tracker','doc-progression','doc-statut','do
 
 function showSection(id) {
   document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.top-nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
-  const idx = SECTIONS.indexOf(id);
-  if(idx >= 0) document.querySelectorAll('.top-nav-btn')[idx]?.classList.add('active');
+  // Activate bottom tab
+  document.querySelector(`.bottom-nav-btn[data-section="${id}"]`)?.classList.add('active');
   if(id === 'tracker')     { initWeekSel(); }
   if(id === 'musculaire')  renderMusculaire();
   if(id === 'programmes')  renderPrograms();
@@ -6925,7 +7009,7 @@ window._confirmReprise = function(repriseWeek, manualFirstSkip) {
     const lastVac = vac[vac.length-1];
     lastVac.repriseWeek = repriseWeek;
     // Use manual firstSkippedWeek if provided, otherwise auto-detect
-    lastVac.firstSkippedWeek = manualFirstSkip || (weeksToSkip.length > 0 ? weeksToSkip[0] : repriseWeek - 1);
+    lastVac.firstSkippedWeek = (manualFirstSkip === -1) ? repriseWeek : (manualFirstSkip || (weeksToSkip.length > 0 ? weeksToSkip[0] : repriseWeek));
     setVacances(vac);
   }
   renderSaisie();
@@ -7732,6 +7816,10 @@ async function init() {
         nw.addEventListener('statechange', () => {
           if(nw.state==='installed'&&navigator.serviceWorker.controller) _showUpdateBanner();
         });
+      });
+      // Listen for SW_UPDATED message from new service worker
+      navigator.serviceWorker.addEventListener('message', e => {
+        if(e.data?.type === 'SW_UPDATED') _showUpdateBanner();
       });
       document.addEventListener('visibilitychange', () => {
         if(document.visibilityState==='visible') reg.update();

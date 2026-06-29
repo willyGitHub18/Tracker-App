@@ -6,7 +6,7 @@
  *   pour invalider le cache sur tous les appareils.
  */
 
-const APP_VERSION = '3.0.0';  // ← incrémenter à chaque déploiement
+const APP_VERSION = '2.2.0';  // ← incrémenter à chaque déploiement
 const CACHE_NAME  = `just2train-${APP_VERSION}`;
 const BASE        = self.registration.scope;
 
@@ -41,6 +41,12 @@ self.addEventListener('activate', event => {
         keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
+      .then(() => {
+        // Notify all clients to reload for the new version
+        self.clients.matchAll({ type: 'window' }).then(clients => {
+          clients.forEach(client => client.postMessage({ type: 'SW_UPDATED', version: APP_VERSION }));
+        });
+      })
   );
 });
 

@@ -37,3 +37,66 @@ header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono);di
 /* musculaire s'étend à toute la largeur disponible dans .main */
 #musculaire{padding:0}
 
+
+/* ── Bottom Tab Bar iOS native ─────────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: calc(56px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  z-index: 200;
+  padding-bottom: env(safe-area-inset-bottom);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 6px 0 2px;
+  transition: color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav-btn .tab-icon {
+  font-size: 22px;
+  line-height: 1;
+  transition: transform .15s;
+}
+.bottom-nav-btn.active {
+  color: var(--text);
+}
+.bottom-nav-btn.active .tab-icon {
+  transform: scale(1.08);
+}
+.bottom-nav-btn:active { opacity: .6; }
+
+/* Push content above tab bar */
+.main {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Header compact */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #111110;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  padding: 10px 16px 8px;
+}
+header h1 { font-size: 17px; font-weight: 700; margin: 0; letter-spacing: -.02em; color: #fff; }
+header .sub { font-size: 11px; color: rgba(255,255,255,.45); display: block; }
