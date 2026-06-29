@@ -79,6 +79,11 @@ export const ACTIVITE_LABELS = {
   muscu:       { label: 'Musculation légère',        bonus: 0.08 },
 };
 
+
+export function setVacances(list) {
+  dbSet('vacances_list', list || []);
+}
+
 export function addVacances(debut, fin, activite='sedentaire') {
   if(!debut || !fin || new Date(fin) < new Date(debut)) return;
   if(!(activite in ACTIVITE_LABELS)) activite = 'sedentaire';
@@ -110,6 +115,93 @@ export function vacancesDuree() { return 0; }
  * - Période terminée il y a plus de 7 jours → null (déjà repris)
  * - Périodes consécutives ou proches (< 7 jours d'écart) → cumulées
  */
+
+/** 
+ * Coefficient de reprise basé sur les semaines (pas le calendrier).
+ * Cumule toutes les périodes de vacances sur les 8 dernières semaines.
+ * @param {number} week - semaine actuelle (repriseWeek)
+ * @param {Array} list  - liste des vacances avec repriseWeek
+ */
+export function repriseCoeffForWeek(currentWeek, list) {
+  if(!list || !list.length) return null;
+
+  // Collect all skipped week ranges that end before currentWeek (within last 8 weeks)
+  const ranges = [];
+  for(const vac of list) {
+    const rw = vac.repriseWeek;
+    if(!rw || rw !== currentWeek) continue; // only for the reprise week itself
+    // Estimate skipped weeks: from first skipped to repriseWeek-1
+    // We stored skipped statuses, so count them
+    ranges.push(vac);
+  }
+
+  if(!ranges.length) return null;
+
+  // Count total skipped weeks across all overlapping vacation periods
+  // Use repriseWeek and estimate: look at all vac entries whose repriseWeek <= currentWeek
+  // and whose "last skipped week" is within 8 weeks of currentWeek
+  let totalSkippedWeeks = 0;
+  let weightedBonus = 0;
+  let totalWeightDays = 0;
+
+  for(const vac of list) {
+    const rw = vac.repriseWeek;
+    if(!rw) continue;
+    // Only count vacations that ended at or before currentWeek and started within 8 weeks
+    if(rw > currentWeek) continue;
+    if(currentWeek - rw > 8) continue; // too old to matter
+
+    // Estimate skipped weeks for this vacation
+    // We don't have exact skipped weeks stored, but we have debut/fin dates
+    // and repriseWeek. Calculate approximate skipped weeks from dates.
+    let skippedWks = 0;
+    if(vac.debut && vac.fin) {
+      const days = Math.max(0, Math.round((new Date(vac.fin) - new Date(vac.debut)) / 86400000));
+      skippedWks = Math.max(1, Math.round(days / 7));
+    } else {
+      skippedWks = Math.max(1, rw - 1); // fallback
+    }
+
+    // Decay: more recent = more impact
+    const weeksAgo = currentWeek - rw;
+    const decayFactor = Math.max(0.2, 1 - weeksAgo * 0.15); // each week back reduces impact
+    const effectiveSkipped = skippedWks * decayFactor;
+    totalSkippedWeeks += effectiveSkipped;
+
+    // Activity bonus (weighted by duration)
+    const bonus = (ACTIVITE_LABELS[vac.activite] || ACTIVITE_LABELS.sedentaire).bonus;
+    const dur = skippedWks;
+    weightedBonus += bonus * dur;
+    totalWeightDays += dur;
+  }
+
+  if(totalSkippedWeeks === 0) return null;
+
+  const actBonus = totalWeightDays > 0 ? weightedBonus / totalWeightDays : 0;
+
+  // Deconditioning curve based on total effective skipped weeks
+  let baseCoeff, rpeTarget, labelBase;
+  if(totalSkippedWeeks <= 1.5)      { baseCoeff = 0.95; rpeTarget = '≤ 7.5'; labelBase = 'Reprise légère'; }
+  else if(totalSkippedWeeks <= 3)   { baseCoeff = 0.88; rpeTarget = '≤ 7';   labelBase = 'Reprise progressive'; }
+  else if(totalSkippedWeeks <= 5)   { baseCoeff = 0.80; rpeTarget = '≤ 6.5'; labelBase = 'Reprise modérée'; }
+  else                               { baseCoeff = 0.72; rpeTarget = '≤ 6';   labelBase = 'Reprise prudente'; }
+
+  const finalCoeff = Math.min(1, Math.round((baseCoeff + actBonus) * 100) / 100);
+  const rpe = finalCoeff >= 0.95 ? '≤ 7.5' : finalCoeff >= 0.88 ? '≤ 7' : finalCoeff >= 0.82 ? '≤ 6.5' : '≤ 6';
+  const skippedLabel = totalSkippedWeeks <= 1.5 ? '~1 semaine'
+    : totalSkippedWeeks <= 3 ? '~2-3 semaines'
+    : totalSkippedWeeks <= 5 ? '~4-5 semaines'
+    : '5+ semaines';
+
+  return {
+    coeff: finalCoeff,
+    rpeTarget: rpe,
+    label: `${labelBase} (${skippedLabel} de repos cumulé)`,
+    totalSkippedWeeks: Math.round(totalSkippedWeeks * 10) / 10,
+    actBonus: Math.round(actBonus * 100),
+  };
+}
+
 export function repriseCoeff() {
   const list = getVacancesList();
   if(!list.length) return null;
@@ -190,9 +282,18 @@ export function vacancesStatus() {
   for(const p of merged) {
     const debut = new Date(p.debut); debut.setHours(0,0,0,0);
     const fin   = new Date(p.fin);   fin.setHours(0,0,0,0);
+
+    // Vacation in progress
     if(debut <= today && today <= fin) {
       const joursRestants = Math.round((fin - today) / 86400000);
       return { en_cours: true, joursRestants, debut: p.debut, fin: p.fin };
+    }
+
+    // Upcoming vacation (within 14 days)
+    const joursAvant = Math.round((debut - today) / 86400000);
+    if(joursAvant > 0 && joursAvant <= 14) {
+      const duree = Math.round((fin - debut) / 86400000);
+      return { a_venir: true, joursAvant, duree, debut: p.debut, fin: p.fin };
     }
   }
 

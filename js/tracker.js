@@ -660,6 +660,38 @@ function _progSelectorUI() {
   </div>`;
 }
 
+
+function _getFirstSkippedWeek(vac) {
+  // Find lowest week number stored as 'skipped' for this vacance period
+  // Use repriseWeek - duration estimate, or look at skipped statuses
+  if(!vac) return null;
+  const MAIN = ['press','squat','deadlift','gtoh','sandbag','lunges'];
+  const rw = vac.repriseWeek || null;
+  if(!rw) return null;
+  // Find first skipped week before repriseWeek
+  for(let w = 1; w < rw; w++) {
+    const anySkipped = MAIN.some(id => {
+      const st = getExStatus ? getExStatus(id, w) : null;
+      return st === 'skipped';
+    });
+    if(anySkipped) return w;
+  }
+  return rw - 1; // fallback
+}
+
+function _getVacBannerForWeek(list, week) {
+  if(!list.length) return null;
+  for(const vac of list) {
+    const rw = vac.repriseWeek;
+    if(!rw) continue;
+    const sw = _getFirstSkippedWeek(vac) || (rw - 1);
+    if(week === rw) return 'reprise';
+    if(week >= sw && week < rw) return 'en_cours';
+    if(week === sw - 1 || week === sw - 2) return 'a_venir';
+  }
+  return null;
+}
+
 function _vacancesUI() {
   const _rc   = repriseCoeff();
   const _stat = vacancesStatus();
@@ -668,14 +700,44 @@ function _vacancesUI() {
   const _dur  = (d1,d2) => Math.max(0,Math.round((new Date(d2)-new Date(d1))/86400000));
 
   let html = '';
-  if(_stat?.reprise) {
+  // Week-based banner logic (not calendar-based)
+  const _currentWeek = parseInt(document.getElementById('weekSel')?.value || '1', 10);
+  const _vacBanner = _getVacBannerForWeek(_list, _currentWeek);
+
+  if(_vacBanner === 'reprise') {
+    // Use cumulative deconditioning coefficient
+    const _rc = (typeof repriseCoeffForWeek === 'function')
+      ? repriseCoeffForWeek(_currentWeek, _list)
+      : null;
+    const _coeff = _rc?.coeff || 0.85;
+    const _rpe   = _rc?.rpeTarget || '≤ 7';
+    const _lbl   = _rc?.label || 'Reprise progressive';
+    const _skipped = _rc?.totalSkippedWeeks;
+    html += `<div class="reprise-panel">
+      <div class="reprise-panel-title">⚡ ${esc(_lbl)}</div>
+      <div class="reprise-panel-coeff">Coefficient : <strong>${Math.round(_coeff*100)}%</strong>${_rc?.actBonus>0?` (+${_rc.actBonus}% activité)`:''} · RPE cible : <strong>${_rpe}</strong></div>
+      <div class="reprise-note">Basé sur ${_skipped ? _skipped + ' semaine(s) de repos cumulé' : 'tes périodes de repos'}. Reco S+1 ajustée sur ta dernière perf avant les vacances.</div>
+    </div>`;
+  } else if(_vacBanner === 'en_cours') {
+    const _vac = _list.find(v => {
+      const rw = v.repriseWeek || 999;
+      const sw = _getFirstSkippedWeek(v);
+      return _currentWeek >= sw && _currentWeek < rw;
+    });
+    const _repriseW = _vac?.repriseWeek;
+    html += `<div class="reprise-banner" style="background:#f0e8fc;border-color:#c0a0e8;color:#5a0090">🏖 Semaine de vacances${_repriseW ? ` — reprise prévue en S${_repriseW}` : ''}</div>`;
+  } else if(_vacBanner === 'a_venir') {
+    const _vac = _list.slice().sort((a,b)=>new Date(a.debut)-new Date(b.debut))
+      .find(v => (_getFirstSkippedWeek(v) || 999) > _currentWeek);
+    const _sw = _vac ? _getFirstSkippedWeek(_vac) : null;
+    if(_sw) html += `<div class="reprise-banner" style="background:#fff8e1;border-color:#f9a825;color:#7c4a00">📅 Vacances à venir — ${_fmt(_vac.debut)} → ${_fmt(_vac.fin)} · Séances sautées à partir de S${_sw}</div>`;
+  } else if(_stat?.reprise) {
+    // Calendar fallback for reprise within 14 days
     html += `<div class="reprise-panel">
       <div class="reprise-panel-title">⚡ ${esc(_stat.label)}</div>
-      <div class="reprise-panel-coeff">Coefficient : <strong>${Math.round(_stat.coeff*100)}%</strong>${_stat.actBonus>0?`<span class="reprise-bonus">+${_stat.actBonus}% activité</span>`:''} · RPE cible : <strong>${_stat.rpeTarget}</strong></div>
+      <div class="reprise-panel-coeff">Coefficient : <strong>${Math.round(_stat.coeff*100)}%</strong> · RPE cible : <strong>${_stat.rpeTarget}</strong></div>
       <div class="reprise-note">Les recommandations S+1 sont automatiquement ajustées.</div>
     </div>`;
-  } else if(_stat?.en_cours) {
-    html += `<div class="reprise-banner" style="background:#f0e8fc;border-color:#c0a0e8;color:#5a0090">🏖 Vacances en cours — retour dans ${_stat.joursRestants} jour${_stat.joursRestants>1?'s':''}</div>`;
   }
 
   html += `<div class="vacances-setup">
@@ -684,7 +746,7 @@ function _vacancesUI() {
       <div class="vac-list-item">
         <span class="vac-list-dates">${_fmt(v.debut)} → ${_fmt(v.fin)}</span>
         <span class="vac-list-dur">${_dur(v.debut,v.fin)}j</span>
-        <span class="vac-list-act">${(ACTIVITE_LABELS[v.activite]||ACTIVITE_LABELS.sedentaire).label.split(' ')[0]}</span>
+        <span class="vac-list-act">${{sedentaire:'Sédentaire',leger:'Léger',vacances:'PdC',sport:'Sport',muscu:'Muscu'}[v.activite]||'Sédentaire'}</span>
         <button class="vac-remove-btn" onclick="window._removeVacances(${i})">✕</button>
       </div>`).join('')}</div>`:''}
     <div class="vacances-row">

@@ -115,7 +115,11 @@ export function getNextPlan(ex, week) {
   const status        = getExStatus(ex.id, week);
 
   /* ── Vacances : ajuster la charge de reprise ── */
-  const rc = repriseCoeff();
+  // Use cumulative week-based coeff if available, fallback to calendar-based
+  const vacList = typeof getVacancesList === 'function' ? getVacancesList() : [];
+  const rc = (typeof repriseCoeffForWeek === 'function' && vacList.length)
+    ? repriseCoeffForWeek(week + 1, vacList)  // week+1 = next week (the reprise week)
+    : repriseCoeff();
   if(rc) {
     const repriseKg = Math.round(currentKg * rc.coeff / 1.25) * 1.25;
     return { kg: repriseKg, rule: `${rc.label} · charge réduite à ${Math.round(rc.coeff*100)}% · RPE cible ${rc.rpeTarget}`, outcome: 'vacances', plateauCount: 0 };

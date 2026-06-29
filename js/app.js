@@ -239,6 +239,13 @@ window.showArchivedPrograms = function() {
   _renderProgramsList(true);
 };
 
+
+window._markGrossesseDone = function(progId, exId, week, checked) {
+  if(typeof setProgExStatus === 'function') {
+    setProgExStatus(progId, exId, week, checked ? 'done' : 'normal');
+  }
+};
+
 window._switchProgram = function(id) {
   setCurrentProgram(id);
   initWeekSel();
@@ -327,6 +334,16 @@ window._saveVacances = function() {
   const f = document.getElementById('vacFin')?.value;
   const a = document.getElementById('vacActivite')?.value || 'sedentaire';
   if(!d || !f || new Date(f) < new Date(d)) { alert('Dates invalides.'); return; }
+
+window._removeVacances = function(idx) {
+  removeVacances(idx);
+  renderSaisie();
+};
+
+window._clearVacances = function() {
+  clearAllVacances();
+  renderSaisie();
+};
 
   addVacances(d, f, a);
 
