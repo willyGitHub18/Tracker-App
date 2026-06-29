@@ -14,6 +14,10 @@ export function exportJSON() {
     exported: new Date().toISOString(),
     data: getAllRecords(),
     vacances: getVacancesList(),
+    programs: typeof getPrograms === 'function' ? getPrograms() : [],
+    programs_tracking: (typeof dbGet === 'function' ? dbGet('programs_tracking') : null) || {},
+    active_programs: (typeof dbGet === 'function' ? dbGet('active_programs_list') : null) || [],
+    active_program: (typeof dbGet === 'function' ? dbGet('active_program') : null) || null,
   };
   _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
 }
@@ -65,6 +69,22 @@ export function importJSON(event) {
       }
 
       importRecords(result.clean);
+
+      // Restore generated programs if present
+      if(Array.isArray(parsed.programs) && parsed.programs.length > 0) {
+        parsed.programs.forEach(p => {
+          if(p?.id && typeof saveProgram === 'function') saveProgram(p);
+        });
+      }
+      if(parsed.programs_tracking && typeof dbSet === 'function') {
+        dbSet('programs_tracking', parsed.programs_tracking);
+      }
+      if(Array.isArray(parsed.active_programs) && parsed.active_programs.length > 0 && typeof dbSet === 'function') {
+        dbSet('active_programs_list', parsed.active_programs);
+      }
+      if(parsed.active_program && typeof dbSet === 'function') {
+        dbSet('active_program', parsed.active_program);
+      }
 
       // Restore vacances periods if present (including repriseWeek + firstSkippedWeek)
       if(Array.isArray(parsed.vacances)) {

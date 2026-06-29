@@ -690,7 +690,7 @@ tr:last-child td{border-bottom:none}
 .top-nav-btn:nth-child(3){display:none}
 </style></head><body>
 <header><h1>Just2Train</h1><span class="sub">Ton entraînement, ton programme</span></header>
-<div class="top-nav" style="display:none"><button class="top-nav-btn" onclick="showSection('tracker')">Tracker</button><button class="top-nav-btn" onclick="showSection('musculaire')">Muscles</button><button class="top-nav-btn" onclick="showSection('programme')">Programme</button><button class="top-nav-btn" onclick="showSection('programmes')">Programmes</button><button class="top-nav-btn" onclick="showSection('doc')">Docs</button></div>
+<div class="top-nav" style="display:none"></div>
 <div class="main">
 <div id="tracker" class="section-panel active">
   <div class="tabs">
@@ -1788,20 +1788,11 @@ tr:last-child td{border-bottom:none}
   </div><!-- /doc-layout -->
 </div>
 </div>
-
 <nav class="bottom-nav">
-  <button class="bottom-nav-btn" data-section="programmes" onclick="showSection('programmes')">
-    <span class="tab-icon">🎯</span><span>Programmes</span>
-  </button>
-  <button class="bottom-nav-btn active" data-section="tracker" onclick="showSection('tracker')">
-    <span class="tab-icon">📈</span><span>Tracker</span>
-  </button>
-  <button class="bottom-nav-btn" data-section="musculaire" onclick="showSection('musculaire');renderMusculaire()">
-    <span class="tab-icon">⚡</span><span>Muscles</span>
-  </button>
-  <button class="bottom-nav-btn" data-section="doc" onclick="showSection('doc')">
-    <span class="tab-icon">📖</span><span>Docs</span>
-  </button>
+  <button class="bottom-nav-btn" data-section="programmes" onclick="showSection('programmes')"><span class="tab-icon">🎯</span><span>Programmes</span></button>
+  <button class="bottom-nav-btn active" data-section="tracker" onclick="showSection('tracker')"><span class="tab-icon">📈</span><span>Tracker</span></button>
+  <button class="bottom-nav-btn" data-section="musculaire" onclick="showSection('musculaire');renderMusculaire()"><span class="tab-icon">⚡</span><span>Muscles</span></button>
+  <button class="bottom-nav-btn" data-section="doc" onclick="showSection('doc')"><span class="tab-icon">📖</span><span>Docs</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script><script>
 /* -- db.js -- */
@@ -1996,7 +1987,8 @@ function validateImport(obj) {
   const VALID_STATUS = ['normal','hyrox','skipped','deload'];
 
   const hasAny = Object.keys(obj).some(k => EX_KEY.test(k));
-  if(!hasAny)
+  // Allow empty ATHX data (user may only have generated programs)
+  if(!hasAny && Object.keys(obj).length > 0)
     return { ok: false, error: 'Aucune donnée d\'exercice reconnue.' };
 
   const clean = {};
@@ -2010,7 +2002,8 @@ function validateImport(obj) {
     // unknown keys silently ignored
   }
 
-  if(!Object.keys(clean).length)
+  // Allow empty clean result when importing generated-program-only data
+  if(!Object.keys(clean).length && Object.keys(obj).length > 0)
     return { ok: false, error: 'Aucune donnée valide après nettoyage.' };
 
   return { ok: true, clean };
@@ -4694,6 +4687,10 @@ function exportJSON() {
     exported: new Date().toISOString(),
     data: getAllRecords(),
     vacances: getVacancesList(),
+    programs: typeof getPrograms === 'function' ? getPrograms() : [],
+    programs_tracking: (typeof dbGet === 'function' ? dbGet('programs_tracking') : null) || {},
+    active_programs: (typeof dbGet === 'function' ? dbGet('active_programs_list') : null) || [],
+    active_program: (typeof dbGet === 'function' ? dbGet('active_program') : null) || null,
   };
   _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
 }
@@ -4745,6 +4742,22 @@ function importJSON(event) {
       }
 
       importRecords(result.clean);
+
+      // Restore generated programs if present
+      if(Array.isArray(parsed.programs) && parsed.programs.length > 0) {
+        parsed.programs.forEach(p => {
+          if(p?.id && typeof saveProgram === 'function') saveProgram(p);
+        });
+      }
+      if(parsed.programs_tracking && typeof dbSet === 'function') {
+        dbSet('programs_tracking', parsed.programs_tracking);
+      }
+      if(Array.isArray(parsed.active_programs) && parsed.active_programs.length > 0 && typeof dbSet === 'function') {
+        dbSet('active_programs_list', parsed.active_programs);
+      }
+      if(parsed.active_program && typeof dbSet === 'function') {
+        dbSet('active_program', parsed.active_program);
+      }
 
       // Restore vacances periods if present (including repriseWeek + firstSkippedWeek)
       if(Array.isArray(parsed.vacances)) {

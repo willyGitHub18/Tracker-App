@@ -59,7 +59,8 @@ export function validateImport(obj) {
   const VALID_STATUS = ['normal','hyrox','skipped','deload'];
 
   const hasAny = Object.keys(obj).some(k => EX_KEY.test(k));
-  if(!hasAny)
+  // Allow empty ATHX data (user may only have generated programs)
+  if(!hasAny && Object.keys(obj).length > 0)
     return { ok: false, error: 'Aucune donnée d\'exercice reconnue.' };
 
   const clean = {};
@@ -73,7 +74,8 @@ export function validateImport(obj) {
     // unknown keys silently ignored
   }
 
-  if(!Object.keys(clean).length)
+  // Allow empty clean result when importing generated-program-only data
+  if(!Object.keys(clean).length && Object.keys(obj).length > 0)
     return { ok: false, error: 'Aucune donnée valide après nettoyage.' };
 
   return { ok: true, clean };
