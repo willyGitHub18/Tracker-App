@@ -77,7 +77,20 @@ export function showTracker(id) {
   if(id === 'historique')  renderHistorique();
 }
 
-export function showProgAthx(id) {
+export function showWeekAthx(day, bloc) {
+  ['b1','b1d','b2','b2d','b3','b3d'].forEach(b => {
+    const el = document.getElementById(`athx-${day}-${b}`);
+    if(el) el.style.display = 'none';
+  });
+  const el = document.getElementById(`athx-${day}-${bloc}`);
+  if(el) el.style.display = 'block';
+  const nav = document.getElementById(`athx-${day}Weeks`);
+  if(nav) ['b1','b1d','b2','b2d','b3','b3d'].forEach((b,i) =>
+    nav.querySelectorAll('button')[i]?.classList.toggle('active', b === bloc)
+  );
+}
+
+function showProgAthx(id) {
   // Called from ATHX detail view — tabs have prefixed IDs
   const btn = event?.currentTarget || event?.target?.closest('button');
   const nav = btn?.closest('.prog-top-nav');
@@ -454,6 +467,7 @@ function _renderProgDetailView(prog, container) {
     athxHtml = athxHtml.replace(/ id="/g, ' id="athx-');
     // Prefix showProg calls: showProg('nutrition') → showProgAthx('nutrition')
     athxHtml = athxHtml.replace(/showProg\('([^']+)'\)/g, "showProgAthx('$1')");
+    athxHtml = athxHtml.replace(/showWeek\('([^']+)','([^']+)'\)/g, "showWeekAthx('$1','$2')");
 
     container.innerHTML =
       '<div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);margin-bottom:8px">' +
