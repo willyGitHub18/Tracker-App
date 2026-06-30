@@ -113,6 +113,11 @@ function _prefillOrm() {
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
 
+export function setMoisGrossesse(mois) {
+  _config.mois_grossesse = mois;
+  renderStep();
+}
+
 export function renderStep() {
   const container = document.getElementById('wizardContent');
   if(!container) return;

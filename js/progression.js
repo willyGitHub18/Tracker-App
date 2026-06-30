@@ -35,12 +35,22 @@ export function weekOutcome(ex, week) {
   if(status === 'deload')  return 'deload';
 
   const rec = normRecord(getRecord(ex.id, week));
-  if(!rec || !rec.sets || !rec.sets.some(s => s && s.kg)) return 'nodata';
+  if(!rec || !rec.sets || !rec.sets.some(s => s && (s.kg != null || s.skipped))) return 'nodata';
 
   const scheme   = ex.repScheme[week - 1];
   const planReps = parseReps(scheme) || 5;
   const nSets    = parseSets(scheme) || 4;
-  const sets     = rec.sets.filter(s => s && s.kg);
+
+  // Séries explicitement "non effectuées" — signal fort de blessure/manque de force,
+  // distinct d'une simple absence de saisie (nodata)
+  const skippedCount = rec.sets.filter(s => s?.skipped === true).length;
+  if(skippedCount > 0) {
+    const skippedRatio = skippedCount / nSets;
+    if(skippedRatio >= 0.5) return 'injury_suspected'; // ≥50% des séries non faites
+    return 'partial_skip'; // quelques séries non faites — recul prudent
+  }
+
+  const sets     = rec.sets.filter(s => s && s.kg != null);
   const done     = sets.filter(s => s.reps && s.reps > 0);
 
   const avgRpe  = done.length ? done.reduce((a, s) => a + (parseFloat(s.rpe) || 7), 0) / done.length : null;
@@ -105,8 +115,38 @@ export function getNextPlan(ex, week) {
     return null;
   }
 
-  const rec       = normRecord(getRecord(ex.id, week));
-  const currentKg = rec ? (Math.max(...(rec.sets || []).map(s => s?.kg || 0).filter(v => v > 0)) || rec.kg) : null;
+  const rec        = normRecord(getRecord(ex.id, week));
+  const _kgValues   = (rec?.sets || []).map(s => s?.kg || 0).filter(v => v > 0);
+  const currentKg   = rec ? (_kgValues.length ? Math.max(..._kgValues) : (rec.kg || null)) : null;
+
+  // ── Séries marquées "non effectuées" — recul prudent, même sans charge connue ──
+  const skippedSets = rec?.sets?.filter(s => s?.skipped === true) || [];
+  if(skippedSets.length > 0 && !currentKg) {
+    const scheme0 = ex.repScheme?.[week - 1] || '';
+    const nSets0  = parseSets(scheme0) || 4;
+    const ratio   = skippedSets.length / nSets0;
+    const severe  = ratio >= 0.5;
+    const p0      = palier(ex);
+    // Base de référence : dernière charge connue (n'importe quelle semaine antérieure)
+    let refKg = ex.plan[week - 1] || ex.plan[week] || null;
+    for(let w = week - 1; w >= 1 && !refKg; w--) {
+      const prevRec = normRecord(getRecord(ex.id, w));
+      const prevKg  = prevRec ? Math.max(...(prevRec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0)) : 0;
+      if(prevKg > 0) refKg = prevKg;
+    }
+    if(!refKg) return null;
+    const reduction = severe ? 2 * p0 : p0;
+    const nextKg = Math.max(refKg - reduction, p0);
+    return {
+      kg: Math.round(nextKg / 1.25) * 1.25,
+      rule: severe
+        ? `${skippedSets.length} série(s) non effectuée(s) — possible blessure/manque de force. Recul de 2 paliers par précaution.`
+        : `${skippedSets.length} série(s) non effectuée(s) — recul d'un palier par précaution.`,
+      outcome: severe ? 'injury_suspected' : 'partial_skip',
+      plateauCount: 0,
+    };
+  }
+
   if(!currentKg) return ex.plan[week] ? { kg: ex.plan[week], rule: 'Aucune donnée — plan officiel appliqué.', outcome: 'nodata', plateauCount: 0 } : null;
 
   const p             = palier(ex);
@@ -178,7 +218,8 @@ export function calcAdj(ex, week) {
   }
   if(status === 'deload') {
     const rec = normRecord(getRecord(ex.id, week));
-    const bk  = rec ? Math.max(...(rec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0)) : null;
+    const _vals = (rec?.sets||[]).map(s=>s?.kg||0).filter(v=>v>0);
+    const bk  = _vals.length ? Math.max(..._vals) : null;
     return { type: 'deload', signals: [
       { type: 'neutral', text: 'Séance deload — pas d\'analyse de performance.' },
       ...(bk ? [{ type: 'good', text: `Charge effectuée : ${bk} kg — progression S+1 basée sur S${week-1}.` }] : []),
@@ -187,10 +228,30 @@ export function calcAdj(ex, week) {
   }
 
   const rec = normRecord(getRecord(ex.id, week));
-  if(!rec || !rec.sets || !rec.sets.some(s => s && s.kg)) return null;
+  if(!rec || !rec.sets || !rec.sets.some(s => s && (s.kg != null || s.skipped))) return null;
+
+  // ── Séries "non effectuées" — signal explicite distinct de l'absence de données ──
+  const skippedSets = rec.sets.filter(s => s?.skipped === true);
+  if(skippedSets.length > 0 && !rec.sets.some(s => s && s.kg != null)) {
+    // Toutes les séries présentes sont marquées non-effectuées
+    const ratio = skippedSets.length / (nSets || rec.sets.length || 1);
+    const severe = ratio >= 0.5;
+    return {
+      type: severe ? 'injury_suspected' : 'partial_skip',
+      signals: [{
+        type: 'danger',
+        text: severe
+          ? `${skippedSets.length} série(s) non effectuée(s) — possible blessure ou manque de force. Recul prudent recommandé.`
+          : `${skippedSets.length} série(s) non effectuée(s) sur ${nSets} — à surveiller.`,
+      }],
+      nextBonus: severe ? -2 : -1,
+      bk: null, avgRpe: null, avgReps: null, repRatio: null, setPct: 0,
+      skipped: false, hyrox: false, deload: false, injurySuspected: severe,
+    };
+  }
 
   const isHyrox       = status === 'hyrox';
-  const sets          = rec.sets.filter(s => s && s.kg);
+  const sets          = rec.sets.filter(s => s && s.kg != null);
   const completedSets = sets.filter(s => s.reps && s.reps > 0);
   const bk            = Math.max(...sets.map(s => s.kg || 0));
 

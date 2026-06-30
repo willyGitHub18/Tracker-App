@@ -21,14 +21,17 @@ export function sanitizeRecord(rec) {
 
   if(Array.isArray(rec.sets)) {
     out.sets = rec.sets.map(s => {
-      if(!s || typeof s !== 'object') return { kg: null, reps: null, rpe: null };
+      if(!s || typeof s !== 'object') return { kg: null, reps: null, rpe: null, skipped: false };
+      // Série explicitement marquée "non effectuée" — distinct de kg=0 (poids du corps volontaire)
+      const skipped = s.skipped === true;
       const kg   = parseFloat(s.kg);
       const reps = parseInt(s.reps, 10);
       const rpe  = parseFloat(s.rpe);
       return {
-        kg:   isFinite(kg)   && kg   >= 0 && kg   < 1000 ? kg   : null,
-        reps: isFinite(reps) && reps >= 0 && reps < 100  ? reps : null,
-        rpe:  isFinite(rpe)  && rpe  >= 0 && rpe  <= 10  ? String(rpe) : null,
+        kg:      skipped ? null : (isFinite(kg)   && kg   >= 0 && kg   < 1000 ? kg   : null),
+        reps:    skipped ? null : (isFinite(reps) && reps >= 0 && reps < 100  ? reps : null),
+        rpe:     skipped ? null : (isFinite(rpe)  && rpe  >= 0 && rpe  <= 10  ? String(rpe) : null),
+        skipped: skipped,
       };
     });
   }
@@ -42,7 +45,9 @@ export function sanitizeRecord(rec) {
   if(['normal','hyrox','skipped','deload'].includes(rec.sessionStatus))
     out.sessionStatus = rec.sessionStatus;
 
-  if(!out.kg && (!out.sets || !out.sets.some(s => s && s.kg))) return null;
+  // kg=0 est une valeur légitime (poids du corps, échec total) — utiliser != null
+  // Une série marquée "non effectuée" compte aussi comme donnée valide à sauvegarder
+  if(out.kg == null && (!out.sets || !out.sets.some(s => s && (s.kg != null || s.skipped)))) return null;
   return out;
 }
 

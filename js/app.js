@@ -7,7 +7,7 @@ import { dbInit, dbGet, dbSet, dbClear } from './db.js';
 import { initWeekSel, renderSaisie, renderProgression, renderHistorique, setCurrentProgram, getCurrentProgram } from './tracker.js';
 import { renderMusculaire, initBodyDelegation, repaintMuscles, switchBodyView } from './musculaire.js';
 import { exportJSON, exportCSV, importJSON } from './io.js';
-import { initWizard, renderStep, wizNext, wizBack, wizGenerate, wizSearchEx } from './wizard.js';
+import { initWizard, renderStep, wizNext, wizBack, wizGenerate, wizSearchEx, setMoisGrossesse } from './wizard.js';
 import { getPrograms, getActivePrograms, getArchivedPrograms, getProgram, getProgRecord,
          getActiveProgram, getAllActivePrograms, getActiveProgramId,
          setActiveProgram, addActiveProgram, removeActiveProgram, setPrimaryProgram,
@@ -17,6 +17,41 @@ import { buildAthxProgram, NUTRITION_PLANS } from './data.js';
 import { getVacances, setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
 
 // ── Custom confirm modal (iOS PWA-safe) ─────────────────────────────────────
+
+// ── Toggle "série non effectuée" (kg/reps/rpe → null, skipped=true) ─────────
+window._setMoisGrossesse = setMoisGrossesse;
+
+window._toggleSetSkipped = function(checkbox, kind, exId, setIdx) {
+  const isSkipped = checkbox.checked;
+  const prefix = kind === 'p' ? 'p' : '';
+  const kgEl   = document.getElementById(`${prefix}kg_${exId}_${setIdx}`);
+  const repsEl = document.getElementById(`${prefix}reps_${exId}_${setIdx}`);
+  const rpeEl  = document.getElementById(`${prefix}rpe_${exId}_${setIdx}`);
+
+  if(isSkipped) {
+    if(kgEl)   { kgEl.value = '';   kgEl.disabled = true; }
+    if(repsEl) { repsEl.value = ''; repsEl.disabled = true; }
+    if(rpeEl)  { rpeEl.value = '';  rpeEl.disabled = true; }
+  } else {
+    if(kgEl)   kgEl.disabled = false;
+    if(repsEl) repsEl.disabled = false;
+    if(rpeEl)  rpeEl.disabled = false;
+  }
+
+  // Update visual row state
+  const row = checkbox.closest('tr');
+  if(row) row.classList.toggle('set-row-skipped', isSkipped);
+  const statusCell = row?.querySelector('.set-status');
+  if(statusCell) {
+    statusCell.textContent = isSkipped ? '❌' : '';
+    statusCell.style.color = isSkipped ? 'var(--red)' : 'var(--border)';
+  }
+
+  // Store the skipped flag immediately so it survives without waiting for "Enregistrer"
+  // (the actual save button will read these disabled/empty fields and persist skipped:true)
+  checkbox.dataset.skipped = isSkipped ? '1' : '0';
+};
+
 function _confirmModal(message, actionLabel, onConfirm) {
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
@@ -52,7 +87,11 @@ export function showSection(id) {
   document.getElementById(id)?.classList.add('active');
   // Activate bottom tab
   document.querySelector(`.bottom-nav-btn[data-section="${id}"]`)?.classList.add('active');
-  if(id === 'tracker')     { initWeekSel(); }
+  if(id === 'tracker') {
+    // Toujours revenir à l'onglet "Saisie semaine" — comportement standard tab-bar
+    showTracker('saisie');
+    initWeekSel();
+  }
   if(id === 'musculaire')  renderMusculaire();
   if(id === 'programmes')  renderPrograms();
   if(id === 'programme') {
@@ -783,16 +822,10 @@ function _renderProgrammeSchedule(prog) {
 }
 
 function renderPrograms() {
-  const current  = document.querySelector('.prog-view.active-view');
-  const listView = document.getElementById('programs-list-view');
-  const detailView = document.getElementById('program-detail-view');
-
-  // If already showing list or detail, just re-render current view
-  if(current === listView) { _renderProgramsList(); return; }
-  if(current === detailView) return; // don't interrupt detail view
-
-  // Always show list — let list handle empty state
+  // Toujours revenir à la liste racine — comportement standard tab-bar :
+  // un clic explicite sur l'icône de navigation ramène à l'accueil de la section.
   document.querySelectorAll('.prog-view').forEach(v => v.classList.remove('active-view'));
+  const listView = document.getElementById('programs-list-view');
   listView?.classList.add('active-view');
   _renderProgramsList();
 }

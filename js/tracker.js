@@ -150,7 +150,17 @@ function _renderProgSaisie(prog) {
     day.exercices.forEach(ex => {
       const exStatus = getProgExStatus(prog.id, ex.id, week);
       const rec      = normRecord(getProgRecord(prog.id, ex.id, week));
-      const plan     = ex.kgPlan;
+      // Plan dynamique : utilise la recommandation S issue de S-1 si elle existe
+      // (logique Lafay adaptative), sinon retombe sur le kgPlan théorique (1RM × % phase)
+      let plan = ex.kgPlan;
+      if(week > 1) {
+        const prevSemaine = prog.semaines?.[week - 2];
+        const prevEx = prevSemaine?.jours?.flatMap(d => d.exercices).find(e => e.id === ex.id);
+        if(prevSemaine && prevEx && !prevSemaine.isDeload) {
+          const prevNxt = _getNextPlanGeneric(prog, prevEx, week - 1, prevSemaine);
+          if(prevNxt?.kg) plan = prevNxt.kg;
+        }
+      }
       const scheme   = ex.scheme;
       const nSets    = _parseSetsGeneric(scheme);
       const planReps = parseReps(scheme);
@@ -243,21 +253,31 @@ function _renderProgSaisie(prog) {
       if(showGrid) {
         const placeholder = exStatus === 'deload' && deloadKg ? deloadKg : (plan || '');
         html += `<table class="sets-table">
-          <thead><tr><th>Série</th><th>Charge (${ex.unit||'kg'})</th><th>Reps</th><th>RPE</th><th></th></tr></thead>
+          <thead><tr><th>Série</th><th>Charge (${ex.unit||'kg'})</th><th>Reps</th><th>RPE</th><th></th><th></th></tr></thead>
           <tbody>`;
         for(let s = 0; s < Math.max(nSets, 4); s++) {
           const sr  = rec?.sets?.[s] || {};
-          const chk = sr.kg && sr.reps ? '✓' : '';
-          html += `<tr>
+          const isSkipped = sr.skipped === true;
+          const chk = !isSkipped && sr.kg != null && sr.reps != null ? '✓' : (isSkipped ? '❌' : '');
+          const chkColor = isSkipped ? 'var(--red)' : (chk ? 'var(--green)' : 'var(--border)');
+          // Pré-remplit avec le plan (figé ou dynamique) si aucune saisie existante.
+          // L'utilisateur peut toujours modifier — ce n'est qu'une valeur de départ.
+          const kgVal   = sr.kg   != null && sr.kg   !== '' ? sr.kg   : (placeholder || '');
+          const repsVal = sr.reps != null && sr.reps !== '' ? sr.reps : (planReps || '');
+          const dis = isSkipped ? 'disabled' : '';
+          html += `<tr class="${isSkipped?'set-row-skipped':''}">
             <td class="set-num">S${s+1}</td>
-            <td><input class="set-inp" type="number" id="pkg_${ex.id}_${s}" step="1.25" min="0"
-                value="${sr.kg||''}" placeholder="${placeholder}" data-ex="${ex.id}" data-idx="${s}" data-nsets="${Math.max(nSets,3)}"></td>
-            <td><input class="set-inp reps-inp" type="number" id="preps_${ex.id}_${s}"
-                min="0" max="30" step="1" value="${sr.reps||''}" placeholder="${planReps||'—'}"></td>
-            <td><select class="set-rpe" id="prpe_${ex.id}_${s}">
+            <td><input class="set-inp" type="number" id="pkg_${ex.id}_${s}" step="1.25" min="0" ${dis}
+                value="${isSkipped?'':kgVal}" placeholder="${placeholder}" data-ex="${ex.id}" data-idx="${s}" data-nsets="${Math.max(nSets,3)}"></td>
+            <td><input class="set-inp reps-inp" type="number" id="preps_${ex.id}_${s}" ${dis}
+                min="0" max="30" step="1" value="${isSkipped?'':repsVal}" placeholder="${planReps||'—'}"></td>
+            <td><select class="set-rpe" id="prpe_${ex.id}_${s}" ${dis}>
               <option value="">—</option>${_rpeOptions(sr.rpe)}
             </select></td>
-            <td class="set-status" style="color:${chk?'var(--green)':'var(--border)'}">${chk}</td>
+            <td class="set-status" style="color:${chkColor}">${chk}</td>
+            <td><label class="set-skip-toggle" title="Série non effectuée">
+              <input type="checkbox" id="pskip_${ex.id}_${s}" ${isSkipped?'checked':''} onchange="window._toggleSetSkipped(this,'p','${ex.id}',${s})">
+            </label></td>
           </tr>`;
         }
         html += '</tbody></table>';
@@ -335,15 +355,24 @@ function _saveProgSaisie(prog, week, dayName) {
     let anyData = false;
 
     for(let s = 0; s < nSets; s++) {
-      const kg   = parseFloat(document.getElementById(`pkg_${ex.id}_${s}`)?.value) || null;
-      const reps = parseInt(document.getElementById(`preps_${ex.id}_${s}`)?.value, 10) || null;
-      const rpe  = document.getElementById(`prpe_${ex.id}_${s}`)?.value || '';
-      sets.push({ kg, reps, rpe });
-      if(kg || reps) anyData = true;
+      const skipCheckbox = document.getElementById(`pskip_${ex.id}_${s}`);
+      const skipped = skipCheckbox?.checked === true;
+      if(skipped) {
+        sets.push({ kg: null, reps: null, rpe: null, skipped: true });
+        anyData = true;
+        continue;
+      }
+      const kgRaw = document.getElementById(`pkg_${ex.id}_${s}`)?.value;
+      const kg    = kgRaw !== '' && kgRaw != null ? parseFloat(kgRaw) : null;
+      const reps  = parseInt(document.getElementById(`preps_${ex.id}_${s}`)?.value, 10) || null;
+      const rpe   = document.getElementById(`prpe_${ex.id}_${s}`)?.value || '';
+      sets.push({ kg, reps, rpe, skipped: false });
+      if(kg != null || reps) anyData = true;
     }
     if(!anyData) return;
 
-    const bk     = Math.max(...sets.map(s=>s.kg||0).filter(v=>v>0)) || null;
+    const _bkVals = sets.map(s=>s.kg||0).filter(v=>v>0);
+    const bk     = _bkVals.length ? Math.max(..._bkVals) : null;
     const filled = sets.find(s=>s.rpe);
     setProgRecord(prog.id, ex.id, week, {
       sets, kg: bk, rpe: filled?.rpe||'', ts: Date.now(),
@@ -360,19 +389,37 @@ function _saveProgSaisie(prog, week, dayName) {
 
 function _calcAdjGeneric(prog, ex, week, semaine) {
   const rec = normRecord(getProgRecord(prog.id, ex.id, week));
-  if(!rec?.sets?.some(s=>s?.kg)) return null;
+  if(!rec?.sets?.some(s=>s && (s.kg != null || s.skipped))) return null;
 
   const planKg   = ex.kgPlan;
   const scheme   = ex.scheme;
   const planReps = parseReps(scheme) || 5;
   const nSets    = _parseSetsGeneric(scheme) || 4;
   const status   = getProgExStatus(prog.id, ex.id, week);
+
+  // ── Séries "non effectuées" — signal explicite (cohérent avec calcAdj ATHX) ──
+  const skippedSets = rec.sets.filter(s => s?.skipped === true);
+  if(skippedSets.length > 0 && !rec.sets.some(s => s && s.kg != null)) {
+    const ratio  = skippedSets.length / (nSets || rec.sets.length || 1);
+    const severe = ratio >= 0.5;
+    return {
+      type: severe ? 'injury_suspected' : 'partial_skip',
+      signals: [{
+        type: 'danger',
+        text: severe
+          ? `${skippedSets.length} série(s) non effectuée(s) — possible blessure ou manque de force. Recul prudent recommandé.`
+          : `${skippedSets.length} série(s) non effectuée(s) sur ${nSets} — à surveiller.`,
+      }],
+      skipped: false, hyrox: false, deload: false, injurySuspected: severe,
+    };
+  }
   if(status === 'skipped') return { type:'skipped', signals:[], skipped:true };
   if(status === 'deload')  return { type:'deload', signals:[{type:'neutral',text:'Séance deload — aucune analyse.'}], deload:true };
 
-  const sets = rec.sets.filter(s=>s?.kg);
+  const sets = rec.sets.filter(s=>s && s.kg != null);
   const done = sets.filter(s=>s?.reps&&s.reps>0);
-  const bk   = Math.max(...sets.map(s=>s.kg||0));
+  const _bkValsAdj = sets.map(s=>s.kg||0);
+  const bk   = _bkValsAdj.length ? Math.max(..._bkValsAdj) : 0;
   const avgRpe  = done.length ? done.reduce((a,s)=>a+(parseFloat(s.rpe)||7),0)/done.length : null;
   const avgReps = done.length ? done.reduce((a,s)=>a+(s.reps||0),0)/done.length : null;
 
@@ -402,18 +449,46 @@ function _calcAdjGeneric(prog, ex, week, semaine) {
 function _getNextPlanGeneric(prog, ex, week, semaine) {
   if(week >= (prog.totalWeeks || 17)) return null;
   const rec = normRecord(getProgRecord(prog.id, ex.id, week));
-  if(!rec?.sets?.some(s=>s?.kg)) return null;
+  if(!rec?.sets?.some(s=>s && (s.kg != null || s.skipped))) return null;
+
+  // ── Séries "non effectuées" — recul de précaution (cohérent avec getNextPlan ATHX) ──
+  const skippedSets = rec.sets.filter(s => s?.skipped === true);
+  if(skippedSets.length > 0 && !rec.sets.some(s => s && s.kg != null)) {
+    const nSets0 = _parseSetsGeneric(ex.scheme) || 4;
+    const ratio  = skippedSets.length / nSets0;
+    const severe = ratio >= 0.5;
+    const p0     = ex.id === 'squat' || ex.id === 'deadlift' ? 2.5 : 1.25;
+    // Référence : dernière charge connue (semaine actuelle théorique ou semaine antérieure)
+    let refKg = ex.kgPlan || null;
+    for(let w = week - 1; w >= 1 && !refKg; w--) {
+      const prevRec = normRecord(getProgRecord(prog.id, ex.id, w));
+      const prevVals = (prevRec?.sets||[]).map(s=>s?.kg||0).filter(v=>v>0);
+      if(prevVals.length) refKg = Math.max(...prevVals);
+    }
+    if(!refKg) return null;
+    const reduction = severe ? 2 * p0 : p0;
+    const nextKg = Math.max(refKg - reduction, p0);
+    return {
+      kg: Math.round(nextKg / 1.25) * 1.25,
+      rule: severe
+        ? `${skippedSets.length} série(s) non effectuée(s) — possible blessure/manque de force. Recul de 2 paliers par précaution.`
+        : `${skippedSets.length} série(s) non effectuée(s) — recul d'un palier par précaution.`,
+      outcome: severe ? 'injury_suspected' : 'partial_skip',
+    };
+  }
 
   const rc = repriseCoeff();
   if(rc) {
-    const bk = Math.max(...(rec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0));
+    const _bkValsRc = (rec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0);
+    const bk = _bkValsRc.length ? Math.max(..._bkValsRc) : 0;
     const repriseKg = Math.round(bk * rc.coeff / 1.25) * 1.25;
     return { kg:repriseKg, rule:`${rc.label} · ${Math.round(rc.coeff*100)}% · RPE ${rc.rpeTarget}`, outcome:'vacances' };
   }
 
-  const status = getProgExStatus(prog.id, ex.id, week);
-  const bk     = Math.max(...(rec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0));
-  const p      = ex.id === 'squat' || ex.id === 'deadlift' ? 2.5 : 1.25;
+  const status   = getProgExStatus(prog.id, ex.id, week);
+  const _bkVals3 = (rec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0);
+  const bk       = _bkVals3.length ? Math.max(..._bkVals3) : 0;
+  const p        = ex.id === 'squat' || ex.id === 'deadlift' ? 2.5 : 1.25;
 
   if(status === 'skipped') return { kg:bk, rule:'Séance sautée — même charge.', outcome:'skipped' };
   if(status === 'deload')  return { kg: ex.kgPlan || bk, rule:'Retour au plan S+1.', outcome:'deload' };
@@ -543,21 +618,30 @@ function _renderLegacySaisie() {
       if(exStatus !== 'skipped') {
         const deloadKg = exStatus==='deload'&&plan ? Math.round(plan*0.60/1.25)*1.25 : null;
         html += `<table class="sets-table">
-          <thead><tr><th>Série</th><th>Charge (${ex.unit})</th><th>Reps</th><th>RPE</th><th></th></tr></thead><tbody>`;
+          <thead><tr><th>Série</th><th>Charge (${ex.unit})</th><th>Reps</th><th>RPE</th><th></th><th></th></tr></thead><tbody>`;
         for(let s = 0; s < nSets; s++) {
           const sr  = rec?.sets?.[s] || {};
-          const chk = sr.kg&&sr.reps?'✓':'';
-          html += `<tr>
+          const isSkipped = sr.skipped === true;
+          const chk = !isSkipped && sr.kg != null && sr.reps != null ? '✓' : (isSkipped ? '❌' : '');
+          const chkColor = isSkipped ? 'var(--red)' : (chk ? 'var(--green)' : 'var(--border)');
+          const phKg    = deloadKg || plan || '';
+          const kgVal   = sr.kg   != null && sr.kg   !== '' ? sr.kg   : phKg;
+          const repsVal = sr.reps != null && sr.reps !== '' ? sr.reps : (planReps || '');
+          const dis = isSkipped ? 'disabled' : '';
+          html += `<tr class="${isSkipped?'set-row-skipped':''}">
             <td class="set-num">S${s+1}</td>
-            <td><input class="set-inp" type="number" id="kg_${ex.id}_${s}" step="1.25" min="0"
-                value="${sr.kg||''}" placeholder="${deloadKg||plan||''}"
+            <td><input class="set-inp" type="number" id="kg_${ex.id}_${s}" step="1.25" min="0" ${dis}
+                value="${isSkipped?'':kgVal}" placeholder="${phKg}"
                 data-ex="${ex.id}" data-idx="${s}" data-nsets="${nSets}"></td>
-            <td><input class="set-inp reps-inp" type="number" id="reps_${ex.id}_${s}"
-                min="0" max="30" step="1" value="${sr.reps||''}" placeholder="${planReps||'—'}"></td>
-            <td><select class="set-rpe" id="rpe_${ex.id}_${s}">
+            <td><input class="set-inp reps-inp" type="number" id="reps_${ex.id}_${s}" ${dis}
+                min="0" max="30" step="1" value="${isSkipped?'':repsVal}" placeholder="${planReps||'—'}"></td>
+            <td><select class="set-rpe" id="rpe_${ex.id}_${s}" ${dis}>
               <option value="">—</option>${_rpeOptions(sr.rpe)}
             </select></td>
-            <td class="set-status" style="color:${chk?'var(--green)':'var(--border)'}">${chk}</td>
+            <td class="set-status" style="color:${chkColor}">${chk}</td>
+            <td><label class="set-skip-toggle" title="Série non effectuée">
+              <input type="checkbox" id="skip_${ex.id}_${s}" ${isSkipped?'checked':''} onchange="window._toggleSetSkipped(this,'l','${ex.id}',${s})">
+            </label></td>
           </tr>`;
         }
         html += '</tbody></table>';
@@ -623,14 +707,23 @@ export function saveSaisie(week, day) {
     const sets = [];
     let anyData = false;
     for(let s=0;s<nSets;s++) {
-      const kg   = parseFloat(document.getElementById(`kg_${ex.id}_${s}`)?.value) || null;
-      const reps = parseInt(document.getElementById(`reps_${ex.id}_${s}`)?.value, 10) || null;
-      const rpe  = document.getElementById(`rpe_${ex.id}_${s}`)?.value || '';
-      sets.push({ kg, reps, rpe });
-      if(kg||reps) anyData = true;
+      const skipCheckbox = document.getElementById(`skip_${ex.id}_${s}`);
+      const skipped = skipCheckbox?.checked === true;
+      if(skipped) {
+        sets.push({ kg: null, reps: null, rpe: null, skipped: true });
+        anyData = true;
+        continue;
+      }
+      const kgRaw = document.getElementById(`kg_${ex.id}_${s}`)?.value;
+      const kg    = kgRaw !== '' && kgRaw != null ? parseFloat(kgRaw) : null;
+      const reps  = parseInt(document.getElementById(`reps_${ex.id}_${s}`)?.value, 10) || null;
+      const rpe   = document.getElementById(`rpe_${ex.id}_${s}`)?.value || '';
+      sets.push({ kg, reps, rpe, skipped: false });
+      if(kg != null || reps) anyData = true;
     }
     if(!anyData) return;
-    const bk     = Math.max(...sets.map(s=>s.kg||0).filter(v=>v>0))||null;
+    const _bkVals2 = sets.map(s=>s.kg||0).filter(v=>v>0);
+    const bk     = _bkVals2.length ? Math.max(..._bkVals2) : null;
     const filled = sets.find(s=>s.rpe);
     setRecord(ex.id, week, { sets, kg:bk, rpe:filled?.rpe||'', ts:Date.now(), sessionStatus:getExStatus(ex.id,week) });
   });

@@ -224,3 +224,10 @@ tr:last-child td{border-bottom:none}
 .prog-legend{display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap}
 .prog-legend span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
 .pleg-line{display:inline-block;width:18px;height:3px;border-radius:2px}
+
+/* ── Série "non effectuée" — toggle et état visuel ────────────────────────── */
+.set-skip-toggle{display:flex;align-items:center;justify-content:center;cursor:pointer}
+.set-skip-toggle input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--red)}
+tr.set-row-skipped{background:rgba(220,38,38,.05)}
+tr.set-row-skipped .set-inp,
+tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
