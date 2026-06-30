@@ -260,10 +260,10 @@ tr:last-child td{border-bottom:none}
 .reprise-note{font-size:11px;color:#7c4a00;font-style:italic;opacity:.8}
 
 /* ── Program selector ── */
-.prog-selector-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:14px}
-.prog-selector-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
-.prog-selector-select{font-family:var(--sans);font-size:13px;font-weight:500;padding:5px 28px 5px 10px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);cursor:pointer;appearance:none;-webkit-appearance:none;flex:1;min-width:0}
-.prog-selector-hint{font-size:11px;color:var(--text3);white-space:nowrap}
+.prog-selector-bar{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:14px}
+.prog-selector-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);flex:0 0 100%;margin-bottom:2px}
+.prog-selector-select{font-family:var(--sans);font-size:13px;font-weight:500;padding:6px 28px 6px 10px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);cursor:pointer;appearance:none;-webkit-appearance:none;flex:1 1 100%;min-width:0;width:100%}
+.prog-selector-hint{font-size:11px;color:var(--text3);white-space:nowrap;flex:0 0 100%}
 
 /* ── Grossesse tracker ── */
 .grossesse-ex-body{padding:8px 0}
@@ -2571,12 +2571,24 @@ function setExStatus(exId, week, status) {
 }
 
 function getAllRecords() {
-  return dbGetAll();
+  // Only return ATHX-format exercise/status keys — NOT the whole DB
+  // (the DB also contains programs_list, vacances_list, programs_tracking, etc.)
+  const EX_KEY = /^(press|squat|deadlift|gtoh|sandbag|lunges)_w([1-9]|1[0-7])$/;
+  const ST_KEY = /^status_(press|squat|deadlift|gtoh|sandbag|lunges)_w([1-9]|1[0-7])$/;
+  const all = dbGetAll();
+  const filtered = {};
+  for(const [k, v] of Object.entries(all)) {
+    if(EX_KEY.test(k) || ST_KEY.test(k)) filtered[k] = v;
+  }
+  return filtered;
 }
 
 function importRecords(cleanObj) {
-  const current = dbGetAll();
-  dbSetAll({ ...current, ...cleanObj });
+  // Merge only the clean ATHX keys — never touch other store keys
+  // (dbSet is per-key, safe to call individually)
+  for(const [k, v] of Object.entries(cleanObj || {})) {
+    dbSet(k, v);
+  }
 }
 
 /** Find the highest week that has any data */
@@ -4689,8 +4701,8 @@ function exportJSON() {
     vacances: getVacancesList(),
     programs: typeof getPrograms === 'function' ? getPrograms() : [],
     programs_tracking: (typeof dbGet === 'function' ? dbGet('programs_tracking') : null) || {},
-    active_programs: (typeof dbGet === 'function' ? dbGet('active_programs_list') : null) || [],
-    active_program: (typeof dbGet === 'function' ? dbGet('active_program') : null) || null,
+    active_programs: (typeof dbGet === 'function' ? dbGet('programs_active') : null) || [],
+    active_program: (typeof dbGet === 'function' ? dbGet('program_active') : null) || null,
   };
   _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
 }
@@ -4753,10 +4765,10 @@ function importJSON(event) {
         dbSet('programs_tracking', parsed.programs_tracking);
       }
       if(Array.isArray(parsed.active_programs) && parsed.active_programs.length > 0 && typeof dbSet === 'function') {
-        dbSet('active_programs_list', parsed.active_programs);
+        dbSet('programs_active', parsed.active_programs);
       }
       if(parsed.active_program && typeof dbSet === 'function') {
-        dbSet('active_program', parsed.active_program);
+        dbSet('program_active', parsed.active_program);
       }
 
       // Restore vacances periods if present (including repriseWeek + firstSkippedWeek)

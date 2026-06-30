@@ -153,10 +153,10 @@ tr:last-child td{border-bottom:none}
 .reprise-note{font-size:11px;color:#7c4a00;font-style:italic;opacity:.8}
 
 /* ── Program selector ── */
-.prog-selector-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:14px}
-.prog-selector-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
-.prog-selector-select{font-family:var(--sans);font-size:13px;font-weight:500;padding:5px 28px 5px 10px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);cursor:pointer;appearance:none;-webkit-appearance:none;flex:1;min-width:0}
-.prog-selector-hint{font-size:11px;color:var(--text3);white-space:nowrap}
+.prog-selector-bar{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:14px}
+.prog-selector-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);flex:0 0 100%;margin-bottom:2px}
+.prog-selector-select{font-family:var(--sans);font-size:13px;font-weight:500;padding:6px 28px 6px 10px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);cursor:pointer;appearance:none;-webkit-appearance:none;flex:1 1 100%;min-width:0;width:100%}
+.prog-selector-hint{font-size:11px;color:var(--text3);white-space:nowrap;flex:0 0 100%}
 
 /* ── Grossesse tracker ── */
 .grossesse-ex-body{padding:8px 0}

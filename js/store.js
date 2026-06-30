@@ -28,12 +28,24 @@ export function setExStatus(exId, week, status) {
 }
 
 export function getAllRecords() {
-  return dbGetAll();
+  // Only return ATHX-format exercise/status keys — NOT the whole DB
+  // (the DB also contains programs_list, vacances_list, programs_tracking, etc.)
+  const EX_KEY = /^(press|squat|deadlift|gtoh|sandbag|lunges)_w([1-9]|1[0-7])$/;
+  const ST_KEY = /^status_(press|squat|deadlift|gtoh|sandbag|lunges)_w([1-9]|1[0-7])$/;
+  const all = dbGetAll();
+  const filtered = {};
+  for(const [k, v] of Object.entries(all)) {
+    if(EX_KEY.test(k) || ST_KEY.test(k)) filtered[k] = v;
+  }
+  return filtered;
 }
 
 export function importRecords(cleanObj) {
-  const current = dbGetAll();
-  dbSetAll({ ...current, ...cleanObj });
+  // Merge only the clean ATHX keys — never touch other store keys
+  // (dbSet is per-key, safe to call individually)
+  for(const [k, v] of Object.entries(cleanObj || {})) {
+    dbSet(k, v);
+  }
 }
 
 /** Find the highest week that has any data */

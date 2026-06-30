@@ -16,8 +16,8 @@ export function exportJSON() {
     vacances: getVacancesList(),
     programs: typeof getPrograms === 'function' ? getPrograms() : [],
     programs_tracking: (typeof dbGet === 'function' ? dbGet('programs_tracking') : null) || {},
-    active_programs: (typeof dbGet === 'function' ? dbGet('active_programs_list') : null) || [],
-    active_program: (typeof dbGet === 'function' ? dbGet('active_program') : null) || null,
+    active_programs: (typeof dbGet === 'function' ? dbGet('programs_active') : null) || [],
+    active_program: (typeof dbGet === 'function' ? dbGet('program_active') : null) || null,
   };
   _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
 }
@@ -80,10 +80,10 @@ export function importJSON(event) {
         dbSet('programs_tracking', parsed.programs_tracking);
       }
       if(Array.isArray(parsed.active_programs) && parsed.active_programs.length > 0 && typeof dbSet === 'function') {
-        dbSet('active_programs_list', parsed.active_programs);
+        dbSet('programs_active', parsed.active_programs);
       }
       if(parsed.active_program && typeof dbSet === 'function') {
-        dbSet('active_program', parsed.active_program);
+        dbSet('program_active', parsed.active_program);
       }
 
       // Restore vacances periods if present (including repriseWeek + firstSkippedWeek)
