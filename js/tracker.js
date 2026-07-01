@@ -255,7 +255,7 @@ function _renderProgSaisie(prog) {
       if(showGrid) {
         const placeholder = exStatus === 'deload' && deloadKg ? deloadKg : (plan || '');
         html += `<table class="sets-table">
-          <thead><tr><th>Série</th><th>Charge (${ex.unit||'kg'})</th><th>Reps</th><th>RPE</th><th></th><th></th></tr></thead>
+          <thead><tr><th>Série</th><th>Charge (${ex.unit||'kg'})</th><th>Reps</th><th>RPE</th><th></th><th>Sautée</th></tr></thead>
           <tbody>`;
         for(let s = 0; s < Math.max(nSets, 4); s++) {
           const sr  = rec?.sets?.[s] || {};
@@ -620,7 +620,7 @@ function _renderLegacySaisie() {
       if(exStatus !== 'skipped') {
         const deloadKg = exStatus==='deload'&&plan ? Math.round(plan*0.60/1.25)*1.25 : null;
         html += `<table class="sets-table">
-          <thead><tr><th>Série</th><th>Charge (${ex.unit})</th><th>Reps</th><th>RPE</th><th></th><th></th></tr></thead><tbody>`;
+          <thead><tr><th>Série</th><th>Charge (${ex.unit})</th><th>Reps</th><th>RPE</th><th></th><th>Sautée</th></tr></thead><tbody>`;
         for(let s = 0; s < nSets; s++) {
           const sr  = rec?.sets?.[s] || {};
           const isSkipped = sr.skipped === true;

@@ -61,6 +61,14 @@ export function importJSON(event) {
       const incoming = parsed.data || parsed;
       const result   = validateImport(incoming);
 
+      // Debug visible — aide à diagnostiquer sans accès aux devtools
+      console.log('[import] fichier parsé, clés:', Object.keys(incoming).length);
+      console.log('[import] validateImport résultat:', result.ok, result.ok ? Object.keys(result.clean).length + ' entrées nettoyées' : result.error);
+      if(result.ok) {
+        const sample = Object.entries(result.clean)[0];
+        console.log('[import] échantillon:', sample ? JSON.stringify(sample) : 'aucune donnée');
+      }
+
       if(!result.ok) {
         if(typeof _showSaveToast === 'function') _showSaveToast('⚠️ Import échoué : ' + result.error);
         else alert('Import échoué : ' + result.error);
@@ -108,9 +116,21 @@ export function importJSON(event) {
       const fb = document.getElementById('importFeedback');
       if(fb) { fb.style.display = 'inline'; setTimeout(() => fb.style.display = 'none', 3000); }
 
-      // Refresh all views
-      if(typeof renderSaisie === 'function') renderSaisie();
-      repaintMuscles();
+      // Vérification post-import : relit une clé au hasard depuis le store pour confirmer la persistance
+      const checkKey = Object.keys(result.clean)[0];
+      if(checkKey) {
+        const reread = typeof getAllRecords === 'function' ? getAllRecords()[checkKey] : null;
+        console.log('[import] vérification post-écriture pour', checkKey, ':', JSON.stringify(reread));
+      }
+
+      // Refresh all views — forcer un re-render complet après un court délai
+      // pour laisser le temps à IndexedDB de terminer l'écriture asynchrone
+      setTimeout(() => {
+        if(typeof initWeekSel === 'function') initWeekSel();
+        else if(typeof renderSaisie === 'function') renderSaisie();
+        repaintMuscles();
+        console.log('[import] renderSaisie/initWeekSel relancé après import');
+      }, 50);
 
     } catch(err) {
       if(typeof _showSaveToast === 'function') _showSaveToast('⚠️ Import échoué : ' + err.message.slice(0, 60));
