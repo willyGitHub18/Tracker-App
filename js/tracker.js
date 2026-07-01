@@ -395,7 +395,8 @@ function _saveProgSaisie(prog, week, dayName) {
 
   _showSaveToast(`✓ ${dayName} enregistré`);
   repaintMuscles();
-  _updateSetCheckmarks(prog, week, dayName);
+  // Re-render complet pour afficher l'analyse post-sauvegarde
+  renderSaisie();
 }
 
 // ── Generic analysis helpers ──────────────────────────────────────────────────
@@ -545,9 +546,23 @@ function _renderLegacySaisie() {
       <div class="ex-wrap">`;
 
     exs.forEach(ex => {
-      const plan     = ex.plan[week - 1];
-      const scheme   = ex.repScheme[week - 1];
-      const rec      = normRecord(getRecord(ex.id, week));
+      const staticPlan = ex.plan[week - 1];
+      const scheme     = ex.repScheme[week - 1];
+      const rec        = normRecord(getRecord(ex.id, week));
+
+      // Plan dynamique : utilise la recommandation Lafay de la dernière semaine NORMALE
+      // (pas deload) pour ajuster le poids de départ de chaque nouveau bloc
+      let plan = staticPlan;
+      if(week > 1) {
+        // Trouver la dernière semaine normale (non-deload) avant cette semaine
+        for(let pw = week - 1; pw >= 1; pw--) {
+          const prevScheme = ex.repScheme[pw - 1];
+          if(prevScheme === 'Deload' || prevScheme === 'Taper' || prevScheme === 'Repos') continue;
+          const nxt = getNextPlan(ex, pw);
+          if(nxt?.kg) { plan = nxt.kg; break; }
+          break; // si la semaine précédente n'a pas de données, garder le plan statique
+        }
+      }
       // For deload/taper: use previous normal week's set count
       const nSets = (() => {
         if(scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos') {
@@ -716,7 +731,14 @@ export function saveSaisie(week, day) {
   const exs = EXERCISES.filter(e => e.day === day);
   exs.forEach(ex => {
     const scheme = ex.repScheme[week - 1];
-    const nSets  = parseSets(scheme) || 3;
+    // Pour Deload/Taper : même nSets que la grille affichée (semaine précédente non-null)
+    let nSets;
+    if(scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos') {
+      nSets = 4;
+      if(ex.sets) { for(let w = week-2; w >= 0; w--) { if(ex.sets[w] != null) { nSets = ex.sets[w]; break; } } }
+    } else {
+      nSets = parseSets(scheme) || 3;
+    }
     const sets = [];
     let anyData = false;
     for(let s=0;s<nSets;s++) {
@@ -743,7 +765,8 @@ export function saveSaisie(week, day) {
 
   _showSaveToast(`✓ ${day} enregistré`);
   repaintMuscles();
-  _updateLegacyCheckmarks(week, day);
+  // Re-render complet pour afficher l'analyse post-sauvegarde (RPE, recommandation S+1)
+  renderSaisie();
 }
 
 // ── Vacances UI (shared) ──────────────────────────────────────────────────────
