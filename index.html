@@ -4606,8 +4606,8 @@ function calcGlobalMuscleLoad() {
 
   const activeProgs = getAllActivePrograms();
 
+  // Toujours inclure les programmes générés actifs
   if(activeProgs.length > 0) {
-    // Cumulate load from ALL active programs
     activeProgs.forEach(prog => {
       prog.semaines?.forEach((sem, wi) => {
         sem.jours?.forEach(day => {
@@ -4631,8 +4631,10 @@ function calcGlobalMuscleLoad() {
         });
       });
     });
-  } else {
-    // Legacy ATHX
+  }
+
+  // Toujours inclure les données ATHX legacy (pas mutuellement exclusif)
+  {
     EXERCISES.filter(e => ['press','squat','deadlift'].includes(e.id)).forEach(ex => {
       const factors = MUSCLE_MAP[ex.id];
       if(!factors) return;
@@ -4981,8 +4983,12 @@ function importJSON(event) {
 
       // Restore generated programs if present
       if(Array.isArray(parsed.programs) && parsed.programs.length > 0) {
+        const existing = typeof getPrograms === 'function' ? getPrograms() : [];
+        const existingIds = new Set(existing.map(p => p.id));
         parsed.programs.forEach(p => {
-          if(p?.id && typeof saveProgram === 'function') saveProgram(p);
+          if(!p?.id || typeof saveProgram !== 'function') return;
+          // Ne pas dupliquer : si le programme existe déjà, écraser (pas push)
+          saveProgram(p);
         });
       }
       if(parsed.programs_tracking && typeof dbSet === 'function') {

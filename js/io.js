@@ -80,8 +80,12 @@ export function importJSON(event) {
 
       // Restore generated programs if present
       if(Array.isArray(parsed.programs) && parsed.programs.length > 0) {
+        const existing = typeof getPrograms === 'function' ? getPrograms() : [];
+        const existingIds = new Set(existing.map(p => p.id));
         parsed.programs.forEach(p => {
-          if(p?.id && typeof saveProgram === 'function') saveProgram(p);
+          if(!p?.id || typeof saveProgram !== 'function') return;
+          // Ne pas dupliquer : si le programme existe déjà, écraser (pas push)
+          saveProgram(p);
         });
       }
       if(parsed.programs_tracking && typeof dbSet === 'function') {

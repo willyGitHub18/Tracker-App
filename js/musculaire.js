@@ -23,8 +23,8 @@ export function calcGlobalMuscleLoad() {
 
   const activeProgs = getAllActivePrograms();
 
+  // Toujours inclure les programmes générés actifs
   if(activeProgs.length > 0) {
-    // Cumulate load from ALL active programs
     activeProgs.forEach(prog => {
       prog.semaines?.forEach((sem, wi) => {
         sem.jours?.forEach(day => {
@@ -48,8 +48,10 @@ export function calcGlobalMuscleLoad() {
         });
       });
     });
-  } else {
-    // Legacy ATHX
+  }
+
+  // Toujours inclure les données ATHX legacy (pas mutuellement exclusif)
+  {
     EXERCISES.filter(e => ['press','squat','deadlift'].includes(e.id)).forEach(ex => {
       const factors = MUSCLE_MAP[ex.id];
       if(!factors) return;
