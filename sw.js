@@ -6,7 +6,7 @@
  *   pour invalider le cache sur tous les appareils.
  */
 
-const APP_VERSION = '2.8.0';  // ← incrémenter à chaque déploiement
+const APP_VERSION = '2.8.1';  // ← incrémenter à chaque déploiement
 const CACHE_NAME  = `just2train-${APP_VERSION}`;
 const BASE        = self.registration.scope;
 
@@ -56,11 +56,19 @@ self.addEventListener('fetch', event => {
 
   if(request.method !== 'GET' || request.url.startsWith('chrome-extension')) return;
 
-  // Navigation → toujours index.html depuis le cache
+  // Navigation → network-first avec fallback cache (garantit la dernière version)
   if(request.mode === 'navigate') {
     event.respondWith(
-      caches.match(BASE + 'index.html')
-        .then(cached => cached || fetch(request))
+      fetch(BASE + 'index.html', { cache: 'no-store' })
+        .then(response => {
+          if(response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(BASE + 'index.html', clone));
+            return response;
+          }
+          return caches.match(BASE + 'index.html');
+        })
+        .catch(() => caches.match(BASE + 'index.html'))
     );
     return;
   }
