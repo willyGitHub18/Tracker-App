@@ -23,6 +23,8 @@ import { getActiveProgram, getAllActivePrograms, getActiveProgramById,
 let _currentProgId = null;
 
 export function getCurrentProgram() {
+  // Sentinel spécial : forcer explicitement la vue ATHX legacy
+  if(_currentProgId === 'athx-legacy') return null;
   if(_currentProgId) {
     const p = getActiveProgramById(_currentProgId);
     if(p) return p;
@@ -737,19 +739,37 @@ export function saveSaisie(week, day) {
 
 function _progSelectorUI() {
   const all = getAllActivePrograms();
-  if(all.length <= 1) return ''; // no selector needed if only one
+  // Vérifie si des données ATHX legacy existent (au moins un enregistrement)
+  const hasAthxData = ['press','squat','deadlift','gtoh','sandbag','lunges'].some(id => {
+    for(let w = 1; w <= 17; w++) { if(getRecord(id, w)) return true; }
+    return false;
+  });
+
+  // Rien à afficher si un seul programme généré ET pas de données ATHX
+  if(all.length <= 1 && !hasAthxData) return '';
+  // Rien à afficher si un seul programme généré ET pas de données ATHX à proposer
+  if(all.length === 0 && !hasAthxData) return '';
 
   const current = getCurrentProgram();
-  const options = all.map(p =>
+  const isAthxActive = current === null && !hasAthxData ? false : (current === null);
+
+  let options = '';
+  if(hasAthxData) {
+    options += `<option value="athx-legacy" ${isAthxActive ? 'selected' : ''}>🏆 ATHX — Compétition (legacy)</option>`;
+  }
+  options += all.map(p =>
     `<option value="${p.id}" ${p.id === current?.id ? 'selected' : ''}>${esc(p.name)}</option>`
   ).join('');
+
+  const total = all.length + (hasAthxData ? 1 : 0);
+  if(total <= 1) return '';
 
   return `<div class="prog-selector-bar">
     <label class="prog-selector-label">Programme actif</label>
     <select class="prog-selector-select" onchange="window._switchProgram(this.value)">
       ${options}
     </select>
-    <span class="prog-selector-hint">${all.length} programme${all.length > 1 ? 's' : ''} en cours</span>
+    <span class="prog-selector-hint">${total} programme${total > 1 ? 's' : ''} en cours</span>
   </div>`;
 }
 

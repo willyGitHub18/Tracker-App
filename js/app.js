@@ -313,10 +313,10 @@ window._switchProgram = function(id) {
 
 window.activateProgram = function(id) {
   addActiveProgram(id);
-  setCurrentProgram(id);
-  _showSaveToast('✓ Programme activé');
+  // Ne pas basculer automatiquement la vue tracker — l'utilisateur choisit
+  // explicitement via le sélecteur "Programme actif" si plusieurs programmes existent.
+  _showSaveToast('✓ Programme activé — utilise le sélecteur pour basculer la vue Tracker');
   renderPrograms();
-  initWeekSel();
 };
 
 window.setPrimaryProg = function(id) {

@@ -3298,6 +3298,8 @@ function _calcBaseline(ex, upToWeek) {
 let _currentProgId = null;
 
 function getCurrentProgram() {
+  // Sentinel spécial : forcer explicitement la vue ATHX legacy
+  if(_currentProgId === 'athx-legacy') return null;
   if(_currentProgId) {
     const p = getActiveProgramById(_currentProgId);
     if(p) return p;
@@ -4012,19 +4014,37 @@ function saveSaisie(week, day) {
 
 function _progSelectorUI() {
   const all = getAllActivePrograms();
-  if(all.length <= 1) return ''; // no selector needed if only one
+  // Vérifie si des données ATHX legacy existent (au moins un enregistrement)
+  const hasAthxData = ['press','squat','deadlift','gtoh','sandbag','lunges'].some(id => {
+    for(let w = 1; w <= 17; w++) { if(getRecord(id, w)) return true; }
+    return false;
+  });
+
+  // Rien à afficher si un seul programme généré ET pas de données ATHX
+  if(all.length <= 1 && !hasAthxData) return '';
+  // Rien à afficher si un seul programme généré ET pas de données ATHX à proposer
+  if(all.length === 0 && !hasAthxData) return '';
 
   const current = getCurrentProgram();
-  const options = all.map(p =>
+  const isAthxActive = current === null && !hasAthxData ? false : (current === null);
+
+  let options = '';
+  if(hasAthxData) {
+    options += `<option value="athx-legacy" ${isAthxActive ? 'selected' : ''}>🏆 ATHX — Compétition (legacy)</option>`;
+  }
+  options += all.map(p =>
     `<option value="${p.id}" ${p.id === current?.id ? 'selected' : ''}>${esc(p.name)}</option>`
   ).join('');
+
+  const total = all.length + (hasAthxData ? 1 : 0);
+  if(total <= 1) return '';
 
   return `<div class="prog-selector-bar">
     <label class="prog-selector-label">Programme actif</label>
     <select class="prog-selector-select" onchange="window._switchProgram(this.value)">
       ${options}
     </select>
-    <span class="prog-selector-hint">${all.length} programme${all.length > 1 ? 's' : ''} en cours</span>
+    <span class="prog-selector-hint">${total} programme${total > 1 ? 's' : ''} en cours</span>
   </div>`;
 }
 
@@ -7305,10 +7325,10 @@ window._switchProgram = function(id) {
 
 window.activateProgram = function(id) {
   addActiveProgram(id);
-  setCurrentProgram(id);
-  _showSaveToast('✓ Programme activé');
+  // Ne pas basculer automatiquement la vue tracker — l'utilisateur choisit
+  // explicitement via le sélecteur "Programme actif" si plusieurs programmes existent.
+  _showSaveToast('✓ Programme activé — utilise le sélecteur pour basculer la vue Tracker');
   renderPrograms();
-  initWeekSel();
 };
 
 window.setPrimaryProg = function(id) {
