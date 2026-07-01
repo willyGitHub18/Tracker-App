@@ -3297,6 +3297,13 @@ function _calcBaseline(ex, upToWeek) {
 // Currently displayed program (may differ from primary active)
 let _currentProgId = null;
 
+function _hasAthxData() {
+  return ['press','squat','deadlift','gtoh','sandbag','lunges'].some(id => {
+    for(let w = 1; w <= 17; w++) { if(getRecord(id, w)) return true; }
+    return false;
+  });
+}
+
 function getCurrentProgram() {
   // Sentinel spécial : forcer explicitement la vue ATHX legacy
   if(_currentProgId === 'athx-legacy') return null;
@@ -3304,6 +3311,10 @@ function getCurrentProgram() {
     const p = getActiveProgramById(_currentProgId);
     if(p) return p;
   }
+  // Si aucun choix explicite ET des données ATHX existent → rester sur ATHX
+  // par défaut, plutôt que de basculer silencieusement sur le premier programme
+  // généré actif (comportement inattendu quand l'utilisateur n'a rien choisi).
+  if(_currentProgId === null && _hasAthxData()) return null;
   return getActiveProgram();
 }
 
@@ -4014,11 +4025,7 @@ function saveSaisie(week, day) {
 
 function _progSelectorUI() {
   const all = getAllActivePrograms();
-  // Vérifie si des données ATHX legacy existent (au moins un enregistrement)
-  const hasAthxData = ['press','squat','deadlift','gtoh','sandbag','lunges'].some(id => {
-    for(let w = 1; w <= 17; w++) { if(getRecord(id, w)) return true; }
-    return false;
-  });
+  const hasAthxData = _hasAthxData();
 
   // Rien à afficher si un seul programme généré ET pas de données ATHX
   if(all.length <= 1 && !hasAthxData) return '';
