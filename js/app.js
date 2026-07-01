@@ -913,6 +913,7 @@ function _renderProgramsList(showArchived = false) {
             ${isActive && activeIds.size > 1 ? `<button class="prog-action-btn" onclick="event.stopPropagation();setPrimaryProg('${p.id}')">⭐</button>` : ''}
             <button class="prog-action-btn" onclick="event.stopPropagation();closeProg('${p.id}','completed')">✓ Terminer</button>
             <button class="prog-action-btn" onclick="event.stopPropagation();archiveProg('${p.id}')">📦 Archiver</button>
+            <button class="prog-action-btn danger" onclick="event.stopPropagation();deleteProg('${p.id}')" style="margin-left:auto">🗑</button>
           ` : `
             <button class="prog-action-btn" onclick="event.stopPropagation();desarchiveProg('${p.id}')">↩ Réactiver</button>
             <button class="prog-action-btn primary" onclick="event.stopPropagation();exportProgJSON('${p.id}')">⬇ JSON</button>

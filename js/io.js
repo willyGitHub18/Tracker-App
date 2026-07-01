@@ -81,10 +81,17 @@ export function importJSON(event) {
       // Restore generated programs if present
       if(Array.isArray(parsed.programs) && parsed.programs.length > 0) {
         const existing = typeof getPrograms === 'function' ? getPrograms() : [];
-        const existingIds = new Set(existing.map(p => p.id));
+        // Déduplication par nom + date de création (les IDs wizard sont timestampés → diffèrent à chaque génération)
+        const existingKeys = new Set(existing.map(p => `${p.name}|${p.created||''}`));
         parsed.programs.forEach(p => {
           if(!p?.id || typeof saveProgram !== 'function') return;
-          // Ne pas dupliquer : si le programme existe déjà, écraser (pas push)
+          const key = `${p.name}|${p.created||''}`;
+          // Si un programme avec le même nom ET la même date existe déjà → skip
+          if(existingKeys.has(key)) {
+            console.log('[import] programme dupliqué ignoré:', p.name, p.created);
+            return;
+          }
+          existingKeys.add(key);
           saveProgram(p);
         });
       }
