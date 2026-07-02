@@ -6843,22 +6843,47 @@ function step6() {
 }
 
 
-// Détermine si le programme nécessite des 1RM (uniquement force/hyrox avec barre)
+// Détermine si le programme nécessite des 1RM
 function _needsORM() {
   const forceDomains = ['force', 'hyrox'];
   if(!forceDomains.includes(_config.domaine)) return false;
-  // Barre nécessaire pour les exercices avec 1RM
-  return _config.materiel.includes('barre');
+  return _ormExercises().length > 0;
 }
 
-// Retourne la liste des exercices nécessitant un 1RM selon le domaine et les exercices forcés
+// Retourne la liste des exercices nécessitant un 1RM :
+// basé sur les exercices réels du programme (domaine + matériel + exercices forcés)
 function _ormExercises() {
-  const BARBELL_LIFTS = [
-    { id:'press',    label:'Strict Press',  domains:['force','hyrox'] },
-    { id:'squat',    label:'Back Squat',    domains:['force','hyrox'] },
-    { id:'deadlift', label:'Deadlift',      domains:['force','hyrox'] },
-  ];
-  return BARBELL_LIFTS.filter(ex => ex.domains.includes(_config.domaine));
+  const dom = _config.domaine;
+  const seen = new Set();
+  const result = [];
+
+  // 1. Exercices forcés par l'utilisateur en step 7 — toujours en priorité
+  _config.exercicesForces.forEach(ex => {
+    // Chercher dans FALLBACK si c'est un exercice à barre (equipment inclut 1)
+    const ref = FALLBACK_EXERCISES.find(f => f.id === ex.id);
+    if(ref && ref.equipment?.includes(1) && !seen.has(ex.id)) {
+      result.push({ id: ex.id, label: ex.name });
+      seen.add(ex.id);
+    }
+  });
+
+  // 2. Exercices "compound" à barre du domaine sélectionné (les principaux lifts)
+  const COMPOUND_BARBELL = ['squat','deadlift','press','bench','squat_fs','ohp','rdl','row_barre','thruster'];
+  FALLBACK_EXERCISES
+    .filter(ex =>
+      COMPOUND_BARBELL.includes(ex.id) &&
+      ex.domains?.includes(dom) &&
+      ex.equipment?.includes(1) &&
+      _config.materiel.includes('barre') &&
+      !_config.exercicesExclus.some(e => e.id === ex.id) &&
+      !seen.has(ex.id)
+    )
+    .forEach(ex => {
+      result.push({ id: ex.id, label: ex.name });
+      seen.add(ex.id);
+    });
+
+  return result;
 }
 
 // ── Step 7 — Récapitulatif + 1RM ─────────────────────────────────────────────
