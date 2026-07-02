@@ -504,6 +504,13 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
 .prog-ex-detail-scheme{display:flex;gap:4px;flex-wrap:wrap}
 .prog-ex-tag{font-size:11px;background:var(--surface3);color:var(--text2);padding:2px 6px;border-radius:4px}
 
+/* Bloc sub-navigation (within day tabs) */
+.prog-bloc-nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;padding:4px 0}
+.prog-bloc-btn{font-size:12px;padding:4px 10px;border:1px solid var(--border);border-radius:16px;background:var(--surface2);color:var(--text2);cursor:pointer}
+.prog-bloc-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);font-weight:600}
+.prog-bloc-content{display:none}
+.prog-bloc-content.active{display:block}
+
 /* ══════════════════════════════════════════════
    WIZARD & PROGRAMMES
    ══════════════════════════════════════════════ */
@@ -7870,38 +7877,67 @@ function _renderProgDetailView(prog, container) {
   pillsHtml += `<button onclick="_showGenTab(this,'gphases')">📊 Phases</button>`;
   if(nutritionPlan) pillsHtml += `<button onclick="_showGenTab(this,'gnutri')">🍽 Nutrition</button>`;
 
-  // Build per-day content (all weeks for each day)
+  // Identifier les blocs (phases groupées) pour la sous-navigation
+  const blocs = [];
+  let currentBloc = null;
+  prog.semaines.forEach(sem => {
+    const blocKey = sem.isDeload ? `deload-${sem.num}` : (sem.isTaper ? 'taper' : sem.phase);
+    if(!currentBloc || currentBloc.key !== blocKey) {
+      currentBloc = { key: blocKey, label: sem.isDeload ? `S${sem.num} Deload` : (sem.isTaper ? `S${sem.num} Taper` : sem.phase), start: sem.num, end: sem.num, weeks: [sem], isDeload: sem.isDeload, isTaper: sem.isTaper, phase: sem.phase };
+      blocs.push(currentBloc);
+    } else {
+      currentBloc.end = sem.num;
+      currentBloc.weeks.push(sem);
+    }
+  });
+
+  // Build per-day content with bloc sub-navigation
   let daysContentHtml = '';
   dayNames.forEach((day, di) => {
-    let weekRows = '';
-    prog.semaines.forEach(sem => {
-      const jourData = sem.jours?.[di];
-      if(!jourData) return;
+    // Sous-pills par bloc
+    let subPills = blocs.map((bloc, bi) => {
+      const label = bloc.isDeload ? bloc.label
+        : bloc.isTaper ? bloc.label
+        : bloc.start === bloc.end ? `${bloc.label} (S${bloc.start})`
+        : `${bloc.label} (S${bloc.start}–${bloc.end})`;
+      return `<button class="prog-bloc-btn ${bi===0?'active':''}" onclick="_showGenBloc(${di},${bi},this)">${esc(label)}</button>`;
+    }).join('');
 
-      const bg = sem.isDeload ? '#e8e6e0' : (phaseColors[sem.phase] || '#f0f0ee');
-      const col = sem.isDeload ? '#444441' : (phaseTextColors[sem.phase] || '#444');
-      const phaseLabel = sem.isDeload ? 'Deload' : sem.isTaper ? 'Taper' : sem.phase;
+    // Contenu par bloc
+    let blocsHtml = blocs.map((bloc, bi) => {
+      let weekRows = bloc.weeks.map(sem => {
+        const jourData = sem.jours?.[di];
+        if(!jourData) return '';
 
-      const exRows = (jourData.exercices || []).map(ex => `
-        <div class="prog-ex-detail-item">
-          <div class="prog-ex-detail-name">${esc(ex.nom||ex.id)}</div>
-          <div class="prog-ex-detail-scheme">
-            <span class="prog-ex-tag">${ex.scheme || (ex.series+'×'+ex.reps)}</span>
-            ${ex.kgPlan ? `<span class="prog-ex-tag">${ex.kgPlan} kg</span>` : ex.pct1rm ? `<span class="prog-ex-tag">${ex.pct1rm}%</span>` : ''}
-          </div>
-        </div>`).join('');
+        const bg = sem.isDeload ? '#e8e6e0' : (phaseColors[sem.phase] || '#f0f0ee');
+        const col = sem.isDeload ? '#444441' : (phaseTextColors[sem.phase] || '#444');
 
-      weekRows += `
-        <div class="prog-week-row" style="border-left:3px solid ${col}">
-          <div class="prog-week-header">
-            <span class="prog-phase-badge-sm" style="background:${bg};color:${col}">S${sem.num}</span>
-            <span style="font-size:11px;color:var(--text3)">${esc(phaseLabel)} · ${Math.round(sem.intensite*100)}% · RPE ${sem.rpeTarget||'—'}</span>
-          </div>
-          <div class="prog-ex-detail-list">${exRows}</div>
-        </div>`;
-    });
+        const exRows = (jourData.exercices || []).map(ex => `
+          <div class="prog-ex-detail-item">
+            <div class="prog-ex-detail-name">${esc(ex.nom||ex.id)}</div>
+            <div class="prog-ex-detail-scheme">
+              <span class="prog-ex-tag">${ex.scheme || (ex.series+'×'+ex.reps)}</span>
+              ${ex.kgPlan ? `<span class="prog-ex-tag">${ex.kgPlan} kg</span>` : ex.pct1rm ? `<span class="prog-ex-tag">${ex.pct1rm}%</span>` : ''}
+            </div>
+          </div>`).join('');
 
-    daysContentHtml += `<div id="gday-${di}" class="prog-tab ${di===0?'active':''}">${weekRows}</div>`;
+        return `
+          <div class="prog-week-row" style="border-left:3px solid ${col}">
+            <div class="prog-week-header">
+              <span class="prog-phase-badge-sm" style="background:${bg};color:${col}">S${sem.num}</span>
+              <span style="font-size:11px;color:var(--text3)">${Math.round(sem.intensite*100)}% · RPE ${sem.rpeTarget||'—'}</span>
+            </div>
+            <div class="prog-ex-detail-list">${exRows}</div>
+          </div>`;
+      }).join('');
+
+      return `<div class="prog-bloc-content ${bi===0?'active':''}" data-day="${di}" data-bloc="${bi}">${weekRows}</div>`;
+    }).join('');
+
+    daysContentHtml += `<div id="gday-${di}" class="prog-tab ${di===0?'active':''}">
+      <div class="prog-bloc-nav">${subPills}</div>
+      ${blocsHtml}
+    </div>`;
   });
 
   // Phase overview tab
@@ -7959,6 +7995,16 @@ function _renderProgDetailView(prog, container) {
     </div>
     <div class="prog-top-nav">${pillsHtml}</div>
     ${daysContentHtml}`;
+
+  // Bloc sub-navigation within a day tab
+  window._showGenBloc = function(dayIdx, blocIdx, btn) {
+    const dayTab = container.querySelector('#gday-' + dayIdx);
+    if(!dayTab) return;
+    dayTab.querySelectorAll('.prog-bloc-btn').forEach(b => b.classList.remove('active'));
+    dayTab.querySelectorAll('.prog-bloc-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    dayTab.querySelector(`.prog-bloc-content[data-day="${dayIdx}"][data-bloc="${blocIdx}"]`)?.classList.add('active');
+  };
 
   // Tab switching (same pattern as ATHX)
   window._showGenTab = function(btn, tabId) {
@@ -8026,7 +8072,7 @@ function _renderProgramsList(showArchived = false) {
 
   el.innerHTML = tabHtml + `<div class="programs-grid">
     ${show.map(p => {
-      const isActive = p.id === activeId;
+      const isActive = activeIds.has(p.id);
       const dom    = DOMAINES_LABELS[p.config?.domaine] || p.config?.domaine || '—';
       const niv    = NIVEAUX_LABELS[p.config?.niveau] || '—';
       const weeks  = p.totalWeeks || '?';

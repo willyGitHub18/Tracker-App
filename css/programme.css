@@ -115,3 +115,10 @@
 .prog-ex-detail-name{font-size:13px;font-weight:500;color:var(--text)}
 .prog-ex-detail-scheme{display:flex;gap:4px;flex-wrap:wrap}
 .prog-ex-tag{font-size:11px;background:var(--surface3);color:var(--text2);padding:2px 6px;border-radius:4px}
+
+/* Bloc sub-navigation (within day tabs) */
+.prog-bloc-nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;padding:4px 0}
+.prog-bloc-btn{font-size:12px;padding:4px 10px;border:1px solid var(--border);border-radius:16px;background:var(--surface2);color:var(--text2);cursor:pointer}
+.prog-bloc-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);font-weight:600}
+.prog-bloc-content{display:none}
+.prog-bloc-content.active{display:block}
