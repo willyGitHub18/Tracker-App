@@ -301,35 +301,89 @@ function _buildPhases(template, totalWeeks, competition) {
   return phases;
 }
 
+// A4: Exercices prioritaires (compound) par type de split
+const SPLIT_COMPOUNDS = {
+  push:  ['bench','press','ohp','dips'],
+  pull:  ['deadlift','row_barre','pullup','rdl'],
+  legs:  ['squat','squat_fs','lunges','leg_press'],
+  upper: ['bench','press','row_barre','pullup'],
+  lower: ['squat','deadlift','squat_fs','rdl'],
+  full:  ['squat','bench','deadlift','press'],
+  metcon:['thruster','burpee','box_jump','wall_ball'],
+  force_inf: ['squat','squat_fs','deadlift','lunges'],
+  force_sup: ['bench','press','ohp','row_barre'],
+};
+
+// Muscles associés à chaque type de split (pour filtrer les accessoires)
+const SPLIT_MUSCLES = {
+  push:  ['pec','deltAnt','triceps','epaule'],
+  pull:  ['dorsaux','biceps','trapeze','rhomboide'],
+  legs:  ['quad','ischio','fessiers','mollets','adducteur'],
+  upper: ['pec','deltAnt','triceps','dorsaux','biceps','trapeze','epaule'],
+  lower: ['quad','ischio','fessiers','mollets','adducteur'],
+  full:  null, // pas de filtre
+};
+
+// Contexte partagé entre les jours pour éviter les doublons
+let _usedExerciseIds = new Set();
+
+function _resetDaySelection() { _usedExerciseIds = new Set(); }
+
 function _selectExercisesForDay(pool, forced, splitName, domaine, count, dayIndex) {
-  const split  = splitName.toLowerCase();
-  let filtered = [...pool];
+  if(dayIndex === 0) _resetDaySelection();
 
-  // Filter by muscle group based on split name
-  if(split.includes('push') || split.includes('sup') || split.includes('chest')) {
-    filtered = pool.filter(e => e.muscles?.some(m => ['pec','deltAnt','triceps'].includes(m)));
-  } else if(split.includes('pull') || split.includes('back')) {
-    filtered = pool.filter(e => e.muscles?.some(m => ['dorsaux','biceps','trapeze'].includes(m)));
-  } else if(split.includes('legs') || split.includes('inf') || split.includes('leg')) {
-    filtered = pool.filter(e => e.muscles?.some(m => ['quad','ischio','fessiers','mollets'].includes(m)));
-  } else if(split.includes('metcon') || split.includes('cardio') || split.includes('simulation')) {
-    filtered = pool.filter(e => e.domains?.includes('hyrox') || e.domains?.includes('cardio'));
-  }
+  const split = splitName.toLowerCase();
+  const result = [];
 
+  // 1. Identifier le type de split
+  let splitKey = 'full';
+  if(split.includes('push') || split.includes('chest'))          splitKey = 'push';
+  else if(split.includes('pull') || split.includes('back') || split.includes('bi')) splitKey = 'pull';
+  else if(split.includes('legs') || split.includes('leg') || split.includes('jambe')) splitKey = 'legs';
+  else if(split.includes('inf'))                                  splitKey = split.includes('force') ? 'force_inf' : 'lower';
+  else if(split.includes('sup'))                                  splitKey = split.includes('force') ? 'force_sup' : 'upper';
+  else if(split.includes('upper'))                                splitKey = 'upper';
+  else if(split.includes('lower'))                                splitKey = 'lower';
+  else if(split.includes('metcon') || split.includes('cardio') || split.includes('simulation')) splitKey = 'metcon';
+
+  // 2. Filtrer les exercices par muscles du split (ou tous pour full/metcon)
+  const muscleFilter = SPLIT_MUSCLES[splitKey];
+  let filtered = muscleFilter
+    ? pool.filter(e => e.muscles?.some(m => muscleFilter.includes(m)))
+    : pool;
   if(filtered.length < 2) filtered = pool;
 
-  // Prioritise forced exercises for day 0
-  const result = [];
-  if(dayIndex === 0) {
-    forced.slice(0, 2).forEach(ex => {
-      if(!result.find(e => e.id === ex.id)) result.push(ex);
-    });
-  }
+  // 3. Insérer les exercices forcés qui correspondent à ce split
+  forced.forEach(ex => {
+    if(_usedExerciseIds.has(ex.id)) return;
+    const matchesSplit = !muscleFilter || ex.muscles?.some(m => muscleFilter.includes(m));
+    if(matchesSplit && result.length < count) {
+      result.push(ex);
+      _usedExerciseIds.add(ex.id);
+    }
+  });
 
-  // Fill remaining slots
-  const used = new Set(result.map(e => e.id));
-  const shuffled = _shuffle(filtered.filter(e => !used.has(e.id)));
-  shuffled.slice(0, count - result.length).forEach(ex => result.push(ex));
+  // 4. Compounds prioritaires — cherchés dans le POOL COMPLET (pas le filtre musculaire)
+  const compounds = SPLIT_COMPOUNDS[splitKey] || [];
+  compounds.forEach(cId => {
+    if(result.length >= count) return;
+    if(_usedExerciseIds.has(cId)) return;
+    const ex = pool.find(e => e.id === cId);
+    if(ex) {
+      result.push(ex);
+      _usedExerciseIds.add(cId);
+    }
+  });
+
+  // 5. Accessoires : remplir les slots restants depuis le filtre musculaire
+  const remaining = filtered
+    .filter(e => !_usedExerciseIds.has(e.id))
+    .sort((a,b) => (a.id > b.id ? 1 : -1));
+
+  remaining.slice(0, count - result.length).forEach(ex => {
+    result.push(ex);
+    _usedExerciseIds.add(ex.id);
+  });
 
   return result.slice(0, count);
 }

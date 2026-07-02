@@ -363,7 +363,8 @@ function _saveProgSaisie(prog, week, dayName) {
   if(!day) return;
 
   day.exercices.forEach(ex => {
-    const nSets = Math.max(_parseSetsGeneric(ex.scheme), 3);
+    // Lire autant de séries que la grille en affiche (cohérence render ↔ save)
+    const nSets = Math.max(_parseSetsGeneric(ex.scheme), 4);
     const sets  = [];
     let anyData = false;
 
