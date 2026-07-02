@@ -573,7 +573,7 @@ function _renderProgDetailView(prog, container) {
   pillsHtml += `<button onclick="_showGenTab(this,'gphases')">📊 Phases</button>`;
   if(nutritionPlan) pillsHtml += `<button onclick="_showGenTab(this,'gnutri')">🍽 Nutrition</button>`;
 
-  // Identifier les blocs (phases groupées) pour la sous-navigation
+  // Identifier les blocs (phases groupées)
   const blocs = [];
   let currentBloc = null;
   prog.semaines.forEach(sem => {
@@ -587,52 +587,147 @@ function _renderProgDetailView(prog, container) {
     }
   });
 
-  // Build per-day content with bloc sub-navigation
+  // Objectifs par phase
+  const PHASE_OBJECTIVES = {
+    'Base aérobie':  'Volume et technique — progression linéaire des charges',
+    'Construction':  'Intensité croissante — charges modérées à lourdes',
+    'Intensité':     'Travail lourd — séries courtes, récup longue',
+    'Pic intensité': 'Peak force — charges lourdes, séries courtes',
+    'Pic':           'Peak performance — intensité maximale',
+    'Taper':         'Affûtage — volume minimal, maintien des acquis',
+  };
+
+  // Phase bar colors
+  const PHASE_BAR = {
+    'Base aérobie':  { bg:'#E6F1FB', col:'#185FA5' },
+    'Construction':  { bg:'#FAEEDA', col:'#854F0B' },
+    'Intensité':     { bg:'#FDEAEA', col:'#9c2222' },
+    'Pic intensité': { bg:'#E1F5EE', col:'#0F6E56' },
+    'Pic':           { bg:'#E1F5EE', col:'#0F6E56' },
+    'Taper':         { bg:'#F1EFE8', col:'#444441' },
+  };
+
+  // Compound IDs for role detection
+  const COMPOUND_IDS = new Set(['squat','deadlift','press','bench','squat_fs','ohp','rdl','row_barre','thruster']);
+
+  // Helper: estimate session duration (sets × (time_per_set + rest))
+  function _estimateMinutes(exercises) {
+    let total = 0;
+    exercises.forEach(ex => {
+      const sets = ex.series || 4;
+      const reps = ex.reps || 6;
+      const secPerSet = Math.max(20, reps * 3); // ~3 sec per rep
+      const rest = ex.pct1rm >= 85 ? 210 : ex.pct1rm >= 75 ? 150 : 90; // 3.5/2.5/1.5 min
+      total += sets * (secPerSet + rest);
+    });
+    return Math.round(total / 60);
+  }
+
+  // Helper: build weekly weight progression text for an exercise across bloc weeks
+  function _weekProgression(blocWeeks, dayIdx, exId) {
+    return blocWeeks.map(sem => {
+      const ex = sem.jours?.[dayIdx]?.exercices?.find(e => e.id === exId);
+      return ex?.kgPlan ? `S${sem.num}:${ex.kgPlan}kg` : null;
+    }).filter(Boolean).join(', ');
+  }
+
+  // Build per-day content with ATHX-style design
   let daysContentHtml = '';
   dayNames.forEach((day, di) => {
-    // Sous-pills par bloc
+    const refDay = refWeek.jours[di];
+    const split = refDay?.split || '';
+    const exNames = refDay?.exercices?.slice(0,2).map(e => e.nom || e.id).join(' + ') || '';
+    const estMin = _estimateMinutes(refDay?.exercices || []);
+
+    // Sous-pills par bloc (format ATHX: Bloc X (S1-5), S6 Deload)
+    let blocNum = 0;
     let subPills = blocs.map((bloc, bi) => {
-      const label = bloc.isDeload ? bloc.label
-        : bloc.isTaper ? bloc.label
-        : bloc.start === bloc.end ? `${bloc.label} (S${bloc.start})`
-        : `${bloc.label} (S${bloc.start}–${bloc.end})`;
-      return `<button class="prog-bloc-btn ${bi===0?'active':''}" onclick="_showGenBloc(${di},${bi},this)">${esc(label)}</button>`;
+      let label;
+      if(bloc.isDeload) {
+        label = `S${bloc.start} Deload`;
+      } else if(bloc.isTaper) {
+        label = `S${bloc.start} Taper`;
+      } else {
+        blocNum++;
+        label = bloc.start === bloc.end ? `Bloc ${blocNum} (S${bloc.start})` : `Bloc ${blocNum} (S${bloc.start}–${bloc.end})`;
+      }
+      return `<button class="${bi===0?'active':''}" onclick="_showGenBloc(${di},${bi},this)">${esc(label)}</button>`;
     }).join('');
 
     // Contenu par bloc
+    blocNum = 0;
     let blocsHtml = blocs.map((bloc, bi) => {
-      let weekRows = bloc.weeks.map(sem => {
-        const jourData = sem.jours?.[di];
-        if(!jourData) return '';
+      if(!bloc.isDeload && !bloc.isTaper) blocNum++;
 
-        const bg = sem.isDeload ? '#e8e6e0' : (phaseColors[sem.phase] || '#f0f0ee');
-        const col = sem.isDeload ? '#444441' : (phaseTextColors[sem.phase] || '#444');
+      // Phase bar
+      const barStyle = bloc.isDeload ? { bg:'#F1EFE8', col:'#444441' }
+        : bloc.isTaper ? { bg:'#F1EFE8', col:'#444441' }
+        : (PHASE_BAR[bloc.phase] || { bg:'#E6F1FB', col:'#185FA5' });
+      const phaseLabel = bloc.isDeload ? `Semaine ${bloc.start} — Deload`
+        : bloc.isTaper ? `Semaine ${bloc.start} — Taper`
+        : `Bloc ${blocNum} — ${PHASE_OBJECTIVES[bloc.phase] || bloc.phase}`;
+      let html = `<span class="p-phase-bar" style="background:${barStyle.bg};color:${barStyle.col}">${esc(phaseLabel)}</span>`;
 
-        const exRows = (jourData.exercices || []).map(ex => `
-          <div class="prog-ex-detail-item">
-            <div class="prog-ex-detail-name">${esc(ex.nom||ex.id)}</div>
-            <div class="prog-ex-detail-scheme">
-              <span class="prog-ex-tag">${ex.scheme || (ex.series+'×'+ex.reps)}</span>
-              ${ex.kgPlan ? `<span class="prog-ex-tag">${ex.kgPlan} kg</span>` : ex.pct1rm ? `<span class="prog-ex-tag">${ex.pct1rm}%</span>` : ''}
-            </div>
-          </div>`).join('');
+      if(bloc.isDeload || bloc.isTaper) {
+        // Deload/Taper: simple card
+        const sem = bloc.weeks[0];
+        const exList = (sem.jours?.[di]?.exercices || []).map(ex =>
+          `${ex.scheme} ${ex.nom} @ ${ex.kgPlan ? ex.kgPlan+'kg' : ex.pct1rm+'%'}`
+        ).join('. ');
+        html += `<div class="p-card"><div class="p-card-body">${esc(exList)}. Durée estimée : ~${Math.max(15, Math.round(estMin*0.6))} min.</div></div>`;
+      } else {
+        // Training bloc: rich exercise cards grouped by compound
+        const firstWeek = bloc.weeks[0];
+        const dayExercises = firstWeek.jours?.[di]?.exercices || [];
+        let currentCard = [];
+        let cards = [];
 
-        return `
-          <div class="prog-week-row" style="border-left:3px solid ${col}">
-            <div class="prog-week-header">
-              <span class="prog-phase-badge-sm" style="background:${bg};color:${col}">S${sem.num}</span>
-              <span style="font-size:11px;color:var(--text3)">${Math.round(sem.intensite*100)}% · RPE ${sem.rpeTarget||'—'}</span>
-            </div>
-            <div class="prog-ex-detail-list">${exRows}</div>
-          </div>`;
-      }).join('');
+        dayExercises.forEach((ex, ei) => {
+          const isCompound = COMPOUND_IDS.has(ex.id);
+          if(isCompound && currentCard.length > 0) {
+            cards.push(currentCard);
+            currentCard = [];
+          }
+          currentCard.push({ ...ex, idx: ei });
+        });
+        if(currentCard.length) cards.push(currentCard);
 
-      return `<div class="prog-bloc-content ${bi===0?'active':''}" data-day="${di}" data-bloc="${bi}">${weekRows}</div>`;
+        cards.forEach(group => {
+          const mainEx = group[0];
+          const prog_ = _weekProgression(bloc.weeks, di, mainEx.id);
+          html += `<div class="p-card">`;
+          html += `<div class="p-card-title">${esc(mainEx.nom)} — ${mainEx.scheme} @ ${mainEx.pct1rm}–${bloc.weeks.length > 1 ? bloc.weeks[bloc.weeks.length-1].jours?.[di]?.exercices?.find(e=>e.id===mainEx.id)?.pct1rm||mainEx.pct1rm : mainEx.pct1rm}%</div>`;
+          if(prog_) html += `<div class="p-card-body" style="margin-bottom:6px">${prog_}</div>`;
+
+          group.forEach((ex, gi) => {
+            const role = COMPOUND_IDS.has(ex.id) ? 'Primaire' : (ex.muscles?.some(m => m === 'core') ? 'Core' : 'Accessoire');
+            const roleClass = role === 'Primaire' ? 'p-tag-f' : (role === 'Core' ? 'p-tag-r' : 'p-tag-f');
+            const rest = ex.pct1rm >= 85 ? 'Récup 3–4 min.' : ex.pct1rm >= 75 ? 'Récup 2–3 min.' : 'Récup 1–2 min.';
+            html += `<div class="p-ex-row">
+              <div class="p-ex-num">${ex.idx + 1}</div>
+              <div class="p-ex-name">${esc(ex.nom)}</div>
+              <div class="p-ex-detail">${ex.scheme} @ ${ex.kgPlan ? ex.kgPlan+'kg' : ex.pct1rm+'%'}. ${rest}</div>
+              <div class="p-ex-tag ${roleClass}">${role}</div>
+            </div>`;
+          });
+          html += `</div>`;
+        });
+
+        // Time footer
+        const blocMin = _estimateMinutes(dayExercises);
+        html += `<div class="p-note">${dayExercises.map(e => `${e.nom} ${e.scheme}`).join(', ')} = ~${blocMin} min. Accessoires en super-set si besoin.</div>`;
+      }
+
+      return `<div class="prog-bloc-content ${bi===0?'active':''}" data-day="${di}" data-bloc="${bi}">${html}</div>`;
     }).join('');
 
     daysContentHtml += `<div id="gday-${di}" class="prog-tab ${di===0?'active':''}">
-      <div class="prog-bloc-nav">${subPills}</div>
-      ${blocsHtml}
+      <div class="p-section">
+        <div class="p-sec-title">${esc(day)} — ${esc(split)} (${esc(exNames)})</div>
+        <span class="p-time-badge">~${estMin} min total · Échauffement + séance + retour calme</span>
+        <div class="p-week-sel">${subPills}</div>
+        ${blocsHtml}
+      </div>
     </div>`;
   });
 
