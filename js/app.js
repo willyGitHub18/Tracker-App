@@ -12,7 +12,8 @@ import { getPrograms, getActivePrograms, getArchivedPrograms, getProgram, getPro
          getActiveProgram, getAllActivePrograms, getActiveProgramId,
          setActiveProgram, addActiveProgram, removeActiveProgram, setPrimaryProgram,
          deleteProgram, archiveProgram, closeProgram, newProgramId, saveProgram,
-         exportProgramJSON, exportProgramMD, exportAllPrograms, importAllPrograms } from './programs.js';
+         exportProgramJSON, exportProgramMD, exportAllPrograms, importAllPrograms,
+         getCurrentWeek, setStartDate } from './programs.js';
 import { buildAthxProgram, NUTRITION_PLANS } from './data.js';
 import { getVacances, setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
 
@@ -312,12 +313,50 @@ window._switchProgram = function(id) {
 };
 
 window.activateProgram = function(id) {
-  addActiveProgram(id);
-  // Ne pas basculer automatiquement la vue tracker — l'utilisateur choisit
-  // explicitement via le sélecteur "Programme actif" si plusieurs programmes existent.
-  _showSaveToast('✓ Programme activé — utilise le sélecteur pour basculer la vue Tracker');
-  renderPrograms();
+  const prog = getProgram(id);
+  if(prog && !prog.startDate) {
+    // Proposer la date de démarrage
+    _promptStartDate(id, () => {
+      addActiveProgram(id);
+      _showSaveToast('✓ Programme activé');
+      renderPrograms();
+    });
+  } else {
+    addActiveProgram(id);
+    _showSaveToast('✓ Programme activé');
+    renderPrograms();
+  }
 };
+
+function _promptStartDate(progId, callback) {
+  const today = new Date().toISOString().split('T')[0];
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  const sheet = document.createElement('div');
+  sheet.style.cssText = 'background:var(--surface,#fff);border-radius:16px 16px 0 0;padding:24px 20px;width:100%;max-width:480px';
+
+  sheet.innerHTML = `
+    <p style="font-size:15px;font-weight:600;margin:0 0 8px;color:var(--text)">📅 Date de démarrage</p>
+    <p style="font-size:13px;color:var(--text2);margin:0 0 16px;line-height:1.5">Quand commences-tu ce programme ?<br>La semaine courante sera calculée automatiquement.</p>
+    <input type="date" id="sdInput" value="${today}" style="display:block;width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;font-size:15px;margin-bottom:16px;box-sizing:border-box">
+    <button id="sdConfirm" style="display:block;width:100%;padding:14px;background:var(--text,#1a1a18);color:var(--bg,#fff);border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px">Confirmer</button>
+    <button id="sdToday" style="display:block;width:100%;padding:14px;background:#e8e6e0;color:#333;border:none;border-radius:12px;font-size:15px;cursor:pointer">Aujourd'hui</button>`;
+
+  modal.appendChild(sheet);
+  document.body.appendChild(modal);
+
+  sheet.querySelector('#sdConfirm').onclick = () => {
+    const val = sheet.querySelector('#sdInput').value || today;
+    setStartDate(progId, val);
+    modal.remove();
+    callback();
+  };
+  sheet.querySelector('#sdToday').onclick = () => {
+    setStartDate(progId, today);
+    modal.remove();
+    callback();
+  };
+}
 
 window.setPrimaryProg = function(id) {
   setPrimaryProgram(id);

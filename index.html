@@ -3367,12 +3367,18 @@ function initWeekSel() {
     sel.appendChild(o);
   }
 
-  // Set to latest week with data
+  // Auto-sélection : semaine courante (startDate) ou dernière avec données
   try {
-    const latest = prog
-      ? getProgLatestWeek(prog.id, prog)
-      : getLatestWeek(EXERCISES);
-    sel.value = Math.min(Math.max(latest, 1), total);
+    let targetWeek;
+    if(prog?.startDate) {
+      // Programme avec date de démarrage → semaine calculée dynamiquement
+      targetWeek = getCurrentWeek(prog);
+    } else if(prog) {
+      targetWeek = getProgLatestWeek(prog.id, prog);
+    } else {
+      targetWeek = getLatestWeek(EXERCISES);
+    }
+    sel.value = Math.min(Math.max(targetWeek, 1), total);
   } catch(e) {
     sel.value = 1;
   }
@@ -4079,9 +4085,11 @@ function _progSelectorUI() {
   if(hasAthxData) {
     options += `<option value="athx-legacy" ${isAthxActive ? 'selected' : ''}>🏆 ATHX — Compétition (legacy)</option>`;
   }
-  options += all.map(p =>
-    `<option value="${p.id}" ${p.id === current?.id ? 'selected' : ''}>${esc(p.name)}</option>`
-  ).join('');
+  options += all.map(p => {
+    const cw = p.startDate ? getCurrentWeek(p) : null;
+    const weekLabel = cw ? ` (S${cw}/${p.totalWeeks||'?'})` : '';
+    return `<option value="${p.id}" ${p.id === current?.id ? 'selected' : ''}>${esc(p.name)}${weekLabel}</option>`;
+  }).join('');
 
   const total = all.length + (hasAthxData ? 1 : 0);
   if(total <= 1) return '';
@@ -4091,7 +4099,13 @@ function _progSelectorUI() {
     <select class="prog-selector-select" onchange="window._switchProgram(this.value)">
       ${options}
     </select>
-    <span class="prog-selector-hint">${total} programme${total > 1 ? 's' : ''} en cours</span>
+    <span class="prog-selector-hint">${(() => {
+      if(current?.startDate) {
+        const cw = getCurrentWeek(current);
+        return 'Semaine ' + cw + '/' + (current.totalWeeks||'?');
+      }
+      return total + ' programme' + (total > 1 ? 's' : '') + ' en cours';
+    })()}</span>
   </div>`;
 }
 
@@ -5434,6 +5448,25 @@ function setActiveProgram(idOrNull) {
   if(idOrNull) {
     const list = getActiveProgramIds();
     if(!list.includes(idOrNull)) { list.unshift(idOrNull); dbSet(KEY_ACTIVES, list); }
+  }
+}
+
+// Semaine courante calculée depuis la date de démarrage
+function getCurrentWeek(prog) {
+  if(!prog?.startDate) return 1;
+  const start = new Date(prog.startDate);
+  const now   = new Date();
+  const diff  = Math.floor((now - start) / 604800000) + 1; // 1 semaine = 604800000 ms
+  return Math.max(1, Math.min(diff, prog.totalWeeks || 99));
+}
+
+// Enregistrer la date de démarrage d'un programme
+function setStartDate(id, dateStr) {
+  const list = getPrograms();
+  const prog = list.find(p => p.id === id);
+  if(prog) {
+    prog.startDate = dateStr;
+    dbSet(KEY_LIST, list);
   }
 }
 
@@ -7616,12 +7649,50 @@ window._switchProgram = function(id) {
 };
 
 window.activateProgram = function(id) {
-  addActiveProgram(id);
-  // Ne pas basculer automatiquement la vue tracker — l'utilisateur choisit
-  // explicitement via le sélecteur "Programme actif" si plusieurs programmes existent.
-  _showSaveToast('✓ Programme activé — utilise le sélecteur pour basculer la vue Tracker');
-  renderPrograms();
+  const prog = getProgram(id);
+  if(prog && !prog.startDate) {
+    // Proposer la date de démarrage
+    _promptStartDate(id, () => {
+      addActiveProgram(id);
+      _showSaveToast('✓ Programme activé');
+      renderPrograms();
+    });
+  } else {
+    addActiveProgram(id);
+    _showSaveToast('✓ Programme activé');
+    renderPrograms();
+  }
 };
+
+function _promptStartDate(progId, callback) {
+  const today = new Date().toISOString().split('T')[0];
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  const sheet = document.createElement('div');
+  sheet.style.cssText = 'background:var(--surface,#fff);border-radius:16px 16px 0 0;padding:24px 20px;width:100%;max-width:480px';
+
+  sheet.innerHTML = `
+    <p style="font-size:15px;font-weight:600;margin:0 0 8px;color:var(--text)">📅 Date de démarrage</p>
+    <p style="font-size:13px;color:var(--text2);margin:0 0 16px;line-height:1.5">Quand commences-tu ce programme ?<br>La semaine courante sera calculée automatiquement.</p>
+    <input type="date" id="sdInput" value="${today}" style="display:block;width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;font-size:15px;margin-bottom:16px;box-sizing:border-box">
+    <button id="sdConfirm" style="display:block;width:100%;padding:14px;background:var(--text,#1a1a18);color:var(--bg,#fff);border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px">Confirmer</button>
+    <button id="sdToday" style="display:block;width:100%;padding:14px;background:#e8e6e0;color:#333;border:none;border-radius:12px;font-size:15px;cursor:pointer">Aujourd'hui</button>`;
+
+  modal.appendChild(sheet);
+  document.body.appendChild(modal);
+
+  sheet.querySelector('#sdConfirm').onclick = () => {
+    const val = sheet.querySelector('#sdInput').value || today;
+    setStartDate(progId, val);
+    modal.remove();
+    callback();
+  };
+  sheet.querySelector('#sdToday').onclick = () => {
+    setStartDate(progId, today);
+    modal.remove();
+    callback();
+  };
+}
 
 window.setPrimaryProg = function(id) {
   setPrimaryProgram(id);

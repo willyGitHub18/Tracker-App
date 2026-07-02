@@ -112,6 +112,25 @@ export function setActiveProgram(idOrNull) {
   }
 }
 
+// Semaine courante calculée depuis la date de démarrage
+export function getCurrentWeek(prog) {
+  if(!prog?.startDate) return 1;
+  const start = new Date(prog.startDate);
+  const now   = new Date();
+  const diff  = Math.floor((now - start) / 604800000) + 1; // 1 semaine = 604800000 ms
+  return Math.max(1, Math.min(diff, prog.totalWeeks || 99));
+}
+
+// Enregistrer la date de démarrage d'un programme
+export function setStartDate(id, dateStr) {
+  const list = getPrograms();
+  const prog = list.find(p => p.id === id);
+  if(prog) {
+    prog.startDate = dateStr;
+    dbSet(KEY_LIST, list);
+  }
+}
+
 export function addActiveProgram(id) {
   const list = getActiveProgramIds();
   if(!list.includes(id)) list.push(id);

@@ -15,7 +15,7 @@ import { repaintMuscles }  from './musculaire.js';
 import { renderGrossesseProgram } from './grossesse.js';
 import { getActiveProgram, getAllActivePrograms, getActiveProgramById,
          getProgRecord, setProgRecord,
-         getProgExStatus, setProgExStatus, getProgLatestWeek } from './programs.js';
+         getProgExStatus, setProgExStatus, getProgLatestWeek, getCurrentWeek } from './programs.js';
 
 // ── Week selector ─────────────────────────────────────────────────────────────
 
@@ -76,12 +76,18 @@ export function initWeekSel() {
     sel.appendChild(o);
   }
 
-  // Set to latest week with data
+  // Auto-sélection : semaine courante (startDate) ou dernière avec données
   try {
-    const latest = prog
-      ? getProgLatestWeek(prog.id, prog)
-      : getLatestWeek(EXERCISES);
-    sel.value = Math.min(Math.max(latest, 1), total);
+    let targetWeek;
+    if(prog?.startDate) {
+      // Programme avec date de démarrage → semaine calculée dynamiquement
+      targetWeek = getCurrentWeek(prog);
+    } else if(prog) {
+      targetWeek = getProgLatestWeek(prog.id, prog);
+    } else {
+      targetWeek = getLatestWeek(EXERCISES);
+    }
+    sel.value = Math.min(Math.max(targetWeek, 1), total);
   } catch(e) {
     sel.value = 1;
   }
@@ -788,9 +794,11 @@ function _progSelectorUI() {
   if(hasAthxData) {
     options += `<option value="athx-legacy" ${isAthxActive ? 'selected' : ''}>🏆 ATHX — Compétition (legacy)</option>`;
   }
-  options += all.map(p =>
-    `<option value="${p.id}" ${p.id === current?.id ? 'selected' : ''}>${esc(p.name)}</option>`
-  ).join('');
+  options += all.map(p => {
+    const cw = p.startDate ? getCurrentWeek(p) : null;
+    const weekLabel = cw ? ` (S${cw}/${p.totalWeeks||'?'})` : '';
+    return `<option value="${p.id}" ${p.id === current?.id ? 'selected' : ''}>${esc(p.name)}${weekLabel}</option>`;
+  }).join('');
 
   const total = all.length + (hasAthxData ? 1 : 0);
   if(total <= 1) return '';
@@ -800,7 +808,13 @@ function _progSelectorUI() {
     <select class="prog-selector-select" onchange="window._switchProgram(this.value)">
       ${options}
     </select>
-    <span class="prog-selector-hint">${total} programme${total > 1 ? 's' : ''} en cours</span>
+    <span class="prog-selector-hint">${(() => {
+      if(current?.startDate) {
+        const cw = getCurrentWeek(current);
+        return 'Semaine ' + cw + '/' + (current.totalWeeks||'?');
+      }
+      return total + ' programme' + (total > 1 ? 's' : '') + ' en cours';
+    })()}</span>
   </div>`;
 }
 

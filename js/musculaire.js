@@ -4,7 +4,7 @@
 
 import { EXERCISES, MUSCLE_LABELS, RECOVERY_HALFLIFE, MUSCLE_MAP, MUSCLE_THRESH } from './data.js';
 import { getRecord, getExStatus, normRecord } from './store.js';
-import { getAllActivePrograms, getProgRecord } from './programs.js';
+import { getAllActivePrograms, getProgRecord, getCurrentWeek } from './programs.js';
 
 let _currentLoad      = {};
 let _selectedMuscleId = null;
