@@ -6436,6 +6436,7 @@ const _config = {
   domaine:          null,
   niveau:           null,
   age:              null,
+  bodyWeight:       null,  // kg — pour estimer les 1RM si non renseignés
   seancesParSemaine: 3,
   dureeSeance:      60,
   materiel:         [],
@@ -6498,7 +6499,7 @@ async function initWizard() {
     grossesse_type: null, mois_grossesse: 5, postnatal_phase: null,
     nutrition: null,
     dureeSeance: 60, materiel: [], exercicesForces: [], exercicesExclus: [],
-    duree: 12, competition: null, name: '', orm: {},
+    duree: 12, competition: null, name: '', orm: {}, bodyWeight: null,
   });
 
   // Pre-fill ORM from existing tracker data
@@ -6619,7 +6620,16 @@ function step2b() {
       <div class="wiz-age-row"><span>RPE cible</span><strong>${mod.rpeTarget}</strong></div>
       <div class="wiz-age-row"><span>Volume mobilité</span><strong>${Math.round(mod.mobilityPct*100)}% des séances</strong></div>
       ${mod.volumeMult < 1 ? `<div class="wiz-age-row"><span>Ajustement volume</span><strong style="color:var(--amber)">−${Math.round((1-mod.volumeMult)*100)}% vs baseline</strong></div>` : ''}
-    </div>` : ''}`;
+    </div>` : ''}
+
+    <div class="wiz-field" style="margin-top:16px">
+      <label class="wiz-label">Ton poids de corps <span style="font-size:11px;color:var(--text3)">(utilisé pour estimer tes charges si tu ne connais pas tes 1RM)</span></label>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="number" id="bodyWeight" class="wiz-text-input" style="max-width:120px"
+               value="${_config.bodyWeight || ''}" placeholder="kg" min="30" max="200" step="0.5">
+        <span style="font-size:13px;color:var(--text2)">kg</span>
+      </div>
+    </div>`;
 }
 
 // ── Step Grossesse — configuration prénatal/postnatal ───────────────────────
@@ -6843,6 +6853,29 @@ function step6() {
 }
 
 
+
+// ── Estimation 1RM à partir du poids de corps × coefficient par niveau ──────
+// Sources : Rippetoe "Practical Programming", Kilgore "Fit", ratios communautaires
+const ORM_RATIOS = {
+  //              débutant  intermédiaire  avancé
+  squat:     { debutant: 0.75, intermediaire: 1.25, avance: 1.75 },
+  deadlift:  { debutant: 1.00, intermediaire: 1.50, avance: 2.00 },
+  press:     { debutant: 0.40, intermediaire: 0.60, avance: 0.75 },
+  bench:     { debutant: 0.50, intermediaire: 0.85, avance: 1.25 },
+  squat_fs:  { debutant: 0.60, intermediaire: 1.00, avance: 1.40 },
+  rdl:       { debutant: 0.80, intermediaire: 1.25, avance: 1.70 },
+  row_barre: { debutant: 0.50, intermediaire: 0.80, avance: 1.10 },
+  ohp:       { debutant: 0.45, intermediaire: 0.65, avance: 0.85 },
+  thruster:  { debutant: 0.40, intermediaire: 0.60, avance: 0.80 },
+};
+
+function _estimateORM(exId, bodyWeight, niveau) {
+  const ratios = ORM_RATIOS[exId];
+  if(!ratios || !bodyWeight) return null;
+  const ratio = ratios[niveau] || ratios.intermediaire;
+  return Math.round(bodyWeight * ratio / 2.5) * 2.5; // arrondi au 2.5 kg
+}
+
 // Détermine si le programme nécessite des 1RM
 function _needsORM() {
   const forceDomains = ['force', 'hyrox'];
@@ -6922,14 +6955,21 @@ function step7() {
     <div class="wiz-field">
       <label class="wiz-label">Tes 1RM actuels <span style="font-size:11px;color:var(--text3)">(pour calculer les charges — pré-remplis depuis le tracker)</span></label>
       <div class="wiz-orm-grid">
-        ${_ormExercises().map(ex => `
+        ${_ormExercises().map(ex => {
+          const manual = _config.orm[ex.id];
+          const estimated = _config.bodyWeight ? _estimateORM(ex.id, _config.bodyWeight, _config.niveau) : null;
+          const val = manual || estimated || '';
+          const isEstimated = !manual && estimated;
+          return `
           <div class="wiz-orm-row">
-            <label>${ex.label}</label>
+            <label>${ex.label}${isEstimated ? ' <span style="font-size:10px;color:var(--text3)">(estimé)</span>' : ''}</label>
             <input type="number" class="wiz-orm-input" id="orm_${ex.id}"
-                   value="${_config.orm[ex.id] || ''}" placeholder="kg" min="0" step="2.5">
-          </div>`).join('')}
+                   value="${val}" placeholder="kg" min="0" step="2.5"
+                   style="${isEstimated ? 'color:var(--text2);font-style:italic' : ''}">
+          </div>`;
+        }).join('')}
       </div>
-      <div class="wiz-note">💡 Si tu ne connais pas ton 1RM, laisse vide — les charges seront calculées à partir de la 2ème séance.</div>
+      <div class="wiz-note">💡 Les valeurs en <em>italique</em> sont estimées à partir de ton poids de corps (${_config.bodyWeight ? _config.bodyWeight + ' kg' : '?'}) et ton niveau. Modifie-les si tu connais tes vrais 1RM.</div>
     </div>` : ''}`;
 }
 
@@ -7022,6 +7062,13 @@ function _showError(msg) {
 // ── Collect step data ─────────────────────────────────────────────────────────
 
 function _collectStep() {
+  // Poids de corps (step 2b / âge)
+  const bwEl = document.getElementById('bodyWeight');
+  if(bwEl) {
+    const bw = parseFloat(bwEl.value);
+    if(isFinite(bw) && bw >= 30 && bw <= 200) _config.bodyWeight = bw;
+  }
+
   if(_step === 6) {
     const dateEl = document.getElementById('competDate');
     const typeEl = document.getElementById('competType');
