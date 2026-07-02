@@ -174,7 +174,7 @@ export function generateProgram(config, newProgramId) {
           const weekReps = _interpolateReps(phase, pw, vol);
           const weekSeries = _interpolateSeries(phase, pw, vol);
           const pct  = isTaper ? 0.65 : weekPct;
-          const kg   = orm ? _calcKg(ex.id, pct, orm) : null;
+          const kg   = orm ? _calcKg(ex.id, pct, orm, ex.muscles) : null;
 
           return {
             id:       ex.id,
@@ -217,7 +217,7 @@ export function generateProgram(config, newProgramId) {
 
         const exercices = exForDay.map(ex => {
           const deloadPct = 0.60;
-          const kg = orm ? _calcKg(ex.id, deloadPct, orm) : null;
+          const kg = orm ? _calcKg(ex.id, deloadPct, orm, ex.muscles) : null;
           const deloadSeries = Math.max(2, vol.series - 2);
           const deloadReps = vol.repsRange[1] + 2; // reps élevées en deload
           return {
@@ -417,8 +417,23 @@ function _repsForPhase(pct, vol, isDeload, isTaper) {
   return vol.repsRange[1];                         // ex: 8 reps
 }
 
-function _calcKg(exId, pct, orm) {
-  const ref = orm[exId] || orm.squat || orm.deadlift || orm.press;
+function _calcKg(exId, pct, orm, muscles) {
+  // Correspondance directe par ID
+  if(orm[exId]) return Math.round(orm[exId] * pct / 1.25) * 1.25;
+
+  // Correspondance par groupe musculaire → ORM le plus proche
+  const m = (muscles || []).map(x => x.toLowerCase());
+  let ref = null;
+  if(m.some(x => ['pec','deltant','triceps'].includes(x)))        ref = orm.bench || orm.press;
+  else if(m.some(x => ['dorsaux','biceps','trapeze'].includes(x))) ref = orm.deadlift || orm.row_barre;
+  else if(m.some(x => ['quad','fessiers','ischio'].includes(x)))   ref = orm.squat || orm.deadlift;
+  else if(m.some(x => ['deltpost','core','lombaires'].includes(x)))ref = orm.press || orm.squat;
+
+  // Fallback : moyenne des ORM disponibles × 0.6 (exercice accessoire = ~60% du compound)
+  if(!ref) {
+    const vals = Object.values(orm).filter(v => typeof v === 'number' && v > 0);
+    ref = vals.length ? vals.reduce((a,b)=>a+b,0) / vals.length * 0.6 : null;
+  }
   if(!ref) return null;
   return Math.round(ref * pct / 1.25) * 1.25;
 }
