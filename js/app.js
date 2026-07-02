@@ -609,8 +609,9 @@ function _renderProgDetailView(prog, container) {
     const label = split && split !== day ? `${day} — ${split}` : day;
     pillsHtml += `<button class="${di===0?'active':''}" onclick="_showGenTab(this,'gday-${di}')">${esc(label)}</button>`;
   });
-  pillsHtml += `<button onclick="_showGenTab(this,'gphases')">📊 Phases</button>`;
-  if(nutritionPlan) pillsHtml += `<button onclick="_showGenTab(this,'gnutri')">🍽 Nutrition</button>`;
+  pillsHtml += `<button onclick="_showGenTab(this,'gwarmup')">🔥 Échauffements</button>`;
+  // Phases tab removed — info already visible in bloc sub-navigation
+  pillsHtml += `<button onclick="_showGenTab(this,'gvacances')">🏖 Vacances</button>`;
 
   // Identifier les blocs (phases groupées)
   const blocs = [];
@@ -631,8 +632,8 @@ function _renderProgDetailView(prog, container) {
     'Base aérobie':  'Volume et technique — progression linéaire des charges',
     'Construction':  'Intensité croissante — charges modérées à lourdes',
     'Intensité':     'Travail lourd — séries courtes, récup longue',
-    'Pic intensité': 'Peak force — charges lourdes, séries courtes',
-    'Pic':           'Peak performance — intensité maximale',
+    'Pic intensité': 'Force maximale — charges lourdes, séries courtes',
+    'Pic':           'Performance maximale — intensité au sommet',
     'Taper':         'Affûtage — volume minimal, maintien des acquis',
   };
 
@@ -646,8 +647,10 @@ function _renderProgDetailView(prog, container) {
     'Taper':         { bg:'#F1EFE8', col:'#444441' },
   };
 
-  // Compound IDs for role detection
-  const COMPOUND_IDS = new Set(['squat','deadlift','press','bench','squat_fs','ohp','rdl','row_barre','thruster']);
+  // Nombre d'exercices compounds par jour (les premiers sont toujours les compounds)
+  // Basé sur SPLIT_COMPOUNDS du générateur : 2-4 compounds en premier, le reste = accessoires
+  const COMPOUNDS_PER_DAY = 3; // les 3 premiers exercices de chaque jour sont considérés "Primaire"
+  const CORE_MUSCLES = new Set(['core','lombaires','abdominaux','obliques']);
 
   // Helper: estimate session duration (sets × (time_per_set + rest))
   function _estimateMinutes(exercises) {
@@ -670,6 +673,34 @@ function _renderProgDetailView(prog, container) {
     }).filter(Boolean).join(', ');
   }
 
+
+  // Coaching cues par exercice — descriptions techniques riches (style ATHX legacy)
+  const EX_CUES = {
+    squat:     'Focus : descente 3 sec, pause 1 sec en bas, poussée explosive. Vérifier profondeur (hanche sous genou). Genoux dans l\'axe des pieds.',
+    deadlift:  'Focus : dos neutre, pression pieds milieu/talons. Tirer la barre le long des tibias. Verrouillage hanches + épaules simultané.',
+    press:     'Focus : gainage abdo, fessiers contractés, barre dans l\'axe du nez. Pas de cambrure excessive. Extension complète en haut.',
+    bench:     'Focus : rétraction scapulaire, pieds ancrés au sol. Barre au niveau des tétons, coudes à 45°. Poussée explosive.',
+    ohp:       'Focus : core engagé, tête en avant une fois la barre passée. Trajectoire verticale, pas d\'inclinaison arrière.',
+    squat_fs:  'Focus : coudes hauts, position de rack propre. Descente contrôlée, rebond actif en bas. Core très engagé.',
+    rdl:       'Focus : charnière de hanche, barre le long des cuisses. Étirement ischio-jambiers, genoux légèrement fléchis. Dos neutre.',
+    row_barre: 'Focus : buste à 45°, tirer vers le nombril. Serrer les omoplates en haut. Contrôler la descente.',
+    thruster:  'Focus : front squat propre + press explosif en haut. Utiliser l\'élan des jambes. Respiration entre chaque rep.',
+    pullup:    'Focus : rétraction scapulaire en bas, traction coudes vers les hanches. Extension complète bras tendus.',
+    pushup:    'Focus : corps gainé en planche, coudes à 45°. Poitrine au sol, extension complète.',
+    dips:      'Focus : inclinaison légère vers l\'avant pour cibler les pecs. Descente contrôlée, coudes à 90°.',
+    lunges:    'Focus : pas long, genou arrière frôle le sol. Poids sur le talon avant. Tronc vertical.',
+  };
+
+  // Progression description par exercice dans un bloc
+  const EX_PROG_DESC = {
+    'Base aérobie':  'Programme linéaire — augmentation progressive des charges chaque semaine.',
+    'Construction':  'Intensité croissante — charges modérées à lourdes, volume maintenu.',
+    'Intensité':     'Travail lourd — séries courtes, récupération longue entre les séries.',
+    'Pic intensité': 'Peak force — charges proches du max, focus technique sous charge.',
+    'Pic':           'Performance maximale — test de force.',
+    'Taper':         'Affûtage — volume minimal, charges légères, récupération complète.',
+  };
+
   // Build per-day content with ATHX-style design
   let daysContentHtml = '';
   dayNames.forEach((day, di) => {
@@ -683,7 +714,7 @@ function _renderProgDetailView(prog, container) {
     let subPills = blocs.map((bloc, bi) => {
       let label;
       if(bloc.isDeload) {
-        label = `S${bloc.start} Deload`;
+        label = `S${bloc.start} Récup (deload)`;
       } else if(bloc.isTaper) {
         label = `S${bloc.start} Taper`;
       } else {
@@ -735,13 +766,15 @@ function _renderProgDetailView(prog, container) {
           const mainEx = group[0];
           const prog_ = _weekProgression(bloc.weeks, di, mainEx.id);
           html += `<div class="p-card">`;
-          html += `<div class="p-card-title">${esc(mainEx.nom)} — ${mainEx.scheme} @ ${mainEx.pct1rm}–${bloc.weeks.length > 1 ? bloc.weeks[bloc.weeks.length-1].jours?.[di]?.exercices?.find(e=>e.id===mainEx.id)?.pct1rm||mainEx.pct1rm : mainEx.pct1rm}%</div>`;
+          const endPct = bloc.weeks.length > 1 ? (bloc.weeks[bloc.weeks.length-1].jours?.[di]?.exercices?.find(e=>e.id===mainEx.id)?.pct1rm||mainEx.pct1rm) : mainEx.pct1rm;
+          const incr = mainEx.kgPlan && orm ? '+' + Math.round((endPct - mainEx.pct1rm) * (orm[mainEx.id]||orm.squat||orm.press||80) / 100 / 1.25) * 1.25 + ' kg/bloc' : '';
+          html += `<div class="p-card-title">${esc(mainEx.nom)} — ${mainEx.scheme} @ ${mainEx.pct1rm}–${endPct}%${incr ? ' (' + incr + ')' : ''}</div>`;
           if(prog_) html += `<div class="p-card-body" style="margin-bottom:6px">${prog_}</div>`;
 
           group.forEach((ex, gi) => {
-            const role = COMPOUND_IDS.has(ex.id) ? 'Primaire' : (ex.muscles?.some(m => m === 'core') ? 'Core' : 'Accessoire');
+            const role = gi === 0 ? 'Primaire' : (ex.muscles?.some(m => CORE_MUSCLES.has(m)) ? 'Core' : 'Accessoire');
             const roleClass = role === 'Primaire' ? 'p-tag-f' : (role === 'Core' ? 'p-tag-r' : 'p-tag-f');
-            const rest = ex.pct1rm >= 85 ? 'Récup 3–4 min.' : ex.pct1rm >= 75 ? 'Récup 2–3 min.' : 'Récup 1–2 min.';
+            const rest = ex.pct1rm >= 85 ? 'Repos 3–4 min.' : ex.pct1rm >= 75 ? 'Repos 2–3 min.' : 'Repos 1–2 min.';
             html += `<div class="p-ex-row">
               <div class="p-ex-num">${ex.idx + 1}</div>
               <div class="p-ex-name">${esc(ex.nom)}</div>
@@ -754,7 +787,7 @@ function _renderProgDetailView(prog, container) {
 
         // Time footer
         const blocMin = _estimateMinutes(dayExercises);
-        html += `<div class="p-note">${dayExercises.map(e => `${e.nom} ${e.scheme}`).join(', ')} = ~${blocMin} min. Accessoires en super-set si besoin.</div>`;
+        html += `<div class="p-note">${dayExercises.map(e => `${e.nom} ${e.scheme}`).join(', ')} = ~${blocMin} min. Accessoires en super-set pour gagner du temps.</div>`;
       }
 
       return `<div class="prog-bloc-content ${bi===0?'active':''}" data-day="${di}" data-bloc="${bi}">${html}</div>`;
@@ -763,25 +796,58 @@ function _renderProgDetailView(prog, container) {
     daysContentHtml += `<div id="gday-${di}" class="prog-tab ${di===0?'active':''}">
       <div class="p-section">
         <div class="p-sec-title">${esc(day)} — ${esc(split)} (${esc(exNames)})</div>
-        <span class="p-time-badge">~${estMin} min total · Échauffement + séance + retour calme</span>
+        <span class="p-time-badge">~${estMin} min total · Échauffement + séance + retour au calme</span>
         <div class="p-week-sel">${subPills}</div>
         ${blocsHtml}
       </div>
     </div>`;
   });
 
-  // Phase overview tab
-  const phasesHtml = prog.semaines.map(s => {
-    const bg = s.isDeload ? '#e8e6e0' : (phaseColors[s.phase] || '#f0f0ee');
-    const col = s.isDeload ? '#444441' : (phaseTextColors[s.phase] || '#444');
-    return `<div class="prog-phase-row">
-      <span class="prog-phase-badge-sm" style="background:${bg};color:${col}">S${s.num}</span>
-      <span class="prog-phase-weeks">${esc(s.phase)}</span>
-      <span class="prog-phase-int">${Math.round(s.intensite*100)}% · RPE ${esc(s.rpeTarget||'—')}</span>
-    </div>`;
-  }).join('');
 
-  daysContentHtml += `<div id="gphases" class="prog-tab">${phasesHtml}</div>`;
+  // Échauffements tab
+  daysContentHtml += `<div id="gwarmup" class="prog-tab">
+    <div class="p-section">
+      <div class="p-sec-title">Échauffement recommandé</div>
+      <span class="p-time-badge">8–12 min avant chaque séance</span>
+      <div class="p-card">
+        <div class="p-card-title">Phase 1 — Activation cardiovasculaire (3 min)</div>
+        <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Vélo / rameur léger</div><div class="p-ex-detail">3 min à allure légère. Objectif : élever la température musculaire.</div></div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Phase 2 — Mobilité articulaire (3–5 min)</div>
+        <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Rotations thoraciques</div><div class="p-ex-detail">10 reps/côté en quadrupédie. Essentiel pour le squat et le press.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Étirement fléchisseurs hanche</div><div class="p-ex-detail">30 sec/côté. Profondeur de squat et position de deadlift.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Dislocations épaules (bande)</div><div class="p-ex-detail">10 reps. Amplitude overhead pour le press.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">4</div><div class="p-ex-name">Mobilité chevilles</div><div class="p-ex-detail">10 reps/côté genou au mur. Dorsiflexion = profondeur squat.</div></div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Phase 3 — Activation musculaire (2–3 min)</div>
+        <div class="p-ex-row"><div class="p-ex-num">1</div><div class="p-ex-name">Banded clamshells</div><div class="p-ex-detail">2×15 avec bande légère. Activation fessiers moyens.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">2</div><div class="p-ex-name">Face pulls bande</div><div class="p-ex-detail">2×15. Activation rotateurs externes épaule.</div></div>
+        <div class="p-ex-row"><div class="p-ex-num">3</div><div class="p-ex-name">Séries montantes</div><div class="p-ex-detail">Barre vide ×10 → 50% ×5 → 70% ×3. Ne jamais commencer à charge max à froid.</div></div>
+      </div>
+      <div class="p-note">Adapter selon le jour : jours Push → insister mobilité épaules. Jours Legs → insister hanches + chevilles. Si temps limité : garder mobilité + séries montantes (5 min).</div>
+    </div>
+  </div>`;
+
+  // Vacances tab
+  daysContentHtml += `<div id="gvacances" class="prog-tab">
+    <div class="p-section">
+      <div class="p-sec-title">🏖 Gestion des vacances et absences</div>
+      <div class="p-card">
+        <div class="p-card-body">
+          Les vacances sont gérées depuis l'onglet <strong>Tracker</strong> → section <strong>Vacances</strong> en bas de page.<br><br>
+          Le système applique automatiquement un <strong>coefficient de reprise</strong> progressif après chaque période d'absence :<br>
+          • 1 semaine d'absence → reprise à ~90% des charges<br>
+          • 2 semaines → ~80%<br>
+          • 3+ semaines → ~70% avec remontée progressive<br><br>
+          Les recommandations de charge S+1 tiennent compte de ce coefficient.
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  // Phases tab removed
 
   // Nutrition tab
   if(nutritionPlan) {
