@@ -6842,6 +6842,25 @@ function step6() {
     </div>` : ''}`;
 }
 
+
+// Détermine si le programme nécessite des 1RM (uniquement force/hyrox avec barre)
+function _needsORM() {
+  const forceDomains = ['force', 'hyrox'];
+  if(!forceDomains.includes(_config.domaine)) return false;
+  // Barre nécessaire pour les exercices avec 1RM
+  return _config.materiel.includes('barre');
+}
+
+// Retourne la liste des exercices nécessitant un 1RM selon le domaine et les exercices forcés
+function _ormExercises() {
+  const BARBELL_LIFTS = [
+    { id:'press',    label:'Strict Press',  domains:['force','hyrox'] },
+    { id:'squat',    label:'Back Squat',    domains:['force','hyrox'] },
+    { id:'deadlift', label:'Deadlift',      domains:['force','hyrox'] },
+  ];
+  return BARBELL_LIFTS.filter(ex => ex.domains.includes(_config.domaine));
+}
+
 // ── Step 7 — Récapitulatif + 1RM ─────────────────────────────────────────────
 
 function step7() {
@@ -6874,14 +6893,11 @@ function step7() {
              placeholder="Mon programme Hyrox 2027">
     </div>
 
+    ${_needsORM() ? `
     <div class="wiz-field">
       <label class="wiz-label">Tes 1RM actuels <span style="font-size:11px;color:var(--text3)">(pour calculer les charges — pré-remplis depuis le tracker)</span></label>
       <div class="wiz-orm-grid">
-        ${[
-          { id:'press',    label:'Strict Press' },
-          { id:'squat',    label:'Back Squat' },
-          { id:'deadlift', label:'Deadlift' },
-        ].map(ex => `
+        ${_ormExercises().map(ex => `
           <div class="wiz-orm-row">
             <label>${ex.label}</label>
             <input type="number" class="wiz-orm-input" id="orm_${ex.id}"
@@ -6889,7 +6905,7 @@ function step7() {
           </div>`).join('')}
       </div>
       <div class="wiz-note">💡 Si tu ne connais pas ton 1RM, laisse vide — les charges seront calculées à partir de la 2ème séance.</div>
-    </div>`;
+    </div>` : ''}`;
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -6994,11 +7010,14 @@ function _collectStep() {
   if(_step === 7 || _step === 8 || _step === 9) {
     const nameEl = document.getElementById('progName');
     if(nameEl) _config.name = nameEl.value.trim();
-    ['press','squat','deadlift'].forEach(id => {
-      const el  = document.getElementById(`orm_${id}`);
-      const val = parseFloat(el?.value);
-      if(isFinite(val) && val > 0) _config.orm[id] = val;
-    });
+    // Lire les 1RM uniquement si le formulaire les affiche
+    if(_needsORM()) {
+      _ormExercises().forEach(({id}) => {
+        const el  = document.getElementById(`orm_${id}`);
+        const val = parseFloat(el?.value);
+        if(isFinite(val) && val > 0) _config.orm[id] = val;
+      });
+    }
   }
 }
 
