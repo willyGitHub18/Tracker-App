@@ -106,3 +106,12 @@
 .doc-link{color:var(--blue);text-decoration:none;font-weight:inherit}
 .doc-link:hover{text-decoration:underline}
 .doc-link strong{color:var(--blue)}
+
+/* Generated program detail — week rows */
+.prog-week-row{padding:10px 12px;margin-bottom:8px;background:var(--surface2);border-radius:8px}
+.prog-week-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.prog-ex-detail-item{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)}
+.prog-ex-detail-item:last-child{border-bottom:none}
+.prog-ex-detail-name{font-size:13px;font-weight:500;color:var(--text)}
+.prog-ex-detail-scheme{display:flex;gap:4px;flex-wrap:wrap}
+.prog-ex-tag{font-size:11px;background:var(--surface3);color:var(--text2);padding:2px 6px;border-radius:4px}

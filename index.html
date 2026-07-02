@@ -495,6 +495,15 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
 .doc-link:hover{text-decoration:underline}
 .doc-link strong{color:var(--blue)}
 
+/* Generated program detail — week rows */
+.prog-week-row{padding:10px 12px;margin-bottom:8px;background:var(--surface2);border-radius:8px}
+.prog-week-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.prog-ex-detail-item{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)}
+.prog-ex-detail-item:last-child{border-bottom:none}
+.prog-ex-detail-name{font-size:13px;font-weight:500;color:var(--text)}
+.prog-ex-detail-scheme{display:flex;gap:4px;flex-wrap:wrap}
+.prog-ex-tag{font-size:11px;background:var(--surface3);color:var(--text2);padding:2px 6px;border-radius:4px}
+
 /* ══════════════════════════════════════════════
    WIZARD & PROGRAMMES
    ══════════════════════════════════════════════ */
@@ -7757,102 +7766,85 @@ function _renderProgDetailView(prog, container) {
     return;
   }
 
-  // ── Generated program — rich view ────────────────────────────────────────────
+  // ── Generated program — rich view (pills par jour comme ATHX) ──────────────
+
   const nutritionPlan = prog.nutrition ? window._NUTRITION_PLANS?.[prog.nutrition] : null;
 
   // Phase colors
   const phaseColors = {
-    'Base':'#e8f0fc','Construction':'#fdf0d8','Intensité':'#fdeaea',
-    'Pic':'#e0f4eb','Taper':'#f1efe8','Deload':'#e8e6e0',
-    'Bloc 1 — Base':'#e8f0fc','Bloc 2 — Intensité':'#fdf0d8','Bloc 3 — Simulation':'#e0f4eb',
+    'Base aérobie':'#e8f0fc','Construction':'#fdf0d8','Intensité':'#fdeaea',
+    'Pic intensité':'#e0f4eb','Pic':'#e0f4eb','Taper':'#f1efe8',
   };
   const phaseTextColors = {
-    'Base':'#1a5fb4','Construction':'#7c4a00','Intensité':'#9c2222',
-    'Pic':'#1b6b45','Taper':'#444441','Deload':'#444441',
-    'Bloc 1 — Base':'#1a5fb4','Bloc 2 — Intensité':'#7c4a00','Bloc 3 — Simulation':'#1b6b45',
+    'Base aérobie':'#1a5fb4','Construction':'#7c4a00','Intensité':'#9c2222',
+    'Pic intensité':'#1b6b45','Pic':'#1b6b45','Taper':'#444441',
   };
 
-  // Build tabs: Programme | Nutrition
-  const tabs = ['programme', nutritionPlan ? 'nutrition' : null].filter(Boolean);
-
-  // Semaine type = first non-deload week as reference
+  // Extraire les jours uniques du programme
   const refWeek = prog.semaines?.find(s => !s.isDeload && !s.isTaper) || prog.semaines?.[0];
+  const dayNames = refWeek?.jours?.map(j => j.nom) || [];
 
-  // Week nav
-  const weekNav = prog.semaines?.map((w,i) => {
-    const cls = ['prog-week-btn', w.isDeload?'deload':'', w.isTaper?'taper':''].filter(Boolean).join(' ');
-    return `<button class="${cls}" onclick="window._showDetailWeek(${i+1})">${'S'+(i+1)}</button>`;
-  }).join('') || '';
+  // Build pills
+  let pillsHtml = '';
+  dayNames.forEach((day, di) => {
+    const split = refWeek.jours[di]?.split || '';
+    const label = split && split !== day ? `${day} — ${split}` : day;
+    pillsHtml += `<button class="${di===0?'active':''}" onclick="_showGenTab(this,'gday-${di}')">${esc(label)}</button>`;
+  });
+  pillsHtml += `<button onclick="_showGenTab(this,'gphases')">📊 Phases</button>`;
+  if(nutritionPlan) pillsHtml += `<button onclick="_showGenTab(this,'gnutri')">🍽 Nutrition</button>`;
 
-  // Phase summary
-  const phasesHtml = prog.phases?.map(p => {
-    const bg  = phaseColors[p.nom]  || '#f0f0ee';
-    const col = phaseTextColors[p.nom] || '#444';
+  // Build per-day content (all weeks for each day)
+  let daysContentHtml = '';
+  dayNames.forEach((day, di) => {
+    let weekRows = '';
+    prog.semaines.forEach(sem => {
+      const jourData = sem.jours?.[di];
+      if(!jourData) return;
+
+      const bg = sem.isDeload ? '#e8e6e0' : (phaseColors[sem.phase] || '#f0f0ee');
+      const col = sem.isDeload ? '#444441' : (phaseTextColors[sem.phase] || '#444');
+      const phaseLabel = sem.isDeload ? 'Deload' : sem.isTaper ? 'Taper' : sem.phase;
+
+      const exRows = (jourData.exercices || []).map(ex => `
+        <div class="prog-ex-detail-item">
+          <div class="prog-ex-detail-name">${esc(ex.nom||ex.id)}</div>
+          <div class="prog-ex-detail-scheme">
+            <span class="prog-ex-tag">${ex.scheme || (ex.series+'×'+ex.reps)}</span>
+            ${ex.kgPlan ? `<span class="prog-ex-tag">${ex.kgPlan} kg</span>` : ex.pct1rm ? `<span class="prog-ex-tag">${ex.pct1rm}%</span>` : ''}
+          </div>
+        </div>`).join('');
+
+      weekRows += `
+        <div class="prog-week-row" style="border-left:3px solid ${col}">
+          <div class="prog-week-header">
+            <span class="prog-phase-badge-sm" style="background:${bg};color:${col}">S${sem.num}</span>
+            <span style="font-size:11px;color:var(--text3)">${esc(phaseLabel)} · ${Math.round(sem.intensite*100)}% · RPE ${sem.rpeTarget||'—'}</span>
+          </div>
+          <div class="prog-ex-detail-list">${exRows}</div>
+        </div>`;
+    });
+
+    daysContentHtml += `<div id="gday-${di}" class="prog-tab ${di===0?'active':''}">${weekRows}</div>`;
+  });
+
+  // Phase overview tab
+  const phasesHtml = prog.semaines.map(s => {
+    const bg = s.isDeload ? '#e8e6e0' : (phaseColors[s.phase] || '#f0f0ee');
+    const col = s.isDeload ? '#444441' : (phaseTextColors[s.phase] || '#444');
     return `<div class="prog-phase-row">
-      <span class="prog-phase-badge-sm" style="background:${bg};color:${col}">${esc(p.nom)}</span>
-      <span class="prog-phase-weeks">S${p.debut} → S${p.fin}</span>
-      <span class="prog-phase-int">${Math.round(p.intensite*100)}% · RPE ${esc(p.rpeTarget||'—')}</span>
+      <span class="prog-phase-badge-sm" style="background:${bg};color:${col}">S${s.num}</span>
+      <span class="prog-phase-weeks">${esc(s.phase)}</span>
+      <span class="prog-phase-int">${Math.round(s.intensite*100)}% · RPE ${esc(s.rpeTarget||'—')}</span>
     </div>`;
-  }).join('') || '';
+  }).join('');
 
-  // Semaine type detail
-  const semaineTypeHtml = refWeek ? refWeek.jours.map(day => {
-    const exHtml = day.exercices.map(ex => `
-      <div class="prog-ex-detail-item">
-        <div class="prog-ex-detail-name">${esc(ex.nom||ex.id)}</div>
-        <div class="prog-ex-detail-scheme">
-          ${ex.series ? `<span class="prog-ex-tag">${ex.series} séries</span>` : ''}
-          ${ex.reps   ? `<span class="prog-ex-tag">${ex.reps} reps</span>` : ''}
-          ${ex.kgPlan ? `<span class="prog-ex-tag">${ex.kgPlan} kg</span>` : ex.pct1rm ? `<span class="prog-ex-tag">${ex.pct1rm}% 1RM</span>` : ''}
-        </div>
-        ${ex.muscles?.length ? `<div class="prog-ex-muscles">${ex.muscles.slice(0,3).map(m=>esc(m)).join(' · ')}</div>` : ''}
-      </div>`).join('');
-    return `<div class="prog-day-detail-card">
-      <div class="prog-day-detail-header">
-        <span class="prog-day-detail-name">${esc(day.nom)}</span>
-        <span class="prog-day-detail-split">${esc(day.split||'')}</span>
-      </div>
-      <div class="prog-ex-detail-list">${exHtml}</div>
-    </div>`;
-  }).join('') : '';
+  daysContentHtml += `<div id="gphases" class="prog-tab">${phasesHtml}</div>`;
 
-  container.innerHTML = `
-    <div class="wiz-header">
-      <div class="wiz-header-top">
-        <div>
-          <div class="wiz-header-title">${esc(prog.name)}</div>
-          <div class="wiz-header-sub">${DOMAINES_LABELS[prog.config?.domaine]||''} · ${prog.totalWeeks} sem. · ${prog.config?.seancesParSemaine||'?'}×/sem · ${prog.config?.niveau||''}</div>
-        </div>
-        <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
-      </div>
-    </div>
-
-    <!-- Tabs -->
-    <div class="g-tabs" style="margin-bottom:16px">
-      <button class="g-tab active" data-ptab="programme">📋 Programme</button>
-      ${nutritionPlan ? '<button class="g-tab" data-ptab="nutrition">🍽 Nutrition</button>' : ''}
-    </div>
-
-    <!-- Programme tab -->
-    <div id="pd-programme" class="pd-panel active">
-
-      <!-- Phases -->
-      <div class="prog-section-title">Phases du programme</div>
-      <div class="prog-phases-summary" style="margin-bottom:16px">${phasesHtml}</div>
-
-      <!-- Semaine type -->
-      <div class="prog-section-title">Semaine type</div>
-      <div class="prog-section-sub">Structure de référence · les charges s'adaptent à chaque phase</div>
-      <div style="margin-bottom:16px">${semaineTypeHtml}</div>
-
-      <!-- Navigation semaine par semaine -->
-      <div class="prog-section-title">Semaine par semaine</div>
-      <div class="prog-week-nav" id="detailWeekNav" style="margin-bottom:12px">${weekNav}</div>
-      <div id="detailWeekContent"></div>
-    </div>
-
-    <!-- Nutrition tab -->
-    ${nutritionPlan ? `<div id="pd-nutrition" class="pd-panel">
+  // Nutrition tab
+  if(nutritionPlan) {
+    const NUTRITION_LABELS = { masse:'💪 Prise de masse', perte:'🔥 Perte de poids', healthy:'🥗 Santé / Équilibre', performance:'⚡ Performance', maintien:'⚖️ Maintien' };
+    daysContentHtml += `<div id="gnutri" class="prog-tab">
       <div class="nutri-header">
         <div class="nutri-title">${NUTRITION_LABELS[prog.nutrition]||''}</div>
         <div class="nutri-macros">
@@ -7862,175 +7854,43 @@ function _renderProgDetailView(prog, container) {
           <div class="nutri-macro-item"><span class="nutri-macro-label">Calories</span><span class="nutri-macro-val">${esc(nutritionPlan.surplus)}</span></div>
         </div>
       </div>
-
       <div class="nutri-block">
         <div class="nutri-block-title">⏰ ${esc(nutritionPlan.preSeance.timing)} — Pré-séance</div>
         ${nutritionPlan.preSeance.conseils.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
       </div>
-
       <div class="nutri-block">
         <div class="nutri-block-title">💪 ${esc(nutritionPlan.postSeance.timing)} — Post-séance</div>
         ${nutritionPlan.postSeance.conseils.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
       </div>
-
       <div class="nutri-block">
         <div class="nutri-block-title">🛋 Jours de repos</div>
         ${nutritionPlan.reposActif.conseils.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
       </div>
-
       <div class="nutri-block nutri-tips-block">
         <div class="nutri-block-title">💡 À retenir</div>
         ${nutritionPlan.tips.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
       </div>
-    </div>` : ''}`;
-
-  // Tab switching
-  container.querySelectorAll('[data-ptab]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      container.querySelectorAll('[data-ptab]').forEach(b => b.classList.remove('active'));
-      container.querySelectorAll('.pd-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      container.querySelector(`#pd-${btn.dataset.ptab}`)?.classList.add('active');
-    });
-  });
-
-  // Week detail
-  window._showDetailWeek = function(weekNum) {
-    const week = prog.semaines?.[weekNum-1];
-    if(!week) return;
-    document.querySelectorAll('#detailWeekNav .prog-week-btn').forEach((b,i) =>
-      b.classList.toggle('active', i+1===weekNum)
-    );
-    const bg  = phaseColors[week.phase]  || 'var(--surface2)';
-    const col = phaseTextColors[week.phase] || 'var(--text2)';
-    const daysHtml = week.jours?.map(day => `
-      <div class="prog-day-detail-card">
-        <div class="prog-day-detail-header">
-          <span class="prog-day-detail-name">${esc(day.nom)}</span>
-          <span class="prog-day-detail-split">${esc(day.split&&day.split!==day.nom?day.split:'')}</span>
-        </div>
-        <div class="prog-ex-detail-list">
-          ${(day.exercices||[]).map(ex=>`
-            <div class="prog-ex-detail-item">
-              <div class="prog-ex-detail-name">${esc(ex.nom||ex.id)}</div>
-              <div class="prog-ex-detail-scheme">
-                ${ex.series?`<span class="prog-ex-tag">${ex.series}×</span>`:''}
-                ${ex.reps?`<span class="prog-ex-tag">${ex.reps} reps</span>`:''}
-                ${ex.kgPlan?`<span class="prog-ex-tag">${ex.kgPlan} kg</span>`:ex.pct1rm?`<span class="prog-ex-tag">${ex.pct1rm}% 1RM</span>`:''}
-              </div>
-            </div>`).join('')}
-        </div>
-      </div>`).join('');
-    document.getElementById('detailWeekContent').innerHTML = `
-      <span class="prog-phase-badge" style="background:${bg};color:${col};display:inline-block;margin-bottom:8px">
-        ${week.isDeload?'🔵 Deload · ':week.isTaper?'📉 Taper · ':`${week.phase}`}
-      </span>
-      <div class="prog-rpe-target" style="margin-bottom:12px">RPE cible : ${week.rpeTarget} · ${Math.round(week.intensite*100)}%</div>
-      ${daysHtml}`;
-  };
-  window._showDetailWeek(1);
-}
-
-
-function _showProgrammeTab() {
-  const active = getActiveProgram();
-  // If an ATHX/fixed program is active, show its HTML schedule
-  // Otherwise show a redirect message to Programmes tab
-  if(!active) {
-    const el = document.getElementById('programme');
-    if(el) el.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--text3)">
-      <div style="font-size:32px;margin-bottom:12px">📋</div>
-      <div style="font-size:14px;font-weight:500;margin-bottom:8px">Aucun programme actif</div>
-      <div style="font-size:12px;margin-bottom:16px">Crée ou active un programme dans l'onglet Programmes</div>
-      <button class="wiz-btn-next" onclick="showSection('programmes')">Aller dans Programmes →</button>
     </div>`;
   }
-  // If active program is ATHX (fixed/subtype), keep existing HTML view
-  // For generated programs, show week-by-week schedule
-  if(active && active.subtype !== 'fixed') {
-    _renderProgrammeSchedule(active);
-  }
-  // For ATHX fixed program, the existing programme.html content is shown as-is
-}
 
-function _renderProgrammeSchedule(prog) {
-  const el = document.getElementById('programme');
-  if(!el || !prog) return;
-
-  const DOMAINES_LABELS = { hyrox:'🏟 Hyrox', force:'🏋 Force', gym:'💪 Gym', cardio:'🏃 Cardio', mobilite:'🧘 Mobilité', mixte:'⚡ Mixte', grossesse:'🤰 Grossesse' };
-
-  // Phase summary
-  const phasesHtml = prog.phases?.map(p =>
-    `<div class="prog-phase-row">
-      <span class="prog-phase-name">${p.nom}</span>
-      <span class="prog-phase-weeks">S${p.debut}–S${p.fin}</span>
-      <span class="prog-phase-int">${Math.round(p.intensite*100)}%</span>
-    </div>`
-  ).join('') || '';
-
-  // Week navigation
-  const weekNav = prog.semaines?.map((w,i) => {
-    const cls = ['prog-week-btn', w.isDeload?'deload':'', w.isTaper?'taper':''].filter(Boolean).join(' ');
-    return `<button class="${cls}" onclick="window._showProgWeek(${i+1})">${'S'+(i+1)}</button>`;
-  }).join('') || '';
-
-  el.innerHTML = `
-    <div class="prog-schedule-header">
-      <div class="prog-schedule-title">${esc(prog.name)}</div>
-      <div class="prog-schedule-meta">
-        ${DOMAINES_LABELS[prog.config?.domaine]||''} · ${prog.totalWeeks} semaines · ${prog.config?.seancesParSemaine||'?'}×/sem
-        <button class="prog-action-btn" style="margin-left:8px" onclick="showSection('programmes')">Gérer →</button>
+  container.innerHTML = `
+    <div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);margin-bottom:8px">
+      <div>
+        <div style="font-size:15px;font-weight:700">${esc(prog.name)}</div>
+        <div style="font-size:11px;color:var(--text3)">${DOMAINES_LABELS[prog.config?.domaine]||''} · ${prog.totalWeeks} sem. · ${prog.config?.seancesParSemaine||'?'}×/sem · ${prog.config?.niveau||''}</div>
       </div>
+      <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
     </div>
-    <div class="prog-phases-summary">${phasesHtml}</div>
-    <div class="prog-week-nav" id="progWeekNav">${weekNav}</div>
-    <div id="progWeekDetail"></div>`;
+    <div class="prog-top-nav">${pillsHtml}</div>
+    ${daysContentHtml}`;
 
-  window._showProgWeek = function(weekNum) {
-    const week = prog.semaines?.[weekNum-1];
-    if(!week) return;
-    // highlight active week btn
-    document.querySelectorAll('#progWeekNav .prog-week-btn').forEach((b,i) =>
-      b.classList.toggle('active', i+1===weekNum)
-    );
-    const phaseColors = {
-      'Base':'#e8f0fc','Construction':'#fdf0d8','Intensité':'#fdeaea',
-      'Pic':'#e0f4eb','Taper':'#f1efe8','Deload':'#e8e6e0',
-      'Bloc 1 — Base':'#e8f0fc','Bloc 2 — Intensité':'#fdf0d8','Bloc 3 — Simulation':'#e0f4eb',
-    };
-    const phaseTextColors = {
-      'Base':'#1a5fb4','Construction':'#7c4a00','Intensité':'#9c2222',
-      'Pic':'#1b6b45','Taper':'#444441','Deload':'#444441',
-      'Bloc 1 — Base':'#1a5fb4','Bloc 2 — Intensité':'#7c4a00','Bloc 3 — Simulation':'#1b6b45',
-    };
-    const bg  = phaseColors[week.phase]  || 'var(--surface2)';
-    const col = phaseTextColors[week.phase] || 'var(--text2)';
-
-    const daysHtml = week.jours?.map(day => `
-      <div class="prog-day-card">
-        <div class="prog-day-header">
-          <span class="prog-day-name">${day.nom}</span>
-          <span class="prog-day-split">${day.split&&day.split!==day.nom?esc(day.split):''}</span>
-        </div>
-        <div class="prog-ex-list">
-          ${(day.exercices||[]).map(ex => `
-            <div class="prog-ex-item">
-              <span class="prog-ex-item-name">${esc(ex.nom||ex.name||ex.id)}</span>
-              <span class="prog-ex-item-scheme">${ex.series||'?'}×${ex.reps||ex.scheme||'?'}</span>
-              ${ex.kgPlan?`<span class="prog-ex-item-kg">${ex.kgPlan} kg</span>`:ex.pct1rm?`<span class="prog-ex-item-kg">${ex.pct1rm}% 1RM</span>`:''}
-            </div>`).join('')}
-        </div>
-      </div>`).join('') || '';
-
-    document.getElementById('progWeekDetail').innerHTML = `
-      <span class="prog-phase-badge" style="background:${bg};color:${col}">
-        ${week.isDeload?'🔵 Deload · ':week.isTaper?'📉 Taper · ':`${week.phase}`}
-      </span>
-      <div class="prog-rpe-target">RPE cible : ${week.rpeTarget} · ${Math.round(week.intensite*100)}%</div>
-      ${daysHtml}`;
+  // Tab switching (same pattern as ATHX)
+  window._showGenTab = function(btn, tabId) {
+    container.querySelectorAll('.prog-top-nav button').forEach(b => b.classList.remove('active'));
+    container.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    container.querySelector('#' + tabId)?.classList.add('active');
   };
-  // Show first week by default
-  window._showProgWeek(1);
 }
 
 function renderPrograms() {
