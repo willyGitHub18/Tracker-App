@@ -10,22 +10,22 @@ import { AGE_MODIFIERS, MIXTE_SPLITS, GROSSESSE_MOIS_CONFIG, GROSSESSE_EXERCISES
 
 const PHASE_TEMPLATES = {
   8:  [
-    { nom:'Base aérobie',   weeks:4, startPct:0.65, endPct:0.73, rpeTarget:'7–7.5' },
-    { nom:'Pic intensité',  weeks:3, startPct:0.80, endPct:0.88, rpeTarget:'8–8.5' },
-    { nom:'Taper',          weeks:1, startPct:0.65, endPct:0.65, rpeTarget:'6.5–7', isTaper:true },
+    { nom:'Base aérobie',   weeks:4, startPct:0.65, endPct:0.73, rpeTarget:'7–7.5',  startReps:8,  endReps:6,  seriesMod:0   },
+    { nom:'Pic intensité',  weeks:3, startPct:0.80, endPct:0.88, rpeTarget:'8–8.5',  startReps:5,  endReps:3,  seriesMod:1   },
+    { nom:'Taper',          weeks:1, startPct:0.65, endPct:0.65, rpeTarget:'6.5–7',  startReps:5,  endReps:5,  seriesMod:-2, isTaper:true },
   ],
   12: [
-    { nom:'Base aérobie',   weeks:5, startPct:0.63, endPct:0.73, rpeTarget:'7–7.5' },
-    { nom:'Construction',   weeks:4, startPct:0.73, endPct:0.82, rpeTarget:'7.5–8' },
-    { nom:'Pic intensité',  weeks:2, startPct:0.85, endPct:0.90, rpeTarget:'8–9'   },
-    { nom:'Taper',          weeks:1, startPct:0.65, endPct:0.65, rpeTarget:'6.5–7', isTaper:true },
+    { nom:'Base aérobie',   weeks:5, startPct:0.63, endPct:0.73, rpeTarget:'7–7.5',  startReps:8,  endReps:6,  seriesMod:0   },
+    { nom:'Construction',   weeks:4, startPct:0.73, endPct:0.82, rpeTarget:'7.5–8',  startReps:6,  endReps:4,  seriesMod:0   },
+    { nom:'Pic intensité',  weeks:2, startPct:0.85, endPct:0.90, rpeTarget:'8–9',    startReps:3,  endReps:2,  seriesMod:1   },
+    { nom:'Taper',          weeks:1, startPct:0.65, endPct:0.65, rpeTarget:'6.5–7',  startReps:5,  endReps:5,  seriesMod:-2, isTaper:true },
   ],
   16: [
-    { nom:'Base aérobie',   weeks:5, startPct:0.60, endPct:0.72, rpeTarget:'6.5–7.5' },
-    { nom:'Construction',   weeks:5, startPct:0.70, endPct:0.80, rpeTarget:'7–8'     },
-    { nom:'Intensité',      weeks:4, startPct:0.80, endPct:0.88, rpeTarget:'8–8.5'   },
-    { nom:'Pic',            weeks:1, startPct:0.90, endPct:0.90, rpeTarget:'8.5–9'   },
-    { nom:'Taper',          weeks:1, startPct:0.65, endPct:0.65, rpeTarget:'6.5–7', isTaper:true },
+    { nom:'Base aérobie',   weeks:5, startPct:0.60, endPct:0.72, rpeTarget:'6.5–7.5',startReps:10, endReps:6,  seriesMod:0   },
+    { nom:'Construction',   weeks:5, startPct:0.70, endPct:0.80, rpeTarget:'7–8',    startReps:6,  endReps:4,  seriesMod:0   },
+    { nom:'Intensité',      weeks:4, startPct:0.80, endPct:0.88, rpeTarget:'8–8.5',  startReps:4,  endReps:3,  seriesMod:1   },
+    { nom:'Pic',            weeks:1, startPct:0.90, endPct:0.90, rpeTarget:'8.5–9',  startReps:2,  endReps:2,  seriesMod:1   },
+    { nom:'Taper',          weeks:1, startPct:0.65, endPct:0.65, rpeTarget:'6.5–7',  startReps:5,  endReps:5,  seriesMod:-2, isTaper:true },
   ],
 };
 
@@ -170,17 +170,18 @@ export function generateProgram(config, newProgramId) {
           : _selectExercisesForDay(pool, forcedExercises, splitName, domaine, vol.exPerSession, di);
 
         const exercices = exForDay.map(ex => {
-          const reps = _repsForPhase(weekPct, vol, false, isTaper);
+          // A3: reps et séries interpolées par semaine dans la phase
+          const weekReps = _interpolateReps(phase, pw, vol);
+          const weekSeries = _interpolateSeries(phase, pw, vol);
           const pct  = isTaper ? 0.65 : weekPct;
           const kg   = orm ? _calcKg(ex.id, pct, orm) : null;
 
-          const seriesCount = isTaper ? Math.max(2, vol.series - 2) : vol.series;
           return {
             id:       ex.id,
             nom:      ex.name,
-            series:   seriesCount,
-            reps,
-            scheme:   `${seriesCount}×${reps}`,
+            series:   weekSeries,
+            reps:     weekReps,
+            scheme:   `${weekSeries}×${weekReps}`,
             pct1rm:   Math.round(pct * 100),
             kgPlan:   kg,
             muscles:  ex.muscles || [],
@@ -218,7 +219,7 @@ export function generateProgram(config, newProgramId) {
           const deloadPct = 0.60;
           const kg = orm ? _calcKg(ex.id, deloadPct, orm) : null;
           const deloadSeries = Math.max(2, vol.series - 2);
-          const deloadReps = _repsForPhase(0.60, vol, true, false);
+          const deloadReps = vol.repsRange[1] + 2; // reps élevées en deload
           return {
             id: ex.id, nom: ex.name,
             series: deloadSeries, reps: deloadReps,
@@ -331,6 +332,26 @@ function _selectExercisesForDay(pool, forced, splitName, domaine, count, dayInde
   shuffled.slice(0, count - result.length).forEach(ex => result.push(ex));
 
   return result.slice(0, count);
+}
+
+// A3: Interpolation reps et séries par semaine dans la phase
+function _interpolateReps(phase, pw, vol) {
+  const startR = phase.startReps || vol.repsRange[1];
+  const endR   = phase.endReps   || vol.repsRange[0];
+  if(phase.weeks <= 1) return startR;
+  const raw = startR + (endR - startR) * pw / (phase.weeks - 1);
+  return Math.round(raw);
+}
+
+function _interpolateSeries(phase, pw, vol) {
+  const baseSeries = vol.series;
+  const mod = phase.seriesMod || 0;
+  // Progressive: séries augmentent légèrement dans les phases intensité (seriesMod > 0)
+  // Taper: séries diminuent (seriesMod < 0)
+  if(phase.weeks <= 1) return Math.max(2, baseSeries + mod);
+  // Interpolation linéaire du modificateur sur la phase
+  const weekMod = Math.round(mod * pw / (phase.weeks - 1));
+  return Math.max(2, baseSeries + weekMod);
 }
 
 function _repsForPhase(pct, vol, isDeload, isTaper) {
