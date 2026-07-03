@@ -16,6 +16,7 @@ import { getPrograms, getActivePrograms, getArchivedPrograms, getProgram, getPro
          setProgExStatus, getCurrentWeek, setStartDate } from './programs.js';
 import { buildAthxProgram } from './data.js';
 import { getRecord, getVacances, setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
+import { renderNutritionSection, bindNutritionEvents } from './nutrition-plan.js';
 
 // ── Custom confirm modal (iOS PWA-safe) ─────────────────────────────────────
 
@@ -94,6 +95,7 @@ export function showSection(id) {
     initWeekSel();
   }
   if(id === 'musculaire')  renderMusculaire();
+  if(id === 'nutrition-section') renderNutritionSection();
   if(id === 'programmes')  renderPrograms();
   if(id === 'programme') {
     // Redirect to Programmes tab — Programme tab is hidden
@@ -187,6 +189,7 @@ export function showDoc(id) {
 
 window.showSection   = showSection;
 window.importJSON    = importJSON;
+window._confirmModal = _confirmModal;
 window._dbClear      = dbClear;
 window.showTracker   = showTracker;
 window.showProg      = showProg;
@@ -1120,6 +1123,9 @@ async function init() {
   // Init body SVG
   initBodyDelegation();
   repaintMuscles();
+
+  // Nutrition : délégation d'événements du wizard (chips/cards)
+  bindNutritionEvents();
 
   // Data toolbar
   document.getElementById('btnExportJSON')?.addEventListener('click', exportJSON);

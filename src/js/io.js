@@ -20,6 +20,7 @@ export function exportJSON() {
     programs_tracking: (typeof dbGet === 'function' ? dbGet('programs_tracking') : null) || {},
     active_programs: (typeof dbGet === 'function' ? dbGet('programs_active') : null) || [],
     active_program: (typeof dbGet === 'function' ? dbGet('program_active') : null) || null,
+    nutrition_plans: (typeof dbGet === 'function' ? dbGet('nutrition_plans') : null) || [],
   };
   _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
 }
@@ -102,6 +103,9 @@ export function importJSON(event) {
       }
       if(parsed.programs_tracking && typeof dbSet === 'function') {
         dbSet('programs_tracking', parsed.programs_tracking);
+      }
+      if(Array.isArray(parsed.nutrition_plans) && typeof dbSet === 'function') {
+        dbSet('nutrition_plans', parsed.nutrition_plans);
       }
       if(Array.isArray(parsed.active_programs) && parsed.active_programs.length > 0 && typeof dbSet === 'function') {
         dbSet('programs_active', parsed.active_programs);

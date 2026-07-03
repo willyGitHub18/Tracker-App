@@ -122,3 +122,9 @@
 .prog-bloc-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);font-weight:600}
 .prog-bloc-content{display:none}
 .prog-bloc-content.active{display:block}
+
+/* ── Cartes de plan nutrition (liste section Nutrition) ── */
+.nutri-plan-card{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.nutri-plan-info{min-width:0}
+.nutri-plan-name{font-size:14px;font-weight:600;color:var(--text)}
+.nutri-plan-sub{font-size:11px;color:var(--text2);margin-top:2px}

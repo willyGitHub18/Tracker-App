@@ -14,14 +14,14 @@ import re
 import sys
 import pathlib
 
-ROOT = pathlib.Path(__file__).resolve().parent
-INDEX = ROOT / "index.html"
+ROOT = pathlib.Path(__file__).resolve().parent          # Code/src (sources + shell.html)
+INDEX = ROOT.parent / "index.html"                       # Code/index.html (runtime, à la racine)
 
 CSS_ORDER  = ["base", "tracker", "musculaire", "programme", "wizard"]
 VIEW_ORDER = ["tracker", "musculaire", "programme", "programmes", "doc", "nutrition"]
 JS_ORDER   = ["db", "security", "data", "store", "progression", "tracker",
               "musculaire", "io", "exercises-db", "programs", "generator",
-              "grossesse", "wizard", "app"]
+              "grossesse", "wizard", "nutrition-plan", "app"]
 
 # Règle d'override injectée en fin de <style> par l'ancien bundler (top-nav masquée).
 TAIL_CSS = "\n.top-nav-btn:nth-child(3){display:none}\n"

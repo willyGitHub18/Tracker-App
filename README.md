@@ -62,6 +62,12 @@ Programme équilibré sur la semaine : Force + Cardio + Hypertrophie + Mobilité
 | RPE max | 9 | 8 | 7 |
 | Volume mobilité | 10% | 20% | 35% |
 
+### 🥗 Nutrition
+Section dédiée (onglet de la barre du bas), organisée comme une liste de plans :
+- **Plan ATHX — Compétition (référence)** toujours en 1er : profil 73 kg, macros, plan alimentaire détaillé, supplémentation evidence-based.
+- **Assistant nutrition** (« + Créer un plan ») : poids, taille, âge, sexe, niveau d'activité, objectif → calcul **Mifflin-St Jeor** (TDEE) → calories jour entraînement/repos, macros (protéines/glucides/lipides en g + %), IMC, répartition des repas et conseils par objectif.
+- Plans personnalisés persistés (IndexedDB), inclus dans l'export/import JSON, supprimables.
+
 ### 🤰 Programme Grossesse / Post-natal
 Basé sur les recommandations **CNSF, HAS, SOGC/CSEP**.
 
@@ -99,43 +105,61 @@ Basé sur les recommandations **CNSF, HAS, SOGC/CSEP**.
 
 ## Architecture
 
+Le **runtime** (servi par GitHub Pages) est à la racine ; les **sources** de build vivent dans `src/`
+et sont inertes sur Pages (l'app tourne uniquement avec `index.html`, qui est auto-suffisant).
+
 ```
 Tracker-App/
-├── index.html              # App complète bundlée (CSS + JS + vues inline)
-├── manifest.json           # PWA (nom, icônes, standalone)
-├── sw.js                   # Service Worker — cache offline
-├── robots.txt              # Désindexation moteurs de recherche
-├── js/
-│   ├── db.js               # IndexedDB + cache in-memory + fallback localStorage
-│   ├── security.js         # esc(), sanitizeRecord(), validateImport()
-│   ├── data.js             # EXERCISES, MUSCLE_MAP, AGE_MODIFIERS, GROSSESSE_*
-│   ├── store.js            # Accesseurs + gestion vacances multi-périodes
-│   ├── progression.js      # Logique Lafay : weekOutcome, getNextPlan, calcAdj
-│   ├── tracker.js          # Tracker générique (ATHX + programmes wizard)
-│   ├── musculaire.js       # SRA, paintAllViews, cumul multi-programmes
-│   ├── io.js               # Export JSON/CSV, import avec validation
-│   ├── exercises-db.js     # Base wger.de + cache IndexedDB + fallback 35 exercices
-│   ├── programs.js         # Storage multi-programmes, statuts, clôture, archive
-│   ├── generator.js        # Algo génération programme (age-aware, mixte, grossesse)
-│   ├── grossesse.js        # Programme prénatal/post-natal complet (CNSF/HAS)
-│   ├── wizard.js           # Wizard 8 étapes
-│   └── app.js              # Routing, init, migration ATHX, cycle de vie programmes
-├── css/
-│   ├── base.css
-│   ├── tracker.css
-│   ├── musculaire.css
-│   ├── programme.css
-│   └── wizard.css
-├── views/
-│   ├── tracker.html
-│   ├── musculaire.html
-│   ├── programme.html
-│   ├── programmes.html     # Wizard + liste programmes
-│   └── doc.html
-└── icons/
-    ├── icon-192.png
-    └── icon-512.png
+├── index.html              # GÉNÉRÉ — app complète bundlée (CSS + JS + vues inline)  ⚠ ne pas éditer
+├── manifest.json           # PWA (nom, icônes, standalone)                            — runtime
+├── sw.js                   # Service Worker — cache offline                           — runtime
+├── robots.txt              # Désindexation moteurs de recherche                       — runtime
+├── icons/                  # icon-180 / 192 / 512                                     — runtime
+└── src/                    # SOURCES (build-time uniquement)
+    ├── build.py            # Bundler : shell.html + css/ + views/ + js/ → ../index.html
+    ├── shell.html          # Squelette HTML (head, header, nav bottom, <script>) + placeholders {{CSS}}/{{VIEWS}}/{{JS}}
+    ├── js/
+    │   ├── db.js               # IndexedDB + cache in-memory + fallback localStorage
+    │   ├── security.js         # esc(), sanitizeRecord(), validateImport()
+    │   ├── data.js             # EXERCISES, MUSCLE_MAP, AGE_MODIFIERS, GROSSESSE_*, NUTRITION_*
+    │   ├── store.js            # Accesseurs + gestion vacances multi-périodes
+    │   ├── progression.js      # Logique Lafay : weekOutcome, getNextPlan, calcAdj
+    │   ├── tracker.js          # Tracker générique (ATHX + programmes wizard)
+    │   ├── musculaire.js       # SRA, paintAllViews, cumul multi-programmes
+    │   ├── io.js               # Export JSON/CSV, import avec validation
+    │   ├── exercises-db.js     # Base wger.de + cache IndexedDB + fallback 35 exercices
+    │   ├── programs.js         # Storage multi-programmes, statuts, clôture, archive
+    │   ├── generator.js        # Algo génération programme (age-aware, mixte, grossesse)
+    │   ├── grossesse.js        # Programme prénatal/post-natal complet (CNSF/HAS)
+    │   ├── wizard.js           # Wizard de programme (8 étapes)
+    │   ├── nutrition-plan.js   # Section Nutrition : plans + calcul Mifflin-St Jeor
+    │   └── app.js              # Routing, init, migration ATHX, cycle de vie programmes
+    ├── css/
+    │   ├── base.css
+    │   ├── tracker.css
+    │   ├── musculaire.css
+    │   ├── programme.css
+    │   └── wizard.css
+    └── views/
+        ├── tracker.html
+        ├── musculaire.html
+        ├── programme.html
+        ├── programmes.html     # Wizard + liste programmes
+        ├── doc.html
+        └── nutrition.html      # Section Nutrition (liste / détail / wizard)
 ```
+
+### Build
+
+`index.html` n'est **jamais édité à la main** : on modifie les sources dans `src/`, puis :
+
+```bash
+cd Code
+python src/build.py            # régénère index.html à la racine
+python src/build.py --check    # vérifie que index.html correspond aux sources (0 = OK)
+```
+
+Voir `Documentation/just2train-workflow.md` pour la procédure complète (build → bump SW → déploiement).
 
 ---
 
@@ -168,12 +192,13 @@ Safari → URL GitHub Pages → **Partager → Ajouter à l'écran d'accueil**
 
 ## Gestion des mises à jour
 
-**Seul `index.html` est obligatoire** pour l'app déployée — tout le code est bundlé dedans.
+**Seul `index.html` est chargé** par l'app déployée — tout le code est bundlé dedans. Le dossier
+`src/` est versionné pour pouvoir rebuild, mais n'est jamais chargé sur GitHub Pages.
 
 ```
-Claude génère index.html
+Éditer les sources dans src/
         ↓
-Remplacer index.html dans le dossier local
+python src/build.py   →  régénère index.html
         ↓
 ⚠ Incrémenter APP_VERSION dans sw.js
         ↓
@@ -185,9 +210,9 @@ GitHub Desktop : Commit → Push
 **Convention de versioning :**
 | Changement | Version |
 |---|---|
-| Correction de bug | `1.0.x` |
-| Nouvelle fonctionnalité | `1.x.0` |
-| Refonte majeure | `x.0.0` |
+| Correction de bug | `x.x.X+1` |
+| Nouvelle fonctionnalité | `x.X+1.0` |
+| Refonte majeure | `X+1.0.0` |
 
 ---
 
