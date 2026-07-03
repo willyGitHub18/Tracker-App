@@ -315,9 +315,10 @@ function step3() {
 // ── Step 4 — Matériel ──────────────────────────────────────────────────────
 
 function step4() {
+  const isCardio = _config.domaine === 'cardio';
   return `
     <div class="wiz-title">Quel matériel as-tu disponible ?</div>
-    <div class="wiz-subtitle">Sélectionne tout ce dont tu disposes</div>
+    <div class="wiz-subtitle">${isCardio ? 'Optionnel pour un programme cardio' : 'Sélectionne tout ce dont tu disposes'}</div>
     <div class="wiz-materiel-grid">
       ${MATERIELS.map(m => `
         <div class="wiz-materiel-item ${_config.materiel.includes(m.id) ? 'selected' : ''}"
@@ -326,7 +327,9 @@ function step4() {
           <span class="wiz-mat-label">${m.label}</span>
         </div>`).join('')}
     </div>
-    <div class="wiz-note">💡 Le programme s'adapte automatiquement au matériel sélectionné.</div>`;
+    <div class="wiz-note">${isCardio
+      ? '💡 Aucun matériel requis — tu choisiras tes activités (course, vélo, rameur, ski-erg…) à l\'étape suivante. Tu peux passer directement.'
+      : '💡 Le programme s\'adapte automatiquement au matériel sélectionné.'}</div>`;
 }
 
 // ── Step 5 — Exercices ────────────────────────────────────────────────────────
@@ -378,25 +381,21 @@ function step5() {
 // ── Step 5 (cardio) — Modalités d'endurance ────────────────────────────────────
 
 function step5_cardio() {
-  const hasMachines = _config.materiel.includes('machines');
   return `
     <div class="wiz-title">Quelles activités d'endurance ?</div>
-    <div class="wiz-subtitle">Sélectionne une ou plusieurs modalités. Les séances qualité (seuil, VO₂max) porteront sur ta 1ère modalité ; les autres serviront aux sorties faciles et à la récupération.</div>
+    <div class="wiz-subtitle">Sélectionne ce que tu pratiques (pas besoin de matériel déclaré). Les séances qualité (seuil, VO₂max) porteront sur ta 1ère activité ; les autres serviront aux sorties faciles et à la récupération.</div>
     <div class="wiz-materiel-grid">
       ${CARDIO_MODALITIES.map(m => {
-        const needsEquip = m.equip && !_config.materiel.includes(m.equip);
         const sel = _config.cardioModalities.includes(m.id);
         return `
         <div class="wiz-materiel-item ${sel ? 'selected' : ''}"
-             data-toggle="cardioModalities" data-value="${m.id}"
-             style="${needsEquip ? 'opacity:.55' : ''}">
+             data-toggle="cardioModalities" data-value="${m.id}">
           <span class="wiz-mat-icon">${m.icon}</span>
           <span class="wiz-mat-label">${m.name}</span>
-          ${needsEquip ? '<span style="font-size:10px;color:var(--amber)">nécessite Machines</span>' : `<span style="font-size:10px;color:var(--text3)">impact ${m.impact}</span>`}
+          <span style="font-size:10px;color:var(--text3)">impact ${m.impact}</span>
         </div>`;
       }).join('')}
     </div>
-    ${!hasMachines ? '<div class="wiz-note">💡 Rameur, vélo, ski-erg et elliptique nécessitent « Machines / Câbles » (étape matériel). Course, marche, corde et natation sont toujours disponibles.</div>' : ''}
     ${_config.cardioModalities.length === 0 ? '<div class="wiz-note">Aucune sélection = course à pied par défaut (+ marche pour la récupération).</div>' : ''}`;
 }
 
@@ -637,7 +636,8 @@ function _validateStep() {
     if(_config.grossesse_type === 'postnatal' && !_config.postnatal_phase) { _showError('Sélectionne ta phase post-natale.'); return false; }
     return true;
   }
-  if(_step === 5 && _config.materiel.length === 0) {  // matériel = step4 @ idx 5
+  // Matériel (step4 @ idx 5) requis — sauf cardio (course/marche sans matériel).
+  if(_step === 5 && _config.materiel.length === 0 && _config.domaine !== 'cardio') {
     _showError('Sélectionne au moins un type de matériel.');
     return false;
   }

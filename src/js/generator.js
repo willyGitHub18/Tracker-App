@@ -575,7 +575,7 @@ const CARDIO_WEEK_PLANS = {
 function _generateCardioProg(config, id) {
   const {
     niveau, age, seancesParSemaine, duree, competition, name,
-    materiel = [], cardioModalities = [],
+    cardioModalities = [],
   } = config;
 
   const level  = CARDIO_LEVEL[niveau] || CARDIO_LEVEL.intermediaire;
@@ -586,8 +586,8 @@ function _generateCardioProg(config, id) {
   const ageZoneCap = ageMod.rpeMax < 7 ? 3 : ageMod.rpeMax < 8 ? 4 : 5;
   const zoneCap    = Math.min(level.zoneCap, ageZoneCap);
 
-  // Modalités : choix utilisateur filtré par matériel dispo, repli sur course + marche.
-  const modalities = _resolveCardioModalities(cardioModalities, materiel);
+  // Modalités : choix utilisateur (autonome — le choisir = y avoir accès), repli course + marche.
+  const modalities = _resolveCardioModalities(cardioModalities);
   const mainModality = modalities[0];
   const easyModalities = modalities.length > 1 ? modalities : [mainModality];
   const lowImpact = modalities.filter(m => m.impact === 'faible' || m.impact === 'nul');
@@ -683,11 +683,10 @@ function _isQuality(type) {
   return ['tempo','threshold','vo2max','race','fartlek'].includes(type);
 }
 
-function _resolveCardioModalities(chosen, materiel) {
+function _resolveCardioModalities(chosen) {
   const ids = Array.isArray(chosen) ? chosen.map(c => (typeof c === 'object' ? c.id : c)) : [];
+  // Choisir une modalité = y avoir accès (pas de dépendance au matériel déclaré).
   let mods = CARDIO_MODALITIES.filter(m => ids.includes(m.id));
-  // Filtrer par matériel : les modalités nécessitant du matériel non dispo sont retirées.
-  mods = mods.filter(m => !m.equip || materiel.includes(m.equip));
   if(mods.length === 0) {
     // Repli : course (toujours dispo) + marche pour la récup.
     mods = CARDIO_MODALITIES.filter(m => m.id === 'run' || m.id === 'walk');
