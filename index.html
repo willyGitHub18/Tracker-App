@@ -7591,11 +7591,21 @@ function _renderNutriDetail(id) {
   const plan = getNutritionPlans().find(p => p.id === id);
   if(!plan) { showNutriList(); return; }
   const c   = plan.calc;
+  const inp = plan.inputs || {};
   const obj = NUTRITION_OBJECTIFS.find(n => n.id === plan.objectif);
   const advice = NUTRITION_PLANS[plan.objectif];
 
+  // Valeurs dérivées pour le détail du calcul
+  const op        = OBJ_PARAMS[plan.objectif] || OBJ_PARAMS.maintien;
+  const af        = ACTIVITY_FACTORS[inp.activite] || 1.55;
+  const afLabel   = ACTIVITY_LABELS[inp.activite] || '';
+  const kcalP     = c.prot_g * 4, kcalL = c.lip_g * 9, kcalG = c.gluc_g * 4;
+  const glucPerKg = inp.poids ? (c.gluc_g / inp.poids).toFixed(1) : '?';
+  const sexeAdj   = inp.sexe === 'F' ? '− 161' : '+ 5';
+  const dlt       = d => d === 0 ? '' : (d > 0 ? ' + ' + d : ' − ' + Math.abs(d));
+
   const meals = MEAL_SPLIT.map(m =>
-    `<div class="p-meal-row"><div class="p-meal-name">${m.nom}</div><div class="p-meal-detail">~${Math.round(c.kcalTraining * m.pct / 10) * 10} kcal (${Math.round(m.pct * 100)}%)</div></div>`
+    `<div class="p-meal-row"><div class="p-meal-name">${m.nom}</div><div class="p-meal-detail">~${Math.round(c.kcalTraining * m.pct / 10) * 10} kcal · ${Math.round(m.pct * 100)}% de la journée</div></div>`
   ).join('');
 
   const adviceBlock = advice ? `
@@ -7623,18 +7633,44 @@ function _renderNutriDetail(id) {
         <div class="p-metric"><div class="p-metric-val">${c.kcalTraining}</div><div class="p-metric-lbl">kcal/jour (entraînement)</div></div>
         <div class="p-metric"><div class="p-metric-val">${c.kcalRest}</div><div class="p-metric-lbl">kcal/jour (repos)</div></div>
         <div class="p-metric"><div class="p-metric-val">${c.tdee}</div><div class="p-metric-lbl">TDEE (dépense)</div></div>
+        <div class="p-metric"><div class="p-metric-val">${c.bmr}</div><div class="p-metric-lbl">MB (métabolisme base)</div></div>
         <div class="p-metric"><div class="p-metric-val">${c.imc}</div><div class="p-metric-lbl">IMC</div></div>
       </div>
-      <div class="p-note">Métabolisme de base ${c.bmr} kcal (Mifflin-St Jeor) × facteur d'activité = ${c.tdee} kcal TDEE, ajusté selon l'objectif « ${obj?.label || ''} ».</div>
+      <div class="p-note">Profil : ${inp.poids || '?'} kg · ${inp.taille || '?'} cm · ${inp.age || '?'} ans · ${inp.sexe === 'F' ? 'femme' : 'homme'} · ${afLabel}.</div>
     </div>
+
     <div class="p-section">
-      <div class="p-sec-title">Macronutriments (jour d'entraînement)</div>
-      <div class="p-card"><div class="nutri-macros">
-        <div class="nutri-macro-item"><span class="nutri-macro-label">Protéines</span><span class="nutri-macro-val">${c.prot_g} g · ${c.prot_pct}%</span></div>
-        <div class="nutri-macro-item"><span class="nutri-macro-label">Glucides</span><span class="nutri-macro-val">${c.gluc_g} g · ${c.gluc_pct}%</span></div>
-        <div class="nutri-macro-item"><span class="nutri-macro-label">Lipides</span><span class="nutri-macro-val">${c.lip_g} g · ${c.lip_pct}%</span></div>
-      </div></div>
+      <div class="p-sec-title">Répartition des macronutriments (jour d'entraînement)</div>
+      <div class="p-card">
+        <div class="p-card-body">
+          <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap">
+            <div><span style="font-size:18px;font-weight:500;color:var(--text)">${c.prot_g} g</span><div style="font-size:11px;color:var(--text2)">Protéines · ${op.protPerKg} g/kg</div></div>
+            <div><span style="font-size:18px;font-weight:500;color:var(--text)">${c.gluc_g} g</span><div style="font-size:11px;color:var(--text2)">Glucides · ~${glucPerKg} g/kg</div></div>
+            <div><span style="font-size:18px;font-weight:500;color:var(--text)">${c.lip_g} g</span><div style="font-size:11px;color:var(--text2)">Lipides · ${op.fatPerKg} g/kg</div></div>
+          </div>
+          <div class="p-macro-bar"><div class="p-macro-p" style="width:${c.prot_pct}%"></div><div class="p-macro-g" style="width:${c.gluc_pct}%"></div><div class="p-macro-l" style="width:${c.lip_pct}%"></div></div>
+          <div class="p-macro-legend">
+            <span><span class="p-legend-dot" style="background:#378ADD"></span>Protéines ${c.prot_pct}%</span>
+            <span><span class="p-legend-dot" style="background:#1D9E75"></span>Glucides ${c.gluc_pct}%</span>
+            <span><span class="p-legend-dot" style="background:#EF9F27"></span>Lipides ${c.lip_pct}%</span>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <div class="p-section">
+      <div class="p-sec-title">Détail du calcul</div>
+      <div class="p-card">
+        <div class="p-ex-row"><div class="p-ex-name">Métabolisme de base</div><div class="p-ex-detail">Mifflin-St Jeor : 10 × ${inp.poids || '?'} + 6.25 × ${inp.taille || '?'} − 5 × ${inp.age || '?'} ${sexeAdj} = <strong style="color:var(--text)">${c.bmr} kcal</strong></div><div class="p-ex-tag p-tag-r">MB</div></div>
+        <div class="p-ex-row"><div class="p-ex-name">Dépense totale (TDEE)</div><div class="p-ex-detail">MB × ${af} (${afLabel}) = <strong style="color:var(--text)">${c.tdee} kcal</strong></div><div class="p-ex-tag p-tag-c">TDEE</div></div>
+        <div class="p-ex-row"><div class="p-ex-name">Objectif — ${obj?.label || ''}</div><div class="p-ex-detail">Entraînement : ${c.tdee}${dlt(op.deltaTrain)} = <strong style="color:var(--text)">${c.kcalTraining} kcal</strong> · Repos : ${c.tdee}${dlt(op.deltaRest)} = <strong style="color:var(--text)">${c.kcalRest} kcal</strong></div><div class="p-ex-tag p-tag-f">Cible</div></div>
+        <div class="p-ex-row"><div class="p-ex-name">Protéines</div><div class="p-ex-detail">${op.protPerKg} g/kg × ${inp.poids || '?'} kg = <strong style="color:var(--text)">${c.prot_g} g</strong> (${kcalP} kcal)</div><div class="p-ex-tag" style="background:#378ADD;color:#fff">P</div></div>
+        <div class="p-ex-row"><div class="p-ex-name">Lipides</div><div class="p-ex-detail">${op.fatPerKg} g/kg × ${inp.poids || '?'} kg = <strong style="color:var(--text)">${c.lip_g} g</strong> (${kcalL} kcal)</div><div class="p-ex-tag" style="background:#EF9F27;color:#fff">L</div></div>
+        <div class="p-ex-row"><div class="p-ex-name">Glucides</div><div class="p-ex-detail">Reste : (${c.kcalTraining} − ${kcalP} − ${kcalL}) ÷ 4 = <strong style="color:var(--text)">${c.gluc_g} g</strong> (${kcalG} kcal)</div><div class="p-ex-tag" style="background:#1D9E75;color:#fff">G</div></div>
+      </div>
+      <div class="p-note">Méthode : équation de Mifflin-St Jeor (référence actuelle, plus précise que Harris-Benedict) ; protéines fixées en g/kg selon l'objectif, lipides ≥ 0.9 g/kg pour la fonction hormonale, glucides sur les calories restantes.</div>
+    </div>
+
     <div class="p-section">
       <div class="p-sec-title">Répartition des repas (jour d'entraînement)</div>
       <div class="p-card">${meals}</div>
