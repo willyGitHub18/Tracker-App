@@ -287,6 +287,8 @@ function _renderProgSaisie(prog) {
           <div class="cardio-scheme">${esc(ex.scheme||'—')}</div>
           <div class="cardio-target">RPE cible <strong>${esc(ex.rpeTarget||'—')}</strong>${ex.hrPct?` · <span style="color:var(--text3)">${esc(ex.hrPct)}</span>`:''}</div>`;
         if(ex.detail) html += `<div class="cardio-detail">${esc(ex.detail)}</div>`;
+        if(ex.feel)   html += `<div class="cardio-detail"><strong>Allure / ressenti :</strong> ${esc(ex.feel)}</div>`;
+        if(ex.cue)    html += `<div class="cardio-detail"><strong>Technique :</strong> ${esc(ex.cue)}</div>`;
         html += `<div class="cardio-log">
           <label class="cardio-log-field">Durée réelle
             <span><input type="number" id="cdur_${ex.id}" min="0" max="600" step="1" value="${durVal}" placeholder="${ex.duration||''}"> min</span>

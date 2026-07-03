@@ -263,11 +263,24 @@ export const MIXTE_SPLITS = {
 // Zones d'intensité — pilotées PRIORITAIREMENT par le RPE (app RPE-centrée),
 // le %FCmax n'est qu'un repère secondaire (Tanaka : FCmax ≈ 208 − 0,7 × âge).
 export const CARDIO_ZONES = {
-  1: { label:'Z1 · Récupération', hr:'50–60% FCmax', rpe:'1–2',  band:'facile', bg:'#E6F1FB', col:'#185FA5' },
-  2: { label:'Z2 · Endurance',    hr:'60–70% FCmax', rpe:'3–4',  band:'facile', bg:'#E1F5EE', col:'#0F6E56' },
-  3: { label:'Z3 · Tempo',        hr:'70–80% FCmax', rpe:'5–6',  band:'seuil',  bg:'#FAEEDA', col:'#854F0B' },
-  4: { label:'Z4 · Seuil',        hr:'80–90% FCmax', rpe:'7–8',  band:'dur',    bg:'#FDE7DA', col:'#B4480B' },
-  5: { label:'Z5 · VO₂max',       hr:'90–100% FCmax',rpe:'9–10', band:'dur',    bg:'#FDEAEA', col:'#9C2222' },
+  1: { label:'Z1 · Récupération', hr:'50–60% FCmax', rpe:'1–2',  band:'facile', bg:'#E6F1FB', col:'#185FA5', feel:'Très facile. Tu peux tenir une conversation complète sans essoufflement. Objectif : régénérer.' },
+  2: { label:'Z2 · Endurance',    hr:'60–70% FCmax', rpe:'3–4',  band:'facile', bg:'#E1F5EE', col:'#0F6E56', feel:'Allure conversationnelle : tu parles par phrases entières (test de la parole). C\'est le socle du volume — reste facile même si ça semble trop lent.' },
+  3: { label:'Z3 · Tempo',        hr:'70–80% FCmax', rpe:'5–6',  band:'seuil',  bg:'#FAEEDA', col:'#854F0B', feel:'Modéré à soutenu mais maîtrisé : phrases courtes seulement. « Confortablement inconfortable ». ~allure semi/marathon.' },
+  4: { label:'Z4 · Seuil',        hr:'80–90% FCmax', rpe:'7–8',  band:'dur',    bg:'#FDE7DA', col:'#B4480B', feel:'Dur : quelques mots à la fois. Allure ~10 km, sensation de brûlure gérable. C\'est le seuil lactique.' },
+  5: { label:'Z5 · VO₂max',       hr:'90–100% FCmax',rpe:'9–10', band:'dur',    bg:'#FDEAEA', col:'#9C2222', feel:'Très dur : parole impossible. Allure ~3–5 km / 1500 m. Respiration maximale. Tenu seulement en intervalles courts.' },
+};
+
+// Repères techniques (mouvement / cadence / posture) par modalité.
+export const CARDIO_CUES = {
+  run:        'Cadence ~170–180 pas/min, foulée courte sous le centre de gravité. Buste droit, épaules relâchées, regard loin. Attaque médio-pied, ne pas sur-attaquer le talon.',
+  bike:       'Cadence 80–95 tr/min, pédalage rond (tirer ET pousser). Buste stable, mains relâchées. Vérifier la hauteur de selle (jambe presque tendue en bas).',
+  row_erg:    'Séquence : jambes → buste → bras (retour inverse : bras → buste → jambes). Dos gainé, pas d\'arrondi lombaire. ~20–24 coups/min en aérobie, plus en intensité. La puissance vient des jambes.',
+  ski_erg:    'Charnière de hanche, tirer avec le dos et les abdos (pas seulement les bras). Descendre les bras jusqu\'aux cuisses, remonter fluide. Gainage constant.',
+  bike_erg:   'Bras et jambes synchronisés, cadence régulière. Idéal pour l\'intensité sans impact articulaire. Rester assis stable, ne pas se cambrer.',
+  elliptical: 'Amplitude complète du mouvement, buste droit. Pousser dans les talons. Ne pas s\'appuyer lourdement sur les poignées — les jambes travaillent.',
+  jump_rope:  'Sauts bas (2–3 cm), rotation des poignets (pas des bras). Appuis sur l\'avant-pied, genoux souples. Fractionner en blocs courts si besoin.',
+  swim:       'Expiration continue dans l\'eau, inspiration brève. Gainage gréé, roulis des épaules, poussée complète jusqu\'à la cuisse. La FC est peu fiable en natation → se fier au RPE.',
+  walk:       'Marche rapide et dynamique, bras actifs pliés à 90°. Dérouler le pied talon→pointe. Terrain plat pour la récupération, côtes possibles en endurance.',
 };
 
 // Modalités cardio. equip = clé matériel requise (null = toujours dispo : course, marche…).

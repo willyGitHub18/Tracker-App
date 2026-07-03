@@ -4,7 +4,7 @@
  */
 
 import { filterExercises } from './exercises-db.js';
-import { AGE_MODIFIERS, MIXTE_SPLITS, GROSSESSE_MOIS_CONFIG, GROSSESSE_EXERCISES_PRENATAL, GROSSESSE_SEMAINE_TYPE, POSTNATAL_PHASES, PILATES_VIDEOS, CARDIO_ZONES, CARDIO_MODALITIES, CARDIO_SESSION_TYPES } from './data.js';
+import { AGE_MODIFIERS, MIXTE_SPLITS, GROSSESSE_MOIS_CONFIG, GROSSESSE_EXERCISES_PRENATAL, GROSSESSE_SEMAINE_TYPE, POSTNATAL_PHASES, PILATES_VIDEOS, CARDIO_ZONES, CARDIO_MODALITIES, CARDIO_SESSION_TYPES, CARDIO_CUES } from './data.js';
 
 // ── Phase structures by duration ──────────────────────────────────────────────
 
@@ -742,6 +742,7 @@ function _buildCardioSession(type, modality, level, volFactor, zoneCap, weekNum,
     id: modality.id, nom: modality.name, kind: 'cardio',
     sessionType: effType, typeLabel: (CARDIO_SESSION_TYPES[effType] || def).label,
     zone, zoneLabel: Z.label, rpeTarget: Z.rpe, hrPct: Z.hr, zoneBg: Z.bg, zoneCol: Z.col,
+    feel: Z.feel, cue: CARDIO_CUES[modality.id] || '',
     unit: 'min', dist: modality.dist, muscles: modality.muscles,
   };
 

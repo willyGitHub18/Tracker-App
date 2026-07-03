@@ -897,7 +897,7 @@ function _renderProgDetailView(prog, container) {
 }
 
 // ── Vue détail cardio / endurance ──────────────────────────────────────────────
-// Programme d'endurance : séances par semaine (modalité, zone, RPE), pas de charges.
+// Navigation façon ATHX : pills par JOUR → sous-boutons par SEMAINE → fiche séance riche.
 function _renderCardioDetailView(prog, container) {
   const PHASE_BAR = {
     'Base aérobie':        { bg:'#E1F5EE', col:'#0F6E56' },
@@ -905,49 +905,58 @@ function _renderCardioDetailView(prog, container) {
     'Pic VO₂max':          { bg:'#FDEAEA', col:'#9C2222' },
     'Affûtage':            { bg:'#F1EFE8', col:'#444441' },
   };
+  const _phaseBar = sem => sem.isDeload ? { bg:'#F1EFE8', col:'#444441' }
+    : sem.isTaper ? { bg:'#F1EFE8', col:'#444441' }
+    : (PHASE_BAR[sem.phase] || { bg:'#E6F1FB', col:'#185FA5' });
 
-  // Regrouper les semaines en blocs (phases consécutives + décharges).
-  const blocs = [];
-  let cur = null;
-  (prog.semaines || []).forEach(sem => {
-    const key = sem.isDeload ? `dl-${sem.num}` : (sem.isTaper ? 'taper' : sem.phase);
-    if(!cur || cur.key !== key) {
-      cur = { key, label: sem.isDeload ? `S${sem.num} Décharge` : (sem.isTaper ? `S${sem.num} Affûtage` : sem.phase),
-              weeks: [sem], phase: sem.phase, isDeload: sem.isDeload, isTaper: sem.isTaper };
-      blocs.push(cur);
-    } else cur.weeks.push(sem);
-  });
+  const sems = prog.semaines || [];
+  const refWeek = sems.find(s => !s.isDeload && !s.isTaper) || sems[0];
+  const dayNames = refWeek?.jours?.map(j => j.nom) || [];
 
-  const pills = blocs.map((b, i) =>
-    `<button class="${i===0?'active':''}" onclick="_showCardioTab(this,'cbloc-${i}')">${esc(b.label)}</button>`
-  ).join('');
-
-  const content = blocs.map((b, i) => {
-    const bar = b.isDeload ? { bg:'#F1EFE8', col:'#444441' } : (PHASE_BAR[b.phase] || { bg:'#E6F1FB', col:'#185FA5' });
-    const barLabel = b.isDeload ? 'Décharge — assimilation, volume réduit (~55 %)'
-      : b.isTaper ? 'Affûtage — volume réduit, intensité conservée'
-      : b.phase;
-
-    const weeksHtml = b.weeks.map(sem => {
-      const rows = (sem.jours || []).map(j => {
-        const s = j.exercices?.[0] || {};
-        const zoneShort = (s.zoneLabel || '').split('·')[0].trim();
-        return `<div class="p-ex-row">
-          <div class="p-ex-name">${esc(j.nom)} · ${esc(j.split || '')}</div>
-          <div class="p-ex-detail">${esc(s.scheme || '—')} — RPE ${esc(s.rpeTarget || '—')}</div>
-          <div class="p-ex-tag" style="background:${s.zoneBg||'var(--surface2)'};color:${s.zoneCol||'var(--text2)'}">${esc(zoneShort)}</div>
-        </div>`;
-      }).join('');
-      return `<div class="p-card">
-        <div class="p-card-title">Semaine ${sem.num}${sem.distribution?` · ${esc(sem.distribution)}`:''}</div>
-        ${rows}
+  // Fiche riche d'une séance (jour, semaine)
+  const _sessionCard = (sem, s) => {
+    const bar = _phaseBar(sem);
+    const phaseLabel = sem.isDeload ? `Semaine ${sem.num} — Décharge (assimilation)`
+      : sem.isTaper ? `Semaine ${sem.num} — Affûtage`
+      : `Semaine ${sem.num} — ${sem.phase}`;
+    let body = `<strong>Intensité :</strong> ${esc(s.zoneLabel||'')} · RPE ${esc(s.rpeTarget||'—')}${s.hrPct?` · ${esc(s.hrPct)}`:''}`;
+    if(s.feel)   body += `<br><strong>Allure / ressenti :</strong> ${esc(s.feel)}`;
+    if(s.detail) body += `<br>${esc(s.detail)}`;
+    if(s.cue)    body += `<br><strong>Technique :</strong> ${esc(s.cue)}`;
+    if(s.totalMin) body += `<br><strong>Durée estimée :</strong> ~${s.totalMin} min (échauffement + retour au calme inclus)`;
+    return `<span class="p-phase-bar" style="background:${bar.bg};color:${bar.col}">${esc(phaseLabel)}${sem.distribution?` · ${esc(sem.distribution)}`:''}</span>
+      <div class="p-card">
+        <div class="p-card-title">${esc(s.nom||'')} — ${esc(s.scheme||'—')}</div>
+        <span class="p-ex-tag" style="background:${s.zoneBg||'var(--surface2)'};color:${s.zoneCol||'var(--text2)'};display:inline-block;margin-bottom:6px">${esc(s.zoneLabel||'')}</span>
+        <div class="p-card-body">${body}</div>
       </div>`;
-    }).join('');
+  };
 
-    return `<div id="cbloc-${i}" class="prog-tab ${i===0?'active':''}">
+  // Pills par jour (+ rôle dominant)
+  const pills = dayNames.map((dn, di) => {
+    const s0 = refWeek?.jours?.[di]?.exercices?.[0];
+    const role = s0 ? (s0.zone >= 3 ? 'Qualité' : (s0.typeLabel || '')) : '';
+    return `<button class="${di===0?'active':''}" onclick="_showCardioTab(this,'cday-${di}')">${esc(dn)}${role?` — ${esc(role)}`:''}</button>`;
+  }).join('');
+
+  // Contenu par jour : sous-boutons semaine + fiche de chaque semaine
+  const daysHtml = dayNames.map((dn, di) => {
+    const weekBtns = sems.map((sem, wi) => {
+      const bar = _phaseBar(sem);
+      return `<button class="prog-bloc-btn${wi===0?' active':''}" style="border-color:${bar.col}55"
+        onclick="_showCardioWeek(${di},${wi},this)">S${sem.num}</button>`;
+    }).join('');
+    const weekContent = sems.map((sem, wi) => {
+      const s = sem.jours?.[di]?.exercices?.[0] || {};
+      return `<div class="prog-bloc-content${wi===0?' active':''}" data-cday="${di}" data-cweek="${wi}">${_sessionCard(sem, s)}</div>`;
+    }).join('');
+    const s0 = refWeek?.jours?.[di]?.exercices?.[0];
+    const role = s0 ? (s0.zone >= 3 ? 'séance qualité' : (s0.typeLabel || '')) : '';
+    return `<div id="cday-${di}" class="prog-tab ${di===0?'active':''}">
       <div class="p-section">
-        <span class="p-phase-bar" style="background:${bar.bg};color:${bar.col}">${esc(barLabel)}</span>
-        ${weeksHtml}
+        <div class="p-sec-title">${esc(dn)}${role?` — ${esc(role)}`:''}</div>
+        <div class="p-week-sel">${weekBtns}</div>
+        ${weekContent}
       </div>
     </div>`;
   }).join('');
@@ -960,15 +969,25 @@ function _renderCardioDetailView(prog, container) {
       </div>
       <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
     </div>
-    <div class="p-note" style="margin:0 12px 8px">Distribution <strong>polarisée ~80/20</strong> : l'essentiel du volume en zone facile (Z1–Z2, test de la parole possible), une minorité en qualité (seuil/VO₂max). Progression de volume ~8 %/sem, décharge entre les blocs, affûtage final.</div>
+    <div class="p-note" style="margin:0 12px 8px">Distribution <strong>polarisée ~80/20</strong> : l'essentiel du volume en zone facile (Z1–Z2, test de la parole possible), une minorité en qualité (seuil/VO₂max). Progression ~8 %/sem, décharge entre les blocs, affûtage final. <em>Choisis un jour, puis une semaine.</em></div>
     <div class="prog-top-nav">${pills}</div>
-    ${content}`;
+    ${daysHtml}`;
 
   window._showCardioTab = function(btn, tabId) {
     container.querySelectorAll('.prog-top-nav button').forEach(b => b.classList.remove('active'));
     container.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
     container.querySelector('#' + tabId)?.classList.add('active');
+  };
+
+  // Sous-navigation semaine au sein d'un jour
+  window._showCardioWeek = function(di, wi, btn) {
+    const dayTab = container.querySelector('#cday-' + di);
+    if(!dayTab) return;
+    dayTab.querySelectorAll('.prog-bloc-btn').forEach(b => b.classList.remove('active'));
+    dayTab.querySelectorAll('.prog-bloc-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    dayTab.querySelector(`.prog-bloc-content[data-cday="${di}"][data-cweek="${wi}"]`)?.classList.add('active');
   };
 }
 

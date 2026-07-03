@@ -2369,11 +2369,24 @@ const MIXTE_SPLITS = {
 // Zones d'intensité — pilotées PRIORITAIREMENT par le RPE (app RPE-centrée),
 // le %FCmax n'est qu'un repère secondaire (Tanaka : FCmax ≈ 208 − 0,7 × âge).
 const CARDIO_ZONES = {
-  1: { label:'Z1 · Récupération', hr:'50–60% FCmax', rpe:'1–2',  band:'facile', bg:'#E6F1FB', col:'#185FA5' },
-  2: { label:'Z2 · Endurance',    hr:'60–70% FCmax', rpe:'3–4',  band:'facile', bg:'#E1F5EE', col:'#0F6E56' },
-  3: { label:'Z3 · Tempo',        hr:'70–80% FCmax', rpe:'5–6',  band:'seuil',  bg:'#FAEEDA', col:'#854F0B' },
-  4: { label:'Z4 · Seuil',        hr:'80–90% FCmax', rpe:'7–8',  band:'dur',    bg:'#FDE7DA', col:'#B4480B' },
-  5: { label:'Z5 · VO₂max',       hr:'90–100% FCmax',rpe:'9–10', band:'dur',    bg:'#FDEAEA', col:'#9C2222' },
+  1: { label:'Z1 · Récupération', hr:'50–60% FCmax', rpe:'1–2',  band:'facile', bg:'#E6F1FB', col:'#185FA5', feel:'Très facile. Tu peux tenir une conversation complète sans essoufflement. Objectif : régénérer.' },
+  2: { label:'Z2 · Endurance',    hr:'60–70% FCmax', rpe:'3–4',  band:'facile', bg:'#E1F5EE', col:'#0F6E56', feel:'Allure conversationnelle : tu parles par phrases entières (test de la parole). C\'est le socle du volume — reste facile même si ça semble trop lent.' },
+  3: { label:'Z3 · Tempo',        hr:'70–80% FCmax', rpe:'5–6',  band:'seuil',  bg:'#FAEEDA', col:'#854F0B', feel:'Modéré à soutenu mais maîtrisé : phrases courtes seulement. « Confortablement inconfortable ». ~allure semi/marathon.' },
+  4: { label:'Z4 · Seuil',        hr:'80–90% FCmax', rpe:'7–8',  band:'dur',    bg:'#FDE7DA', col:'#B4480B', feel:'Dur : quelques mots à la fois. Allure ~10 km, sensation de brûlure gérable. C\'est le seuil lactique.' },
+  5: { label:'Z5 · VO₂max',       hr:'90–100% FCmax',rpe:'9–10', band:'dur',    bg:'#FDEAEA', col:'#9C2222', feel:'Très dur : parole impossible. Allure ~3–5 km / 1500 m. Respiration maximale. Tenu seulement en intervalles courts.' },
+};
+
+// Repères techniques (mouvement / cadence / posture) par modalité.
+const CARDIO_CUES = {
+  run:        'Cadence ~170–180 pas/min, foulée courte sous le centre de gravité. Buste droit, épaules relâchées, regard loin. Attaque médio-pied, ne pas sur-attaquer le talon.',
+  bike:       'Cadence 80–95 tr/min, pédalage rond (tirer ET pousser). Buste stable, mains relâchées. Vérifier la hauteur de selle (jambe presque tendue en bas).',
+  row_erg:    'Séquence : jambes → buste → bras (retour inverse : bras → buste → jambes). Dos gainé, pas d\'arrondi lombaire. ~20–24 coups/min en aérobie, plus en intensité. La puissance vient des jambes.',
+  ski_erg:    'Charnière de hanche, tirer avec le dos et les abdos (pas seulement les bras). Descendre les bras jusqu\'aux cuisses, remonter fluide. Gainage constant.',
+  bike_erg:   'Bras et jambes synchronisés, cadence régulière. Idéal pour l\'intensité sans impact articulaire. Rester assis stable, ne pas se cambrer.',
+  elliptical: 'Amplitude complète du mouvement, buste droit. Pousser dans les talons. Ne pas s\'appuyer lourdement sur les poignées — les jambes travaillent.',
+  jump_rope:  'Sauts bas (2–3 cm), rotation des poignets (pas des bras). Appuis sur l\'avant-pied, genoux souples. Fractionner en blocs courts si besoin.',
+  swim:       'Expiration continue dans l\'eau, inspiration brève. Gainage gréé, roulis des épaules, poussée complète jusqu\'à la cuisse. La FC est peu fiable en natation → se fier au RPE.',
+  walk:       'Marche rapide et dynamique, bras actifs pliés à 90°. Dérouler le pied talon→pointe. Terrain plat pour la récupération, côtes possibles en endurance.',
 };
 
 // Modalités cardio. equip = clé matériel requise (null = toujours dispo : course, marche…).
@@ -3682,6 +3695,8 @@ function _renderProgSaisie(prog) {
           <div class="cardio-scheme">${esc(ex.scheme||'—')}</div>
           <div class="cardio-target">RPE cible <strong>${esc(ex.rpeTarget||'—')}</strong>${ex.hrPct?` · <span style="color:var(--text3)">${esc(ex.hrPct)}</span>`:''}</div>`;
         if(ex.detail) html += `<div class="cardio-detail">${esc(ex.detail)}</div>`;
+        if(ex.feel)   html += `<div class="cardio-detail"><strong>Allure / ressenti :</strong> ${esc(ex.feel)}</div>`;
+        if(ex.cue)    html += `<div class="cardio-detail"><strong>Technique :</strong> ${esc(ex.cue)}</div>`;
         html += `<div class="cardio-log">
           <label class="cardio-log-field">Durée réelle
             <span><input type="number" id="cdur_${ex.id}" min="0" max="600" step="1" value="${durVal}" placeholder="${ex.duration||''}"> min</span>
@@ -6613,6 +6628,7 @@ function _buildCardioSession(type, modality, level, volFactor, zoneCap, weekNum,
     id: modality.id, nom: modality.name, kind: 'cardio',
     sessionType: effType, typeLabel: (CARDIO_SESSION_TYPES[effType] || def).label,
     zone, zoneLabel: Z.label, rpeTarget: Z.rpe, hrPct: Z.hr, zoneBg: Z.bg, zoneCol: Z.col,
+    feel: Z.feel, cue: CARDIO_CUES[modality.id] || '',
     unit: 'min', dist: modality.dist, muscles: modality.muscles,
   };
 
@@ -9138,7 +9154,7 @@ function _renderProgDetailView(prog, container) {
 }
 
 // ── Vue détail cardio / endurance ──────────────────────────────────────────────
-// Programme d'endurance : séances par semaine (modalité, zone, RPE), pas de charges.
+// Navigation façon ATHX : pills par JOUR → sous-boutons par SEMAINE → fiche séance riche.
 function _renderCardioDetailView(prog, container) {
   const PHASE_BAR = {
     'Base aérobie':        { bg:'#E1F5EE', col:'#0F6E56' },
@@ -9146,49 +9162,58 @@ function _renderCardioDetailView(prog, container) {
     'Pic VO₂max':          { bg:'#FDEAEA', col:'#9C2222' },
     'Affûtage':            { bg:'#F1EFE8', col:'#444441' },
   };
+  const _phaseBar = sem => sem.isDeload ? { bg:'#F1EFE8', col:'#444441' }
+    : sem.isTaper ? { bg:'#F1EFE8', col:'#444441' }
+    : (PHASE_BAR[sem.phase] || { bg:'#E6F1FB', col:'#185FA5' });
 
-  // Regrouper les semaines en blocs (phases consécutives + décharges).
-  const blocs = [];
-  let cur = null;
-  (prog.semaines || []).forEach(sem => {
-    const key = sem.isDeload ? `dl-${sem.num}` : (sem.isTaper ? 'taper' : sem.phase);
-    if(!cur || cur.key !== key) {
-      cur = { key, label: sem.isDeload ? `S${sem.num} Décharge` : (sem.isTaper ? `S${sem.num} Affûtage` : sem.phase),
-              weeks: [sem], phase: sem.phase, isDeload: sem.isDeload, isTaper: sem.isTaper };
-      blocs.push(cur);
-    } else cur.weeks.push(sem);
-  });
+  const sems = prog.semaines || [];
+  const refWeek = sems.find(s => !s.isDeload && !s.isTaper) || sems[0];
+  const dayNames = refWeek?.jours?.map(j => j.nom) || [];
 
-  const pills = blocs.map((b, i) =>
-    `<button class="${i===0?'active':''}" onclick="_showCardioTab(this,'cbloc-${i}')">${esc(b.label)}</button>`
-  ).join('');
-
-  const content = blocs.map((b, i) => {
-    const bar = b.isDeload ? { bg:'#F1EFE8', col:'#444441' } : (PHASE_BAR[b.phase] || { bg:'#E6F1FB', col:'#185FA5' });
-    const barLabel = b.isDeload ? 'Décharge — assimilation, volume réduit (~55 %)'
-      : b.isTaper ? 'Affûtage — volume réduit, intensité conservée'
-      : b.phase;
-
-    const weeksHtml = b.weeks.map(sem => {
-      const rows = (sem.jours || []).map(j => {
-        const s = j.exercices?.[0] || {};
-        const zoneShort = (s.zoneLabel || '').split('·')[0].trim();
-        return `<div class="p-ex-row">
-          <div class="p-ex-name">${esc(j.nom)} · ${esc(j.split || '')}</div>
-          <div class="p-ex-detail">${esc(s.scheme || '—')} — RPE ${esc(s.rpeTarget || '—')}</div>
-          <div class="p-ex-tag" style="background:${s.zoneBg||'var(--surface2)'};color:${s.zoneCol||'var(--text2)'}">${esc(zoneShort)}</div>
-        </div>`;
-      }).join('');
-      return `<div class="p-card">
-        <div class="p-card-title">Semaine ${sem.num}${sem.distribution?` · ${esc(sem.distribution)}`:''}</div>
-        ${rows}
+  // Fiche riche d'une séance (jour, semaine)
+  const _sessionCard = (sem, s) => {
+    const bar = _phaseBar(sem);
+    const phaseLabel = sem.isDeload ? `Semaine ${sem.num} — Décharge (assimilation)`
+      : sem.isTaper ? `Semaine ${sem.num} — Affûtage`
+      : `Semaine ${sem.num} — ${sem.phase}`;
+    let body = `<strong>Intensité :</strong> ${esc(s.zoneLabel||'')} · RPE ${esc(s.rpeTarget||'—')}${s.hrPct?` · ${esc(s.hrPct)}`:''}`;
+    if(s.feel)   body += `<br><strong>Allure / ressenti :</strong> ${esc(s.feel)}`;
+    if(s.detail) body += `<br>${esc(s.detail)}`;
+    if(s.cue)    body += `<br><strong>Technique :</strong> ${esc(s.cue)}`;
+    if(s.totalMin) body += `<br><strong>Durée estimée :</strong> ~${s.totalMin} min (échauffement + retour au calme inclus)`;
+    return `<span class="p-phase-bar" style="background:${bar.bg};color:${bar.col}">${esc(phaseLabel)}${sem.distribution?` · ${esc(sem.distribution)}`:''}</span>
+      <div class="p-card">
+        <div class="p-card-title">${esc(s.nom||'')} — ${esc(s.scheme||'—')}</div>
+        <span class="p-ex-tag" style="background:${s.zoneBg||'var(--surface2)'};color:${s.zoneCol||'var(--text2)'};display:inline-block;margin-bottom:6px">${esc(s.zoneLabel||'')}</span>
+        <div class="p-card-body">${body}</div>
       </div>`;
-    }).join('');
+  };
 
-    return `<div id="cbloc-${i}" class="prog-tab ${i===0?'active':''}">
+  // Pills par jour (+ rôle dominant)
+  const pills = dayNames.map((dn, di) => {
+    const s0 = refWeek?.jours?.[di]?.exercices?.[0];
+    const role = s0 ? (s0.zone >= 3 ? 'Qualité' : (s0.typeLabel || '')) : '';
+    return `<button class="${di===0?'active':''}" onclick="_showCardioTab(this,'cday-${di}')">${esc(dn)}${role?` — ${esc(role)}`:''}</button>`;
+  }).join('');
+
+  // Contenu par jour : sous-boutons semaine + fiche de chaque semaine
+  const daysHtml = dayNames.map((dn, di) => {
+    const weekBtns = sems.map((sem, wi) => {
+      const bar = _phaseBar(sem);
+      return `<button class="prog-bloc-btn${wi===0?' active':''}" style="border-color:${bar.col}55"
+        onclick="_showCardioWeek(${di},${wi},this)">S${sem.num}</button>`;
+    }).join('');
+    const weekContent = sems.map((sem, wi) => {
+      const s = sem.jours?.[di]?.exercices?.[0] || {};
+      return `<div class="prog-bloc-content${wi===0?' active':''}" data-cday="${di}" data-cweek="${wi}">${_sessionCard(sem, s)}</div>`;
+    }).join('');
+    const s0 = refWeek?.jours?.[di]?.exercices?.[0];
+    const role = s0 ? (s0.zone >= 3 ? 'séance qualité' : (s0.typeLabel || '')) : '';
+    return `<div id="cday-${di}" class="prog-tab ${di===0?'active':''}">
       <div class="p-section">
-        <span class="p-phase-bar" style="background:${bar.bg};color:${bar.col}">${esc(barLabel)}</span>
-        ${weeksHtml}
+        <div class="p-sec-title">${esc(dn)}${role?` — ${esc(role)}`:''}</div>
+        <div class="p-week-sel">${weekBtns}</div>
+        ${weekContent}
       </div>
     </div>`;
   }).join('');
@@ -9201,15 +9226,25 @@ function _renderCardioDetailView(prog, container) {
       </div>
       <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
     </div>
-    <div class="p-note" style="margin:0 12px 8px">Distribution <strong>polarisée ~80/20</strong> : l'essentiel du volume en zone facile (Z1–Z2, test de la parole possible), une minorité en qualité (seuil/VO₂max). Progression de volume ~8 %/sem, décharge entre les blocs, affûtage final.</div>
+    <div class="p-note" style="margin:0 12px 8px">Distribution <strong>polarisée ~80/20</strong> : l'essentiel du volume en zone facile (Z1–Z2, test de la parole possible), une minorité en qualité (seuil/VO₂max). Progression ~8 %/sem, décharge entre les blocs, affûtage final. <em>Choisis un jour, puis une semaine.</em></div>
     <div class="prog-top-nav">${pills}</div>
-    ${content}`;
+    ${daysHtml}`;
 
   window._showCardioTab = function(btn, tabId) {
     container.querySelectorAll('.prog-top-nav button').forEach(b => b.classList.remove('active'));
     container.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
     container.querySelector('#' + tabId)?.classList.add('active');
+  };
+
+  // Sous-navigation semaine au sein d'un jour
+  window._showCardioWeek = function(di, wi, btn) {
+    const dayTab = container.querySelector('#cday-' + di);
+    if(!dayTab) return;
+    dayTab.querySelectorAll('.prog-bloc-btn').forEach(b => b.classList.remove('active'));
+    dayTab.querySelectorAll('.prog-bloc-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    dayTab.querySelector(`.prog-bloc-content[data-cday="${di}"][data-cweek="${wi}"]`)?.classList.add('active');
   };
 }
 
