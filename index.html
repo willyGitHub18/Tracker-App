@@ -3737,7 +3737,7 @@ function _renderProgSaisie(prog) {
         if(ex.cue)    html += `<div class="cardio-detail"><strong>Technique :</strong> ${esc(ex.cue)}</div>`;
         html += `<div class="cardio-log">
           <label class="cardio-log-field">Durée réelle
-            <span><input type="number" id="cdur_${ex.id}" min="0" max="600" step="1" value="${durVal}" placeholder="${ex.duration||''}"> min</span>
+            <span><input type="number" id="cdur_${ex.id}" min="0" max="600" step="1" value="${durVal}" placeholder="${ex.totalMin||ex.duration||''}"> min</span>
           </label>
           <label class="cardio-log-field">RPE ressenti
             <select id="crpe_${ex.id}"><option value="">—</option>${_rpeOptions(craw.rpe)}</select>
@@ -3749,6 +3749,16 @@ function _renderProgSaisie(prog) {
         </div>`;
         if(craw.done || craw.durationMin != null) {
           html += `<div class="sets-summary">${craw.done?'✓ Réalisée':''}${craw.durationMin!=null?` · ${craw.durationMin} min`:''}${craw.rpe?` · RPE ${esc(String(craw.rpe))}`:''}${craw.distance!=null?` · ${craw.distance} ${esc(ex.dist||'')}`:''}</div>`;
+        }
+        // Analyse post-séance (feedback RPE vs cible) + aperçu séance suivante
+        if(craw.rpe || craw.durationMin != null) html += _cardioSessionAnalysis(ex, craw);
+        const _cdi  = semaine.jours.indexOf(day);
+        const _cnxt = prog.semaines?.[week]?.jours?.[_cdi]?.exercices?.[0];
+        if(_cnxt) {
+          html += `<div class="next-rec-block next-rec-hold">
+            <div class="rec-line">S${week + 1} : <strong>${esc(_cnxt.scheme || '')}</strong></div>
+            <div class="reason">${esc(_cnxt.typeLabel || '')} · progression planifiée (~+8 %/sem)</div>
+          </div>`;
         }
         html += `</div></div>`; // cardio-ex-body + ex-block
         return; // skip normal grid
@@ -3918,6 +3928,40 @@ function _saveProgSaisie(prog, week, dayName) {
 }
 
 // ── Generic analysis helpers ──────────────────────────────────────────────────
+
+// Analyse post-séance cardio : feedback RPE ressenti vs cible de zone (point clé du
+// polarisé — ne pas courir trop dur les jours faciles) + durée réelle vs prescrite.
+function _cardioSessionAnalysis(ex, craw) {
+  const loggedRpe = parseFloat(craw.rpe);
+  const m  = String(ex.rpeTarget || '').match(/(\d+(?:[.,]\d+)?)\D+(\d+(?:[.,]\d+)?)/);
+  const lo = m ? parseFloat(m[1].replace(',', '.')) : null;
+  const hi = m ? parseFloat(m[2].replace(',', '.')) : null;
+  const signals = [];
+
+  if(isFinite(loggedRpe) && lo != null) {
+    if((ex.zone || 2) <= 2) { // séance facile
+      if(loggedRpe > hi + 1) signals.push({ t:'warn', x:`Séance facile ressentie à RPE ${loggedRpe} (cible ${ex.rpeTarget}). En polarisé 80/20, garde les séances faciles vraiment faciles (Z2) — sinon tu accumules de la fatigue sans le bénéfice aérobie.` });
+      else signals.push({ t:'good', x:`RPE ${loggedRpe} bien dans la zone facile — parfait pour la base aérobie.` });
+    } else { // séance qualité
+      if(loggedRpe < lo - 1) signals.push({ t:'warn', x:`RPE ${loggedRpe} sous la cible (${ex.rpeTarget}) — tu peux pousser un peu plus la prochaine séance qualité.` });
+      else if(loggedRpe > hi + 0.5) signals.push({ t:'warn', x:`RPE ${loggedRpe} au-dessus de la cible — séance très exigeante, privilégie une séance facile ou du repos ensuite.` });
+      else signals.push({ t:'good', x:`RPE ${loggedRpe} dans la cible qualité — bon dosage.` });
+    }
+  }
+
+  const ref = ex.totalMin || ex.duration;
+  if(craw.durationMin != null && ref && craw.durationMin < ref * 0.6) {
+    signals.push({ t:'info', x:`Durée ${craw.durationMin} min vs ~${ref} prévue — séance écourtée (sans gravité si ponctuel).` });
+  }
+
+  if(!signals.length) return '';
+  const cls = signals.some(s => s.t === 'warn') ? 'adj-behind' : 'adj-ok';
+  return `<div class="adj-box ${cls}" style="padding:8px 12px">${signals.map(s => {
+    const ic  = s.t === 'good' ? '✓ ' : s.t === 'warn' ? '⚠ ' : '· ';
+    const col = s.t === 'good' ? 'var(--green)' : s.t === 'warn' ? 'var(--amber)' : 'var(--text2)';
+    return `<div style="display:flex;gap:6px;margin-bottom:2px"><span style="color:${col};font-weight:600;flex-shrink:0">${ic}</span><span>${esc(s.x)}</span></div>`;
+  }).join('')}</div>`;
+}
 
 function _calcAdjGeneric(prog, ex, week, semaine) {
   const rec = normRecord(getProgRecord(prog.id, ex.id, week));
@@ -4850,6 +4894,11 @@ let _currentLoad      = {};
 let _selectedMuscleId = null;
 let _currentBodyView  = 'front';
 
+// Échelle de charge cardio : convertit (durée min × RPE/10) en unités de volume
+// comparables aux séries de force. ~0.2 → une sortie facile compte modérément,
+// une séance d'intervalles dure compte davantage, sans écraser la carte musculaire.
+const CARDIO_LOAD_SCALE = 0.2;
+
 // ── Load calculation ────────────────────────────────────────────────────────
 
 /**
@@ -4875,12 +4924,27 @@ function calcGlobalMuscleLoad() {
             const dedupKey = `${prog.id}|${ex.id}|${wi + 1}`;
             if(counted.has(dedupKey)) return;
             counted.add(dedupKey);
-            const rec = normRecord(getProgRecord(prog.id, ex.id, wi + 1));
-            if(!rec?.sets) return;
-            const ts = rec.ts || 0;
+            const raw = getProgRecord(prog.id, ex.id, wi + 1);
+            const ts = raw?.ts || 0;
             if(!ts) return;
             const hoursAgo = (now - ts) / 3_600_000;
             const factors = MUSCLE_MAP[ex.id] || _buildFactors(ex.muscles || []);
+
+            // Cardio : charge = durée × (RPE/10) × échelle (pas de séries kg/reps).
+            if(raw.cardio || ex.kind === 'cardio') {
+              const dur = raw.durationMin || 0;
+              if(!dur) return;
+              const rpe = parseFloat(raw.rpe) || 4;
+              const vol = dur * (rpe / 10) * CARDIO_LOAD_SCALE;
+              Object.entries(factors).forEach(([mid, factor]) => {
+                const hl = RECOVERY_HALFLIFE[mid] || 48;
+                load[mid] = (load[mid] || 0) + vol * factor * Math.pow(2, -hoursAgo / hl);
+              });
+              return;
+            }
+
+            const rec = normRecord(raw);
+            if(!rec?.sets) return;
             rec.sets.forEach(s => {
               if(!s?.kg || !s?.reps) return;
               const rpe = parseFloat(s.rpe) || 7;

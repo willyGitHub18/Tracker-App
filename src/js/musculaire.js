@@ -10,6 +10,11 @@ let _currentLoad      = {};
 let _selectedMuscleId = null;
 let _currentBodyView  = 'front';
 
+// Échelle de charge cardio : convertit (durée min × RPE/10) en unités de volume
+// comparables aux séries de force. ~0.2 → une sortie facile compte modérément,
+// une séance d'intervalles dure compte davantage, sans écraser la carte musculaire.
+const CARDIO_LOAD_SCALE = 0.2;
+
 // ── Load calculation ────────────────────────────────────────────────────────
 
 /**
@@ -35,12 +40,27 @@ export function calcGlobalMuscleLoad() {
             const dedupKey = `${prog.id}|${ex.id}|${wi + 1}`;
             if(counted.has(dedupKey)) return;
             counted.add(dedupKey);
-            const rec = normRecord(getProgRecord(prog.id, ex.id, wi + 1));
-            if(!rec?.sets) return;
-            const ts = rec.ts || 0;
+            const raw = getProgRecord(prog.id, ex.id, wi + 1);
+            const ts = raw?.ts || 0;
             if(!ts) return;
             const hoursAgo = (now - ts) / 3_600_000;
             const factors = MUSCLE_MAP[ex.id] || _buildFactors(ex.muscles || []);
+
+            // Cardio : charge = durée × (RPE/10) × échelle (pas de séries kg/reps).
+            if(raw.cardio || ex.kind === 'cardio') {
+              const dur = raw.durationMin || 0;
+              if(!dur) return;
+              const rpe = parseFloat(raw.rpe) || 4;
+              const vol = dur * (rpe / 10) * CARDIO_LOAD_SCALE;
+              Object.entries(factors).forEach(([mid, factor]) => {
+                const hl = RECOVERY_HALFLIFE[mid] || 48;
+                load[mid] = (load[mid] || 0) + vol * factor * Math.pow(2, -hoursAgo / hl);
+              });
+              return;
+            }
+
+            const rec = normRecord(raw);
+            if(!rec?.sets) return;
             rec.sets.forEach(s => {
               if(!s?.kg || !s?.reps) return;
               const rpe = parseFloat(s.rpe) || 7;
