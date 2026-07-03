@@ -14,7 +14,7 @@ import { getPrograms, getActivePrograms, getArchivedPrograms, getProgram, getPro
          deleteProgram, archiveProgram, closeProgram, newProgramId, saveProgram,
          exportProgramJSON, exportProgramMD, exportAllPrograms, importAllPrograms,
          setProgExStatus, getCurrentWeek, setStartDate } from './programs.js';
-import { buildAthxProgram, NUTRITION_PLANS } from './data.js';
+import { buildAthxProgram } from './data.js';
 import { getRecord, getVacances, setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
 
 // ── Custom confirm modal (iOS PWA-safe) ─────────────────────────────────────
@@ -78,7 +78,7 @@ function _confirmModal(message, actionLabel, onConfirm) {
 
 const SECTIONS   = ['tracker','musculaire','programme','programmes','doc'];
 const TRACK_TABS = ['saisie','progression','historique'];
-const PROG_TABS  = ['nutrition','warmup','mardi','mercredi','jeudi','vendredi','vacances'];
+const PROG_TABS  = ['warmup','mardi','mercredi','jeudi','vendredi','vacances'];
 const DOC_TABS   = ['doc-intro','doc-tracker','doc-progression','doc-statut','doc-musculaire','doc-rpe','doc-export','doc-grossesse'];
 
 export function showSection(id) {
@@ -187,7 +187,6 @@ export function showDoc(id) {
 
 window.showSection   = showSection;
 window.importJSON    = importJSON;
-window._NUTRITION_PLANS = NUTRITION_PLANS;
 window._dbClear      = dbClear;
 window.showTracker   = showTracker;
 window.showProg      = showProg;
@@ -540,7 +539,6 @@ function _renderProgDetailView(prog, container) {
   if(!prog || !container) return;
 
   const DOMAINES_LABELS = { hyrox:'🏟 Hyrox', force:'🏋 Force', gym:'💪 Gym', cardio:'🏃 Cardio', mobilite:'🧘 Mobilité', mixte:'⚡ Mixte', grossesse:'🤰 Grossesse' };
-  const NUTRITION_LABELS = { masse:'💪 Prise de masse', perte:'🔥 Perte de poids', healthy:'🥗 Santé / Équilibre', performance:'⚡ Performance', maintien:'⚖️ Maintien' };
 
   // For ATHX fixed program — inject the full programme.html content
     if(prog.migratedFrom === 'athx_legacy' || prog.subtype === 'fixed') {
@@ -550,9 +548,9 @@ function _renderProgDetailView(prog, container) {
 
     // Get raw HTML and prefix all id= and targets
     let athxHtml = progSection.innerHTML;
-    // Prefix IDs: id="nutrition" → id="athx-nutrition"
+    // Prefix IDs: id="warmup" → id="athx-warmup"
     athxHtml = athxHtml.replace(/ id="/g, ' id="athx-');
-    // Prefix showProg calls: showProg('nutrition') → showProgAthx('nutrition')
+    // Prefix showProg calls: showProg('warmup') → showProgAthx('warmup')
     athxHtml = athxHtml.replace(/showProg\('([^']+)'\)/g, "showProgAthx('$1')");
     athxHtml = athxHtml.replace(/showWeek\('([^']+)','([^']+)'\)/g, "showWeekAthx('$1','$2')");
 
@@ -594,8 +592,6 @@ function _renderProgDetailView(prog, container) {
   }
 
   // ── Generated program — rich view (pills par jour comme ATHX) ──────────────
-
-  const nutritionPlan = prog.nutrition ? window._NUTRITION_PLANS?.[prog.nutrition] : null;
 
   // Phase colors
   const phaseColors = {
@@ -862,38 +858,7 @@ function _renderProgDetailView(prog, container) {
   </div>`;
 
   // Phases tab removed
-
-  // Nutrition tab
-  if(nutritionPlan) {
-    const NUTRITION_LABELS = { masse:'💪 Prise de masse', perte:'🔥 Perte de poids', healthy:'🥗 Santé / Équilibre', performance:'⚡ Performance', maintien:'⚖️ Maintien' };
-    daysContentHtml += `<div id="gnutri" class="prog-tab">
-      <div class="nutri-header">
-        <div class="nutri-title">${NUTRITION_LABELS[prog.nutrition]||''}</div>
-        <div class="nutri-macros">
-          <div class="nutri-macro-item"><span class="nutri-macro-label">Protéines</span><span class="nutri-macro-val">${esc(nutritionPlan.proteines)}</span></div>
-          <div class="nutri-macro-item"><span class="nutri-macro-label">Glucides</span><span class="nutri-macro-val">${esc(nutritionPlan.glucides)}</span></div>
-          <div class="nutri-macro-item"><span class="nutri-macro-label">Lipides</span><span class="nutri-macro-val">${esc(nutritionPlan.lipides)}</span></div>
-          <div class="nutri-macro-item"><span class="nutri-macro-label">Calories</span><span class="nutri-macro-val">${esc(nutritionPlan.surplus)}</span></div>
-        </div>
-      </div>
-      <div class="nutri-block">
-        <div class="nutri-block-title">⏰ ${esc(nutritionPlan.preSeance.timing)} — Pré-séance</div>
-        ${nutritionPlan.preSeance.conseils.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
-      </div>
-      <div class="nutri-block">
-        <div class="nutri-block-title">💪 ${esc(nutritionPlan.postSeance.timing)} — Post-séance</div>
-        ${nutritionPlan.postSeance.conseils.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
-      </div>
-      <div class="nutri-block">
-        <div class="nutri-block-title">🛋 Jours de repos</div>
-        ${nutritionPlan.reposActif.conseils.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
-      </div>
-      <div class="nutri-block nutri-tips-block">
-        <div class="nutri-block-title">💡 À retenir</div>
-        ${nutritionPlan.tips.map(t=>`<div class="nutri-tip">${esc(t)}</div>`).join('')}
-      </div>
-    </div>`;
-  }
+  // Nutrition tab retirée — la nutrition vit désormais dans la section top-level 🥗 Nutrition
 
   container.innerHTML = `
     <div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);margin-bottom:8px">

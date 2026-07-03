@@ -3,7 +3,7 @@
  */
 
 import { loadExercisesDB, searchExercises, FALLBACK_EXERCISES } from './exercises-db.js';
-import { AGE_TRANCHES, AGE_MODIFIERS, GROSSESSE_MOIS_CONFIG, POSTNATAL_PHASES, NUTRITION_OBJECTIFS, NUTRITION_PLANS } from './data.js';
+import { AGE_TRANCHES, AGE_MODIFIERS, GROSSESSE_MOIS_CONFIG, POSTNATAL_PHASES } from './data.js';
 import { generateProgram }  from './generator.js';
 import { saveProgram, setActiveProgram, newProgramId } from './programs.js';
 import { getPrograms }      from './programs.js';
@@ -13,7 +13,7 @@ import { esc }              from './security.js';
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let _step = 1;
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 8;
 
 const _config = {
   domaine:          null,
@@ -126,8 +126,8 @@ export function renderStep() {
   // Grossesse has its own flow: 1 → grossesse_setup → 7
   const isGrossesse = _config.domaine === 'grossesse';
   const renderers = isGrossesse
-    ? [null, step1, step_grossesse, null, null, null, null, null, null, step7]
-    : [null, step1, step2, step2b, step3, step4b, step4, step5, step6, step7];
+    ? [null, step1, step_grossesse, null, null, null, null, null, step7]
+    : [null, step1, step2, step2b, step3, step4, step5, step6, step7];
   const stepFn = renderers[_step];
   const html = stepFn ? stepFn() : '';
 
@@ -308,23 +308,6 @@ function step3() {
           <button class="wiz-chip ${_config.dureeSeance === m ? 'selected' : ''}"
                   data-chip="dureeSeance" data-value="${m}">${m} min</button>`).join('')}
       </div>
-    </div>`;
-}
-
-// ── Step 4b — Nutrition ──────────────────────────────────────────────────────
-
-function step4b() {
-  return `
-    <div class="wiz-title">Quel est ton objectif nutrition ?</div>
-    <div class="wiz-subtitle">Adapte ton alimentation à ton programme</div>
-    <div class="wiz-cards">
-      ${NUTRITION_OBJECTIFS.map(n => `
-        <div class="wiz-card ${_config.nutrition === n.id ? 'selected' : ''}"
-             data-select="nutrition" data-value="${n.id}">
-          <span class="wiz-card-icon">${n.icon}</span>
-          <span class="wiz-card-label">${n.label}</span>
-          <span class="wiz-card-desc">${n.desc}</span>
-        </div>`).join('')}
     </div>`;
 }
 
@@ -522,7 +505,6 @@ function step7() {
       <div class="wiz-recap-row"><span>Durée</span><strong>${_config.duree} semaines</strong></div>
       ${_config.competition ? `<div class="wiz-recap-row"><span>Compétition</span><strong>${_config.competition.type || 'Oui'} · ${_fmtDate(_config.competition.date)}</strong></div>` : ''}
       ${_config.exercicesForces.length ? `<div class="wiz-recap-row"><span>Exercices forcés</span><strong>${_config.exercicesForces.map(e=>e.name).join(', ')}</strong></div>` : ''}
-      ${_config.nutrition ? `<div class="wiz-recap-row"><span>Nutrition</span><strong>${NUTRITION_OBJECTIFS.find(n=>n.id===_config.nutrition)?.icon} ${NUTRITION_OBJECTIFS.find(n=>n.id===_config.nutrition)?.label||'—'}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'prenatal' ? `<div class="wiz-recap-row"><span>Mois de grossesse</span><strong>${GROSSESSE_MOIS_CONFIG[_config.mois_grossesse]?.label}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'postnatal' ? `<div class="wiz-recap-row"><span>Phase post-natale</span><strong>${POSTNATAL_PHASES.find(p=>p.id===_config.postnatal_phase)?.label||'—'}</strong></div>` : ''}
     </div>
@@ -565,14 +547,14 @@ export function wizNext() {
   // Grossesse special flow: step 1 → step 2 (grossesse setup) → step 7 (recap)
   if(_config.domaine === 'grossesse') {
     if(_step === 1) { _step = 2; renderStep(); return; }
-    if(_step === 2) { _step = 9; renderStep(); return; } // skip to recap
+    if(_step === 2) { _step = 8; renderStep(); return; } // skip to recap (step7 @ idx 8)
   }
 
   if(_step < TOTAL_STEPS) { _step++; renderStep(); }
 }
 
 export function wizBack() {
-  if(_config.domaine === 'grossesse' && _step === 9) { _step = 2; renderStep(); return; }
+  if(_config.domaine === 'grossesse' && _step === 8) { _step = 2; renderStep(); return; }
   if(_step > 1) { _step--; renderStep(); }
 }
 
@@ -625,7 +607,7 @@ function _validateStep() {
     if(_config.grossesse_type === 'postnatal' && !_config.postnatal_phase) { _showError('Sélectionne ta phase post-natale.'); return false; }
     return true;
   }
-  if(_step === 6 && _config.materiel.length === 0) {
+  if(_step === 5 && _config.materiel.length === 0) {  // matériel = step4 @ idx 5
     _showError('Sélectionne au moins un type de matériel.');
     return false;
   }
@@ -652,7 +634,7 @@ function _collectStep() {
     if(isFinite(bw) && bw >= 30 && bw <= 200) _config.bodyWeight = bw;
   }
 
-  if(_step === 8) {  // step6() (compétition) est rendu à l'index 8 du renderer
+  if(_step === 7) {  // step6() (compétition) est rendu à l'index 7 du renderer
     const dateEl = document.getElementById('competDate');
     const typeEl = document.getElementById('competType');
     if(_config.competition && dateEl) {
@@ -662,7 +644,7 @@ function _collectStep() {
       };
     }
   }
-  if(_step === 7 || _step === 8 || _step === 9) {
+  if(_step === 6 || _step === 7 || _step === 8) {
     const nameEl = document.getElementById('progName');
     if(nameEl) _config.name = nameEl.value.trim();
     // Lire les 1RM uniquement si le formulaire les affiche

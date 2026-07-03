@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Just2Train"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1a1a18"><link rel="canonical" href="https://willygithub18.github.io/Tracker-App/"><title>Just2Train</title><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icons/icon-180.png"><style>{{CSS}}</style></head><body>
+<header><h1>Just2Train</h1><span class="sub">Ton entraînement, ton programme</span></header>
+<div class="top-nav" style="display:none"></div>
+<div class="main">
+{{VIEWS}}
+</div>
+<nav class="bottom-nav">
+  <button class="bottom-nav-btn" data-section="programmes" onclick="showSection('programmes')"><span class="tab-icon">🎯</span><span>Programmes</span></button>
+  <button class="bottom-nav-btn active" data-section="tracker" onclick="showSection('tracker')"><span class="tab-icon">📈</span><span>Tracker</span></button>
+  <button class="bottom-nav-btn" data-section="musculaire" onclick="showSection('musculaire');renderMusculaire()"><span class="tab-icon">⚡</span><span>Muscles</span></button>
+  <button class="bottom-nav-btn" data-section="nutrition-section" onclick="showSection('nutrition-section')"><span class="tab-icon">🥗</span><span>Nutrition</span></button>
+  <button class="bottom-nav-btn" data-section="doc" onclick="showSection('doc')"><span class="tab-icon">📖</span><span>Docs</span></button>
+</nav>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script><script>
+{{JS}}
+</script></body></html>
