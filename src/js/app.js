@@ -594,6 +594,9 @@ function _renderProgDetailView(prog, container) {
     return;
   }
 
+  // Cardio / endurance — vue détail dédiée (séances par semaine, pas de charges)
+  if(prog.subtype === 'cardio') { _renderCardioDetailView(prog, container); return; }
+
   // ── Generated program — rich view (pills par jour comme ATHX) ──────────────
 
   // Phase colors
@@ -886,6 +889,82 @@ function _renderProgDetailView(prog, container) {
 
   // Tab switching (same pattern as ATHX)
   window._showGenTab = function(btn, tabId) {
+    container.querySelectorAll('.prog-top-nav button').forEach(b => b.classList.remove('active'));
+    container.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    container.querySelector('#' + tabId)?.classList.add('active');
+  };
+}
+
+// ── Vue détail cardio / endurance ──────────────────────────────────────────────
+// Programme d'endurance : séances par semaine (modalité, zone, RPE), pas de charges.
+function _renderCardioDetailView(prog, container) {
+  const PHASE_BAR = {
+    'Base aérobie':        { bg:'#E1F5EE', col:'#0F6E56' },
+    'Développement seuil': { bg:'#FAEEDA', col:'#854F0B' },
+    'Pic VO₂max':          { bg:'#FDEAEA', col:'#9C2222' },
+    'Affûtage':            { bg:'#F1EFE8', col:'#444441' },
+  };
+
+  // Regrouper les semaines en blocs (phases consécutives + décharges).
+  const blocs = [];
+  let cur = null;
+  (prog.semaines || []).forEach(sem => {
+    const key = sem.isDeload ? `dl-${sem.num}` : (sem.isTaper ? 'taper' : sem.phase);
+    if(!cur || cur.key !== key) {
+      cur = { key, label: sem.isDeload ? `S${sem.num} Décharge` : (sem.isTaper ? `S${sem.num} Affûtage` : sem.phase),
+              weeks: [sem], phase: sem.phase, isDeload: sem.isDeload, isTaper: sem.isTaper };
+      blocs.push(cur);
+    } else cur.weeks.push(sem);
+  });
+
+  const pills = blocs.map((b, i) =>
+    `<button class="${i===0?'active':''}" onclick="_showCardioTab(this,'cbloc-${i}')">${esc(b.label)}</button>`
+  ).join('');
+
+  const content = blocs.map((b, i) => {
+    const bar = b.isDeload ? { bg:'#F1EFE8', col:'#444441' } : (PHASE_BAR[b.phase] || { bg:'#E6F1FB', col:'#185FA5' });
+    const barLabel = b.isDeload ? 'Décharge — assimilation, volume réduit (~55 %)'
+      : b.isTaper ? 'Affûtage — volume réduit, intensité conservée'
+      : b.phase;
+
+    const weeksHtml = b.weeks.map(sem => {
+      const rows = (sem.jours || []).map(j => {
+        const s = j.exercices?.[0] || {};
+        const zoneShort = (s.zoneLabel || '').split('·')[0].trim();
+        return `<div class="p-ex-row">
+          <div class="p-ex-name">${esc(j.nom)} · ${esc(j.split || '')}</div>
+          <div class="p-ex-detail">${esc(s.scheme || '—')} — RPE ${esc(s.rpeTarget || '—')}</div>
+          <div class="p-ex-tag" style="background:${s.zoneBg||'var(--surface2)'};color:${s.zoneCol||'var(--text2)'}">${esc(zoneShort)}</div>
+        </div>`;
+      }).join('');
+      return `<div class="p-card">
+        <div class="p-card-title">Semaine ${sem.num}${sem.distribution?` · ${esc(sem.distribution)}`:''}</div>
+        ${rows}
+      </div>`;
+    }).join('');
+
+    return `<div id="cbloc-${i}" class="prog-tab ${i===0?'active':''}">
+      <div class="p-section">
+        <span class="p-phase-bar" style="background:${bar.bg};color:${bar.col}">${esc(barLabel)}</span>
+        ${weeksHtml}
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);margin-bottom:8px">
+      <div>
+        <div style="font-size:15px;font-weight:700">${esc(prog.name)}</div>
+        <div style="font-size:11px;color:var(--text3)">🏃 Endurance · ${prog.totalWeeks} sem. · ${prog.config?.seancesParSemaine||'?'}×/sem · ${esc(prog.modalityLabel || 'Course')}</div>
+      </div>
+      <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
+    </div>
+    <div class="p-note" style="margin:0 12px 8px">Distribution <strong>polarisée ~80/20</strong> : l'essentiel du volume en zone facile (Z1–Z2, test de la parole possible), une minorité en qualité (seuil/VO₂max). Progression de volume ~8 %/sem, décharge entre les blocs, affûtage final.</div>
+    <div class="prog-top-nav">${pills}</div>
+    ${content}`;
+
+  window._showCardioTab = function(btn, tabId) {
     container.querySelectorAll('.prog-top-nav button').forEach(b => b.classList.remove('active'));
     container.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');

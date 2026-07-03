@@ -276,6 +276,19 @@ tr:last-child td{border-bottom:none}
 .grossesse-check input{width:16px;height:16px;cursor:pointer;accent-color:var(--green)}
 .ballon-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:#f0e8fc;color:#6b00c2;margin-bottom:6px}
 
+/* ── Cardio session card (tracker) ── */
+.cardio-ex-body{padding:8px 0}
+.cardio-zone-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px}
+.cardio-scheme{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.cardio-target{font-size:12px;color:var(--text2);margin-bottom:8px}
+.cardio-detail{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+.cardio-log{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.cardio-log-field{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--text3)}
+.cardio-log-field input{width:70px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--surface)}
+.cardio-log-field select{padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--surface)}
+.cardio-check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer}
+.cardio-check input{width:16px;height:16px;cursor:pointer;accent-color:var(--green)}
+
 /* ── Grossesse UI ── */
 .g-banner{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:var(--radius-lg);margin-bottom:16px;font-size:12px;line-height:1.5}
 .g-banner-icon{font-size:24px;flex-shrink:0}
@@ -2347,6 +2360,47 @@ const MIXTE_SPLITS = {
   ],
 };
 
+// ── Cardio / Endurance ──────────────────────────────────────────────────────
+// Modèle d'entraînement d'endurance (distinct du modèle force %1RM).
+// Réf : Seiler (distribution polarisée 80/20), zones 5 paliers standard,
+// Buchheit & Laursen (HIIT), Daniels (allures), Concept2 (rameur), NHS C25K (débutant).
+// Voir Documentation/cardio-program-design.md pour les sources détaillées.
+
+// Zones d'intensité — pilotées PRIORITAIREMENT par le RPE (app RPE-centrée),
+// le %FCmax n'est qu'un repère secondaire (Tanaka : FCmax ≈ 208 − 0,7 × âge).
+const CARDIO_ZONES = {
+  1: { label:'Z1 · Récupération', hr:'50–60% FCmax', rpe:'1–2',  band:'facile', bg:'#E6F1FB', col:'#185FA5' },
+  2: { label:'Z2 · Endurance',    hr:'60–70% FCmax', rpe:'3–4',  band:'facile', bg:'#E1F5EE', col:'#0F6E56' },
+  3: { label:'Z3 · Tempo',        hr:'70–80% FCmax', rpe:'5–6',  band:'seuil',  bg:'#FAEEDA', col:'#854F0B' },
+  4: { label:'Z4 · Seuil',        hr:'80–90% FCmax', rpe:'7–8',  band:'dur',    bg:'#FDE7DA', col:'#B4480B' },
+  5: { label:'Z5 · VO₂max',       hr:'90–100% FCmax',rpe:'9–10', band:'dur',    bg:'#FDEAEA', col:'#9C2222' },
+};
+
+// Modalités cardio. equip = clé matériel requise (null = toujours dispo : course, marche…).
+const CARDIO_MODALITIES = [
+  { id:'run',        name:'Course à pied',       icon:'🏃', unit:'min', dist:'km', impact:'élevé',  equip:null,       muscles:['quad','ischio','mollets'] },
+  { id:'bike',       name:'Vélo / Home-trainer', icon:'🚴', unit:'min', dist:'km', impact:'faible', equip:'machines', muscles:['quad','fessiers','mollets'] },
+  { id:'row_erg',    name:'Rameur',              icon:'🚣', unit:'min', dist:'m',  impact:'faible', equip:'machines', muscles:['dorsaux','quad','biceps','core'] },
+  { id:'ski_erg',    name:'Ski-erg',             icon:'⛷',  unit:'min', dist:'m',  impact:'faible', equip:'machines', muscles:['dorsaux','deltPost','core','triceps'] },
+  { id:'bike_erg',   name:'Assault Bike',        icon:'🌀', unit:'min', dist:null, impact:'faible', equip:'machines', muscles:['quad','ischio','core'] },
+  { id:'elliptical', name:'Elliptique',          icon:'🎿', unit:'min', dist:null, impact:'faible', equip:'machines', muscles:['quad','fessiers','ischio'] },
+  { id:'jump_rope',  name:'Corde à sauter',      icon:'🪢', unit:'min', dist:null, impact:'moyen',  equip:null,       muscles:['mollets','core'] },
+  { id:'swim',       name:'Natation',            icon:'🏊', unit:'min', dist:'m',  impact:'nul',    equip:null,       muscles:['dorsaux','pec','deltAnt','core'] },
+  { id:'walk',       name:'Marche / Rando',      icon:'🚶', unit:'min', dist:'km', impact:'faible', equip:null,       muscles:['quad','mollets'] },
+];
+
+// Types de séance : zone par défaut + format (continu | intervalles | fartlek).
+const CARDIO_SESSION_TYPES = {
+  recovery:  { label:'Récupération',   zone:1, format:'continuous' },
+  endurance: { label:'Endurance',      zone:2, format:'continuous' },
+  long:      { label:'Sortie longue',  zone:2, format:'continuous' },
+  tempo:     { label:'Tempo',          zone:3, format:'continuous' },
+  threshold: { label:'Seuil',          zone:4, format:'intervals'  },
+  vo2max:    { label:'VO₂max',         zone:5, format:'intervals'  },
+  fartlek:   { label:'Fartlek',        zone:3, format:'fartlek'    },
+  race:      { label:'Allure course',  zone:4, format:'continuous' },
+};
+
 // ── Grossesse program config ──────────────────────────────────────────────────
 
 const GROSSESSE_MOIS_CONFIG = {
@@ -3618,6 +3672,35 @@ function _renderProgSaisie(prog) {
         return; // skip normal grid
       }
 
+      // Cardio : pas de grille kg/reps — carte séance (zone/scheme) + log durée/RPE/distance
+      if(ex.kind === 'cardio') {
+        const craw = getProgRecord(prog.id, ex.id, week) || {};
+        const durVal  = craw.durationMin != null ? craw.durationMin : '';
+        const distVal = craw.distance != null ? craw.distance : '';
+        html += `<div class="cardio-ex-body">
+          <div class="cardio-zone-badge" style="background:${ex.zoneBg||'var(--surface2)'};color:${ex.zoneCol||'var(--text2)'}">${esc(ex.zoneLabel||'')}</div>
+          <div class="cardio-scheme">${esc(ex.scheme||'—')}</div>
+          <div class="cardio-target">RPE cible <strong>${esc(ex.rpeTarget||'—')}</strong>${ex.hrPct?` · <span style="color:var(--text3)">${esc(ex.hrPct)}</span>`:''}</div>`;
+        if(ex.detail) html += `<div class="cardio-detail">${esc(ex.detail)}</div>`;
+        html += `<div class="cardio-log">
+          <label class="cardio-log-field">Durée réelle
+            <span><input type="number" id="cdur_${ex.id}" min="0" max="600" step="1" value="${durVal}" placeholder="${ex.duration||''}"> min</span>
+          </label>
+          <label class="cardio-log-field">RPE ressenti
+            <select id="crpe_${ex.id}"><option value="">—</option>${_rpeOptions(craw.rpe)}</select>
+          </label>
+          ${ex.dist ? `<label class="cardio-log-field">Distance
+            <span><input type="number" id="cdist_${ex.id}" min="0" step="0.1" value="${distVal}" placeholder="opt."> ${esc(ex.dist)}</span>
+          </label>` : ''}
+          <label class="cardio-check"><input type="checkbox" id="cdone_${ex.id}" ${craw.done?'checked':''}> Séance réalisée</label>
+        </div>`;
+        if(craw.done || craw.durationMin != null) {
+          html += `<div class="sets-summary">${craw.done?'✓ Réalisée':''}${craw.durationMin!=null?` · ${craw.durationMin} min`:''}${craw.rpe?` · RPE ${esc(String(craw.rpe))}`:''}${craw.distance!=null?` · ${craw.distance} ${esc(ex.dist||'')}`:''}</div>`;
+        }
+        html += `</div></div>`; // cardio-ex-body + ex-block
+        return; // skip normal grid
+      }
+
       // Sets grid (show for all statuses except skipped)
       if(showGrid) {
         const placeholder = exStatus === 'deload' && deloadKg ? deloadKg : (plan || '');
@@ -3722,6 +3805,24 @@ function _saveProgSaisie(prog, week, dayName) {
   if(!day) return;
 
   day.exercices.forEach(ex => {
+    // Cardio : log durée / RPE / distance / réalisée (pas de séries kg/reps)
+    if(ex.kind === 'cardio') {
+      const durEl  = document.getElementById(`cdur_${ex.id}`);
+      const rpeEl  = document.getElementById(`crpe_${ex.id}`);
+      const distEl = document.getElementById(`cdist_${ex.id}`);
+      const doneEl = document.getElementById(`cdone_${ex.id}`);
+      const durationMin = durEl && durEl.value !== '' ? parseFloat(durEl.value) : null;
+      const rpe         = rpeEl?.value || '';
+      const distance    = distEl && distEl.value !== '' ? parseFloat(distEl.value) : null;
+      const done        = doneEl?.checked === true;
+      if(durationMin == null && !rpe && distance == null && !done) return;
+      setProgRecord(prog.id, ex.id, week, {
+        cardio: true, durationMin, rpe, distance, done, ts: Date.now(),
+        sessionStatus: getProgExStatus(prog.id, ex.id, week),
+      });
+      return;
+    }
+
     // Lire autant de séries que la grille en affiche (cohérence render ↔ save)
     const nSets = Math.max(_parseSetsGeneric(ex.scheme), 4);
     const sets  = [];
@@ -5880,6 +5981,11 @@ function generateProgram(config, newProgramId) {
     return _generateGrossesseProg(config, newProgramId);
   }
 
+  // ── Cardio / Endurance: modèle de prescription dédié (zones, intervalles) ───
+  if(domaine === 'cardio') {
+    return _generateCardioProg(config, newProgramId);
+  }
+
   // 1. Get phase template
   const closestDuration = [8, 12, 16].reduce((prev, curr) =>
     Math.abs(curr - duree) < Math.abs(prev - duree) ? curr : prev
@@ -6292,6 +6398,293 @@ function _generateGrossesseProg(config, id) {
     orm:        {},
     totalWeeks,
   };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CARDIO / ENDURANCE — modèle dédié (distinct du modèle force %1RM)
+// Réf : Documentation/cardio-program-design.md
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Périodisation endurance par durée (semaines de base + qualité par bloc + affûtage).
+// `quality` = type de séance qualité du bloc ; `vol` = facteur de volume de base du bloc.
+const CARDIO_PHASE_TEMPLATES = {
+  8:  [
+    { nom:'Base aérobie',       weeks:4, quality:'tempo',     vol:1.00 },
+    { nom:'Développement seuil',weeks:3, quality:'threshold', vol:1.15 },
+    { nom:'Affûtage',           weeks:1, quality:'vo2max',    vol:0.55, isTaper:true },
+  ],
+  12: [
+    { nom:'Base aérobie',       weeks:5, quality:'tempo',     vol:1.00 },
+    { nom:'Développement seuil',weeks:4, quality:'threshold', vol:1.20 },
+    { nom:'Pic VO₂max',         weeks:2, quality:'vo2max',    vol:1.05 },
+    { nom:'Affûtage',           weeks:1, quality:'vo2max',    vol:0.55, isTaper:true },
+  ],
+  16: [
+    { nom:'Base aérobie',       weeks:6, quality:'tempo',     vol:1.00 },
+    { nom:'Développement seuil',weeks:5, quality:'threshold', vol:1.25 },
+    { nom:'Pic VO₂max',         weeks:4, quality:'vo2max',    vol:1.10 },
+    { nom:'Affûtage',           weeks:1, quality:'vo2max',    vol:0.55, isTaper:true },
+  ],
+};
+
+// Durées de base (min) et cap d'intensité par niveau.
+const CARDIO_LEVEL = {
+  debutant:      { easy:25, long:35, quality:20, zoneCap:3, walkRun:true },
+  intermediaire: { easy:40, long:55, quality:30, zoneCap:5 },
+  avance:        { easy:50, long:80, quality:35, zoneCap:5 },
+};
+
+// Plan hebdomadaire (types de séance) par nombre de séances. 'quality' résolu
+// selon le bloc ; 'quality2' = seconde séance qualité (avancé uniquement, sinon endurance).
+const CARDIO_WEEK_PLANS = {
+  2: ['long', 'quality'],
+  3: ['endurance', 'quality', 'long'],
+  4: ['endurance', 'quality', 'endurance', 'long'],
+  5: ['endurance', 'quality', 'recovery', 'quality2', 'long'],
+};
+
+function _generateCardioProg(config, id) {
+  const {
+    niveau, age, seancesParSemaine, duree, competition, name,
+    materiel = [], cardioModalities = [],
+  } = config;
+
+  const level  = CARDIO_LEVEL[niveau] || CARDIO_LEVEL.intermediaire;
+  const ageMod = AGE_MODIFIERS[age || '30-39'] || AGE_MODIFIERS['30-39'];
+  const isBeginner = niveau === 'debutant';
+
+  // Cap de zone effectif : min(niveau, âge). rpeMax faible → pas de VO₂max.
+  const ageZoneCap = ageMod.rpeMax < 7 ? 3 : ageMod.rpeMax < 8 ? 4 : 5;
+  const zoneCap    = Math.min(level.zoneCap, ageZoneCap);
+
+  // Modalités : choix utilisateur filtré par matériel dispo, repli sur course + marche.
+  const modalities = _resolveCardioModalities(cardioModalities, materiel);
+  const mainModality = modalities[0];
+  const easyModalities = modalities.length > 1 ? modalities : [mainModality];
+  const lowImpact = modalities.filter(m => m.impact === 'faible' || m.impact === 'nul');
+
+  // Phases dimensionnées à la durée demandée (deloads insérés entre blocs).
+  const closest  = [8, 12, 16].reduce((p, c) => Math.abs(c - duree) < Math.abs(p - duree) ? c : p);
+  const template = CARDIO_PHASE_TEMPLATES[closest];
+  const phases   = _buildCardioPhases(template, duree);
+
+  const days = DAY_TEMPLATES[Math.min(seancesParSemaine, 5)] || DAY_TEMPLATES[3];
+  const weekPlan = CARDIO_WEEK_PLANS[Math.min(seancesParSemaine, 5)] || CARDIO_WEEK_PLANS[3];
+
+  const semaines = [];
+  let weekNum = 1;
+  let easyRot = 0;  // rotation des modalités sur les séances faciles
+
+  phases.forEach((phase, phaseIdx) => {
+    for(let pw = 0; pw < phase.weeks; pw++) {
+      // Progression de volume intra-bloc : +8 %/sem (règle ~10 %, prudent).
+      const volFactor = phase.vol * (1 + 0.08 * pw);
+
+      const jours = days.map((dayName, di) => {
+        let slot = weekPlan[di] || 'endurance';
+        // Résolution des slots qualité selon le bloc + niveau.
+        if(slot === 'quality')  slot = phase.quality || 'tempo';
+        if(slot === 'quality2') slot = niveau === 'avance' ? 'tempo' : 'endurance';
+
+        // Choix de la modalité : qualité → principale ; récup → faible impact ; facile → rotation.
+        let modality;
+        if(slot === 'recovery')      modality = lowImpact[0] || mainModality;
+        else if(_isQuality(slot))    modality = mainModality;
+        else { modality = easyModalities[easyRot % easyModalities.length]; easyRot++; }
+
+        const session = _buildCardioSession(slot, modality, level, volFactor, zoneCap, weekNum, isBeginner);
+        // ID unique par jour : une même modalité peut revenir sur plusieurs jours
+        // (ex. course lundi ET vendredi) — évite la collision de clé de suivi.
+        session.id = `c${di + 1}_${modality.id}`;
+        session.modalityId = modality.id;
+        return { nom: dayName, split: session.typeLabel, exercices: [session] };
+      });
+
+      const zones = jours.map(j => j.exercices[0].zone);
+      const hard  = zones.filter(z => z >= 3).length;
+      semaines.push({
+        num:     weekNum,
+        phase:   phase.nom,
+        isDeload:false,
+        isTaper: phase.isTaper || false,
+        rpeTarget: phase.isTaper ? '≤ 6' : `Z2 facile · qualité ${CARDIO_ZONES[Math.max(...zones)].rpe}`,
+        intensite: Math.max(...zones) / 5,
+        distribution: `${Math.round((1 - hard / zones.length) * 100)}/${Math.round(hard / zones.length * 100)} facile/dur`,
+        jours,
+      });
+      weekNum++;
+    }
+
+    // Semaine de décharge entre blocs (sauf avant l'affûtage / après le dernier).
+    const nextPhase = phases[phaseIdx + 1];
+    if(nextPhase && !nextPhase.isTaper && !phase.isTaper) {
+      const jours = days.map((dayName, di) => {
+        const modality = easyModalities[di % easyModalities.length];
+        const session  = _buildCardioSession('endurance', modality, level, 0.55, Math.min(2, zoneCap), weekNum, isBeginner);
+        session.id = `c${di + 1}_${modality.id}`;
+        session.modalityId = modality.id;
+        return { nom: dayName, split: session.typeLabel, exercices: [session] };
+      });
+      semaines.push({
+        num: weekNum, phase: `Décharge (${phase.nom})`,
+        isDeload: true, isTaper: false, rpeTarget: '≤ 4 · Z1–Z2',
+        intensite: 0.4, distribution: '100/0 facile/dur', jours,
+      });
+      weekNum++;
+    }
+  });
+
+  return {
+    id,
+    name:       name || `Programme endurance ${duree} sem.`,
+    subtype:    'cardio',
+    status:     'active',
+    createdAt:  Date.now(),
+    config,
+    modalities: modalities.map(m => m.id),
+    modalityLabel: modalities.map(m => m.name).join(' · '),
+    phases: phases.map(p => ({ nom:p.nom, debut:p.startWeek, fin:p.startWeek + p.weeks - 1, intensite:p.vol, rpeTarget:'—' })),
+    semaines,
+    orm:        {},
+    totalWeeks: weekNum - 1,
+  };
+}
+
+function _isQuality(type) {
+  return ['tempo','threshold','vo2max','race','fartlek'].includes(type);
+}
+
+function _resolveCardioModalities(chosen, materiel) {
+  const ids = Array.isArray(chosen) ? chosen.map(c => (typeof c === 'object' ? c.id : c)) : [];
+  let mods = CARDIO_MODALITIES.filter(m => ids.includes(m.id));
+  // Filtrer par matériel : les modalités nécessitant du matériel non dispo sont retirées.
+  mods = mods.filter(m => !m.equip || materiel.includes(m.equip));
+  if(mods.length === 0) {
+    // Repli : course (toujours dispo) + marche pour la récup.
+    mods = CARDIO_MODALITIES.filter(m => m.id === 'run' || m.id === 'walk');
+  }
+  return mods;
+}
+
+function _buildCardioPhases(template, totalWeeks) {
+  const taperWeeks  = 1;
+  const nonTaper    = template.filter(p => !p.isTaper);
+  const deloadWeeks = Math.max(0, nonTaper.length - 1);
+  const mainWeeks   = Math.max(nonTaper.length, totalWeeks - taperWeeks - deloadWeeks);
+  const totalRatio  = nonTaper.reduce((s, p) => s + p.weeks, 0);
+
+  const scaled = nonTaper.map(p => Math.max(1, Math.round(p.weeks / totalRatio * mainWeeks)));
+  // Corriger la dérive d'arrondi : la somme doit valoir exactement mainWeeks
+  // (sinon totalWeeks ≠ durée demandée). On ajuste sur la phase la plus longue.
+  let diff = mainWeeks - scaled.reduce((a, b) => a + b, 0);
+  let guard = 0;
+  while(diff !== 0 && guard++ < 50) {
+    let idx = 0;
+    for(let i = 1; i < scaled.length; i++) if(scaled[i] > scaled[idx]) idx = i;
+    if(diff > 0) { scaled[idx]++; diff--; }
+    else if(scaled[idx] > 1) { scaled[idx]--; diff++; }
+    else break;
+  }
+
+  let cursor = 1;
+  const phases = nonTaper.map((p, i) => {
+    const phase = { ...p, weeks: scaled[i], startWeek: cursor };
+    cursor += scaled[i];
+    return phase;
+  });
+  const taper = template.find(p => p.isTaper);
+  if(taper) { phases.push({ ...taper, weeks: taperWeeks, startWeek: cursor }); cursor += taperWeeks; }
+  return phases;
+}
+
+// Construit une séance cardio (objet exercice avec kind:'cardio').
+function _buildCardioSession(type, modality, level, volFactor, zoneCap, weekNum, isBeginner) {
+  const def = CARDIO_SESSION_TYPES[type] || CARDIO_SESSION_TYPES.endurance;
+  // Si l'intensité prévue dépasse le cap (niveau/âge), on rétrograde vers du tempo continu.
+  let effType = type;
+  if(def.zone > zoneCap && def.format === 'intervals') effType = 'tempo';
+  const effDef = CARDIO_SESSION_TYPES[effType] || def;
+  const zone   = Math.min(effDef.zone, zoneCap);
+  const Z      = CARDIO_ZONES[zone];
+
+  const base = {
+    id: modality.id, nom: modality.name, kind: 'cardio',
+    sessionType: effType, typeLabel: (CARDIO_SESSION_TYPES[effType] || def).label,
+    zone, zoneLabel: Z.label, rpeTarget: Z.rpe, hrPct: Z.hr, zoneBg: Z.bg, zoneCol: Z.col,
+    unit: 'min', dist: modality.dist, muscles: modality.muscles,
+  };
+
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  // ── Débutant : run-walk sur les séances faciles à impact élevé (course) ──────
+  if(isBeginner && level.walkRun && modality.impact === 'élevé' && (effType === 'endurance' || effType === 'long' || effType === 'recovery')) {
+    const dur    = Math.round((effType === 'long' ? level.long : effType === 'recovery' ? level.easy * 0.7 : level.easy) * volFactor);
+    const runSec = clamp(60 + (weekNum - 1) * 25, 60, 600);
+    const walkSec= clamp(90 - (weekNum - 1) * 8, 30, 90);
+    const reps   = Math.max(3, Math.round(dur * 60 / (runSec + walkSec)));
+    return {
+      ...base, format: 'intervals',
+      scheme: `${reps}× (${_fmtSec(runSec)} course / ${_fmtSec(walkSec)} marche)`,
+      duration: dur, totalMin: dur + 10,
+      detail: `Alternance course/marche (${dur} min). Le test de la parole doit rester possible en course. Un jour de repos entre chaque sortie.`,
+    };
+  }
+
+  // ── Intervalles (seuil / VO₂max) ─────────────────────────────────────────────
+  if((CARDIO_SESSION_TYPES[effType] || def).format === 'intervals') {
+    let sets, workMin, restMin;
+    if(effType === 'vo2max') {
+      sets = clamp(Math.round(4 * volFactor), 4, 6); workMin = 3; restMin = 2;
+    } else { // threshold
+      sets = clamp(Math.round(3 * volFactor), 3, 4); workMin = 8; restMin = 2;
+    }
+    const totalWork = sets * workMin;
+    return {
+      ...base, format: 'intervals', sets, workMin, restMin,
+      scheme: `${sets}×${workMin} min ${Z.label.split(' ')[0]} / récup ${restMin} min`,
+      duration: totalWork, totalMin: totalWork + sets * restMin + 20,
+      detail: effType === 'vo2max'
+        ? `Intervalles VO₂max : ${sets}×${workMin} min à allure très soutenue (${totalWork} min cumulées ≥ 90 % VO₂max), récup ${restMin} min en Z1. Échauffement 15 min obligatoire.`
+        : `Intervalles au seuil : ${sets}×${workMin} min à allure « confortablement dure » (Z4), récup ${restMin} min. Échauffement 12 min.`,
+    };
+  }
+
+  // ── Fartlek ──────────────────────────────────────────────────────────────────
+  if((CARDIO_SESSION_TYPES[effType] || def).format === 'fartlek') {
+    const dur = Math.round(level.quality * volFactor + 10);
+    return {
+      ...base, format: 'fartlek',
+      scheme: `${dur} min · jeu d'allures Z2↔Z4`,
+      duration: dur, totalMin: dur + 10,
+      detail: `Fartlek libre (${dur} min) : accélérations spontanées de 1–3 min en Z4 entrecoupées de retour au calme en Z2. Ludique, sans structure rigide.`,
+    };
+  }
+
+  // ── Continu (récup / endurance / long / tempo / race) ────────────────────────
+  const baseMin = effType === 'long' ? level.long
+    : effType === 'recovery' ? Math.round(level.easy * 0.7)
+    : effType === 'tempo' || effType === 'race' ? level.quality + 10
+    : level.easy;
+  const dur = Math.max(15, Math.round(baseMin * volFactor));
+  const detailByType = {
+    recovery:  `Récupération active très facile (${dur} min) en Z1. Objectif : régénérer, pas fatiguer.`,
+    endurance: `Endurance fondamentale (${dur} min) en Z2 — le socle du volume. Allure conversationnelle.`,
+    long:      `Sortie longue (${dur} min) en Z2, à allure conversationnelle. Développe l'endurance aérobie et l'économie.`,
+    tempo:     `Tempo (${dur} min) en Z3, effort « soutenu mais maîtrisé ». Améliore l'endurance de seuil.`,
+    race:      `Séance à allure objectif (${dur} min) en Z3–Z4 pour la spécificité pré-compétition.`,
+  };
+  return {
+    ...base, format: 'continuous',
+    scheme: `${dur} min · ${Z.label.split('·')[0].trim()}`,
+    duration: dur, totalMin: dur + 8,
+    detail: detailByType[effType] || detailByType.endurance,
+  };
+}
+
+function _fmtSec(sec) {
+  if(sec < 60) return `${sec} s`;
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return s ? `${m} min ${s} s` : `${m} min`;
 }
 
 function _selectExercisesForMixte(pool, forced, focuses, count, dayIndex) {
@@ -6718,6 +7111,7 @@ const _config = {
   seancesParSemaine: 3,
   dureeSeance:      60,
   materiel:         [],
+  cardioModalities: [],  // ids modalités cardio (course, vélo, rameur, skierg…)
   exercicesForces:  [],
   exercicesExclus:  [],
   duree:            12,
@@ -6776,7 +7170,7 @@ async function initWizard() {
     domaine: null, niveau: null, age: null, seancesParSemaine: 3,
     grossesse_type: null, mois_grossesse: 5, postnatal_phase: null,
     nutrition: null,
-    dureeSeance: 60, materiel: [], exercicesForces: [], exercicesExclus: [],
+    dureeSeance: 60, materiel: [], cardioModalities: [], exercicesForces: [], exercicesExclus: [],
     duree: 12, competition: null, name: '', orm: {}, bodyWeight: null,
   });
 
@@ -7026,6 +7420,10 @@ function step4() {
 // ── Step 5 — Exercices ────────────────────────────────────────────────────────
 
 function step5() {
+  // Cardio : sélection des modalités (course, vélo, rameur, ski-erg…) au lieu de la
+  // recherche d'exercices — le programme d'endurance se construit autour des modalités.
+  if(_config.domaine === 'cardio') return step5_cardio();
+
   const forcedHtml = _config.exercicesForces.map((ex, i) =>
     `<div class="wiz-ex-tag">
       ${esc(ex.name)}
@@ -7063,6 +7461,31 @@ function step5() {
       </div>
       <div id="exResultsExclu" class="wiz-ex-results"></div>
     </div>`;
+}
+
+// ── Step 5 (cardio) — Modalités d'endurance ────────────────────────────────────
+
+function step5_cardio() {
+  const hasMachines = _config.materiel.includes('machines');
+  return `
+    <div class="wiz-title">Quelles activités d'endurance ?</div>
+    <div class="wiz-subtitle">Sélectionne une ou plusieurs modalités. Les séances qualité (seuil, VO₂max) porteront sur ta 1ère modalité ; les autres serviront aux sorties faciles et à la récupération.</div>
+    <div class="wiz-materiel-grid">
+      ${CARDIO_MODALITIES.map(m => {
+        const needsEquip = m.equip && !_config.materiel.includes(m.equip);
+        const sel = _config.cardioModalities.includes(m.id);
+        return `
+        <div class="wiz-materiel-item ${sel ? 'selected' : ''}"
+             data-toggle="cardioModalities" data-value="${m.id}"
+             style="${needsEquip ? 'opacity:.55' : ''}">
+          <span class="wiz-mat-icon">${m.icon}</span>
+          <span class="wiz-mat-label">${m.name}</span>
+          ${needsEquip ? '<span style="font-size:10px;color:var(--amber)">nécessite Machines</span>' : `<span style="font-size:10px;color:var(--text3)">impact ${m.impact}</span>`}
+        </div>`;
+      }).join('')}
+    </div>
+    ${!hasMachines ? '<div class="wiz-note">💡 Rameur, vélo, ski-erg et elliptique nécessitent « Machines / Câbles » (étape matériel). Course, marche, corde et natation sont toujours disponibles.</div>' : ''}
+    ${_config.cardioModalities.length === 0 ? '<div class="wiz-note">Aucune sélection = course à pied par défaut (+ marche pour la récupération).</div>' : ''}`;
 }
 
 // ── Step 6 — Durée & compétition ──────────────────────────────────────────────
@@ -7389,13 +7812,15 @@ function _initWizardEvents() {
       }
       renderStep(); return;
     }
-    // Materiel toggle (multi) — must check BEFORE generic click
-    const item = e.target.closest('[data-toggle="materiel"]');
+    // Toggle multi-sélection (materiel, cardioModalities) — avant le clic générique
+    const item = e.target.closest('[data-toggle]');
     if(item) {
+      const key   = item.dataset.toggle;
       const value = item.dataset.value;
-      const idx   = _config.materiel.indexOf(value);
-      if(idx >= 0) _config.materiel.splice(idx, 1);
-      else _config.materiel.push(value);
+      if(!Array.isArray(_config[key])) _config[key] = [];
+      const idx = _config[key].indexOf(value);
+      if(idx >= 0) _config[key].splice(idx, 1);
+      else _config[key].push(value);
       renderStep(); return;
     }
     // Remove forced
@@ -8403,6 +8828,9 @@ function _renderProgDetailView(prog, container) {
     return;
   }
 
+  // Cardio / endurance — vue détail dédiée (séances par semaine, pas de charges)
+  if(prog.subtype === 'cardio') { _renderCardioDetailView(prog, container); return; }
+
   // ── Generated program — rich view (pills par jour comme ATHX) ──────────────
 
   // Phase colors
@@ -8695,6 +9123,82 @@ function _renderProgDetailView(prog, container) {
 
   // Tab switching (same pattern as ATHX)
   window._showGenTab = function(btn, tabId) {
+    container.querySelectorAll('.prog-top-nav button').forEach(b => b.classList.remove('active'));
+    container.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    container.querySelector('#' + tabId)?.classList.add('active');
+  };
+}
+
+// ── Vue détail cardio / endurance ──────────────────────────────────────────────
+// Programme d'endurance : séances par semaine (modalité, zone, RPE), pas de charges.
+function _renderCardioDetailView(prog, container) {
+  const PHASE_BAR = {
+    'Base aérobie':        { bg:'#E1F5EE', col:'#0F6E56' },
+    'Développement seuil': { bg:'#FAEEDA', col:'#854F0B' },
+    'Pic VO₂max':          { bg:'#FDEAEA', col:'#9C2222' },
+    'Affûtage':            { bg:'#F1EFE8', col:'#444441' },
+  };
+
+  // Regrouper les semaines en blocs (phases consécutives + décharges).
+  const blocs = [];
+  let cur = null;
+  (prog.semaines || []).forEach(sem => {
+    const key = sem.isDeload ? `dl-${sem.num}` : (sem.isTaper ? 'taper' : sem.phase);
+    if(!cur || cur.key !== key) {
+      cur = { key, label: sem.isDeload ? `S${sem.num} Décharge` : (sem.isTaper ? `S${sem.num} Affûtage` : sem.phase),
+              weeks: [sem], phase: sem.phase, isDeload: sem.isDeload, isTaper: sem.isTaper };
+      blocs.push(cur);
+    } else cur.weeks.push(sem);
+  });
+
+  const pills = blocs.map((b, i) =>
+    `<button class="${i===0?'active':''}" onclick="_showCardioTab(this,'cbloc-${i}')">${esc(b.label)}</button>`
+  ).join('');
+
+  const content = blocs.map((b, i) => {
+    const bar = b.isDeload ? { bg:'#F1EFE8', col:'#444441' } : (PHASE_BAR[b.phase] || { bg:'#E6F1FB', col:'#185FA5' });
+    const barLabel = b.isDeload ? 'Décharge — assimilation, volume réduit (~55 %)'
+      : b.isTaper ? 'Affûtage — volume réduit, intensité conservée'
+      : b.phase;
+
+    const weeksHtml = b.weeks.map(sem => {
+      const rows = (sem.jours || []).map(j => {
+        const s = j.exercices?.[0] || {};
+        const zoneShort = (s.zoneLabel || '').split('·')[0].trim();
+        return `<div class="p-ex-row">
+          <div class="p-ex-name">${esc(j.nom)} · ${esc(j.split || '')}</div>
+          <div class="p-ex-detail">${esc(s.scheme || '—')} — RPE ${esc(s.rpeTarget || '—')}</div>
+          <div class="p-ex-tag" style="background:${s.zoneBg||'var(--surface2)'};color:${s.zoneCol||'var(--text2)'}">${esc(zoneShort)}</div>
+        </div>`;
+      }).join('');
+      return `<div class="p-card">
+        <div class="p-card-title">Semaine ${sem.num}${sem.distribution?` · ${esc(sem.distribution)}`:''}</div>
+        ${rows}
+      </div>`;
+    }).join('');
+
+    return `<div id="cbloc-${i}" class="prog-tab ${i===0?'active':''}">
+      <div class="p-section">
+        <span class="p-phase-bar" style="background:${bar.bg};color:${bar.col}">${esc(barLabel)}</span>
+        ${weeksHtml}
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);margin-bottom:8px">
+      <div>
+        <div style="font-size:15px;font-weight:700">${esc(prog.name)}</div>
+        <div style="font-size:11px;color:var(--text3)">🏃 Endurance · ${prog.totalWeeks} sem. · ${prog.config?.seancesParSemaine||'?'}×/sem · ${esc(prog.modalityLabel || 'Course')}</div>
+      </div>
+      <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
+    </div>
+    <div class="p-note" style="margin:0 12px 8px">Distribution <strong>polarisée ~80/20</strong> : l'essentiel du volume en zone facile (Z1–Z2, test de la parole possible), une minorité en qualité (seuil/VO₂max). Progression de volume ~8 %/sem, décharge entre les blocs, affûtage final.</div>
+    <div class="prog-top-nav">${pills}</div>
+    ${content}`;
+
+  window._showCardioTab = function(btn, tabId) {
     container.querySelectorAll('.prog-top-nav button').forEach(b => b.classList.remove('active'));
     container.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');

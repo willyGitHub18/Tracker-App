@@ -169,6 +169,19 @@ tr:last-child td{border-bottom:none}
 .grossesse-check input{width:16px;height:16px;cursor:pointer;accent-color:var(--green)}
 .ballon-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:#f0e8fc;color:#6b00c2;margin-bottom:6px}
 
+/* ── Cardio session card (tracker) ── */
+.cardio-ex-body{padding:8px 0}
+.cardio-zone-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px}
+.cardio-scheme{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.cardio-target{font-size:12px;color:var(--text2);margin-bottom:8px}
+.cardio-detail{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+.cardio-log{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.cardio-log-field{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--text3)}
+.cardio-log-field input{width:70px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--surface)}
+.cardio-log-field select{padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--surface)}
+.cardio-check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer}
+.cardio-check input{width:16px;height:16px;cursor:pointer;accent-color:var(--green)}
+
 /* ── Grossesse UI ── */
 .g-banner{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:var(--radius-lg);margin-bottom:16px;font-size:12px;line-height:1.5}
 .g-banner-icon{font-size:24px;flex-shrink:0}

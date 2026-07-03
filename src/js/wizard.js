@@ -3,7 +3,7 @@
  */
 
 import { loadExercisesDB, searchExercises, FALLBACK_EXERCISES } from './exercises-db.js';
-import { AGE_TRANCHES, AGE_MODIFIERS, GROSSESSE_MOIS_CONFIG, POSTNATAL_PHASES } from './data.js';
+import { AGE_TRANCHES, AGE_MODIFIERS, GROSSESSE_MOIS_CONFIG, POSTNATAL_PHASES, CARDIO_MODALITIES } from './data.js';
 import { generateProgram }  from './generator.js';
 import { saveProgram, setActiveProgram, newProgramId } from './programs.js';
 import { getPrograms }      from './programs.js';
@@ -23,6 +23,7 @@ const _config = {
   seancesParSemaine: 3,
   dureeSeance:      60,
   materiel:         [],
+  cardioModalities: [],  // ids modalités cardio (course, vélo, rameur, skierg…)
   exercicesForces:  [],
   exercicesExclus:  [],
   duree:            12,
@@ -81,7 +82,7 @@ export async function initWizard() {
     domaine: null, niveau: null, age: null, seancesParSemaine: 3,
     grossesse_type: null, mois_grossesse: 5, postnatal_phase: null,
     nutrition: null,
-    dureeSeance: 60, materiel: [], exercicesForces: [], exercicesExclus: [],
+    dureeSeance: 60, materiel: [], cardioModalities: [], exercicesForces: [], exercicesExclus: [],
     duree: 12, competition: null, name: '', orm: {}, bodyWeight: null,
   });
 
@@ -331,6 +332,10 @@ function step4() {
 // ── Step 5 — Exercices ────────────────────────────────────────────────────────
 
 function step5() {
+  // Cardio : sélection des modalités (course, vélo, rameur, ski-erg…) au lieu de la
+  // recherche d'exercices — le programme d'endurance se construit autour des modalités.
+  if(_config.domaine === 'cardio') return step5_cardio();
+
   const forcedHtml = _config.exercicesForces.map((ex, i) =>
     `<div class="wiz-ex-tag">
       ${esc(ex.name)}
@@ -368,6 +373,31 @@ function step5() {
       </div>
       <div id="exResultsExclu" class="wiz-ex-results"></div>
     </div>`;
+}
+
+// ── Step 5 (cardio) — Modalités d'endurance ────────────────────────────────────
+
+function step5_cardio() {
+  const hasMachines = _config.materiel.includes('machines');
+  return `
+    <div class="wiz-title">Quelles activités d'endurance ?</div>
+    <div class="wiz-subtitle">Sélectionne une ou plusieurs modalités. Les séances qualité (seuil, VO₂max) porteront sur ta 1ère modalité ; les autres serviront aux sorties faciles et à la récupération.</div>
+    <div class="wiz-materiel-grid">
+      ${CARDIO_MODALITIES.map(m => {
+        const needsEquip = m.equip && !_config.materiel.includes(m.equip);
+        const sel = _config.cardioModalities.includes(m.id);
+        return `
+        <div class="wiz-materiel-item ${sel ? 'selected' : ''}"
+             data-toggle="cardioModalities" data-value="${m.id}"
+             style="${needsEquip ? 'opacity:.55' : ''}">
+          <span class="wiz-mat-icon">${m.icon}</span>
+          <span class="wiz-mat-label">${m.name}</span>
+          ${needsEquip ? '<span style="font-size:10px;color:var(--amber)">nécessite Machines</span>' : `<span style="font-size:10px;color:var(--text3)">impact ${m.impact}</span>`}
+        </div>`;
+      }).join('')}
+    </div>
+    ${!hasMachines ? '<div class="wiz-note">💡 Rameur, vélo, ski-erg et elliptique nécessitent « Machines / Câbles » (étape matériel). Course, marche, corde et natation sont toujours disponibles.</div>' : ''}
+    ${_config.cardioModalities.length === 0 ? '<div class="wiz-note">Aucune sélection = course à pied par défaut (+ marche pour la récupération).</div>' : ''}`;
 }
 
 // ── Step 6 — Durée & compétition ──────────────────────────────────────────────
@@ -694,13 +724,15 @@ function _initWizardEvents() {
       }
       renderStep(); return;
     }
-    // Materiel toggle (multi) — must check BEFORE generic click
-    const item = e.target.closest('[data-toggle="materiel"]');
+    // Toggle multi-sélection (materiel, cardioModalities) — avant le clic générique
+    const item = e.target.closest('[data-toggle]');
     if(item) {
+      const key   = item.dataset.toggle;
       const value = item.dataset.value;
-      const idx   = _config.materiel.indexOf(value);
-      if(idx >= 0) _config.materiel.splice(idx, 1);
-      else _config.materiel.push(value);
+      if(!Array.isArray(_config[key])) _config[key] = [];
+      const idx = _config[key].indexOf(value);
+      if(idx >= 0) _config[key].splice(idx, 1);
+      else _config[key].push(value);
       renderStep(); return;
     }
     // Remove forced

@@ -277,6 +277,35 @@ function _renderProgSaisie(prog) {
         return; // skip normal grid
       }
 
+      // Cardio : pas de grille kg/reps — carte séance (zone/scheme) + log durée/RPE/distance
+      if(ex.kind === 'cardio') {
+        const craw = getProgRecord(prog.id, ex.id, week) || {};
+        const durVal  = craw.durationMin != null ? craw.durationMin : '';
+        const distVal = craw.distance != null ? craw.distance : '';
+        html += `<div class="cardio-ex-body">
+          <div class="cardio-zone-badge" style="background:${ex.zoneBg||'var(--surface2)'};color:${ex.zoneCol||'var(--text2)'}">${esc(ex.zoneLabel||'')}</div>
+          <div class="cardio-scheme">${esc(ex.scheme||'—')}</div>
+          <div class="cardio-target">RPE cible <strong>${esc(ex.rpeTarget||'—')}</strong>${ex.hrPct?` · <span style="color:var(--text3)">${esc(ex.hrPct)}</span>`:''}</div>`;
+        if(ex.detail) html += `<div class="cardio-detail">${esc(ex.detail)}</div>`;
+        html += `<div class="cardio-log">
+          <label class="cardio-log-field">Durée réelle
+            <span><input type="number" id="cdur_${ex.id}" min="0" max="600" step="1" value="${durVal}" placeholder="${ex.duration||''}"> min</span>
+          </label>
+          <label class="cardio-log-field">RPE ressenti
+            <select id="crpe_${ex.id}"><option value="">—</option>${_rpeOptions(craw.rpe)}</select>
+          </label>
+          ${ex.dist ? `<label class="cardio-log-field">Distance
+            <span><input type="number" id="cdist_${ex.id}" min="0" step="0.1" value="${distVal}" placeholder="opt."> ${esc(ex.dist)}</span>
+          </label>` : ''}
+          <label class="cardio-check"><input type="checkbox" id="cdone_${ex.id}" ${craw.done?'checked':''}> Séance réalisée</label>
+        </div>`;
+        if(craw.done || craw.durationMin != null) {
+          html += `<div class="sets-summary">${craw.done?'✓ Réalisée':''}${craw.durationMin!=null?` · ${craw.durationMin} min`:''}${craw.rpe?` · RPE ${esc(String(craw.rpe))}`:''}${craw.distance!=null?` · ${craw.distance} ${esc(ex.dist||'')}`:''}</div>`;
+        }
+        html += `</div></div>`; // cardio-ex-body + ex-block
+        return; // skip normal grid
+      }
+
       // Sets grid (show for all statuses except skipped)
       if(showGrid) {
         const placeholder = exStatus === 'deload' && deloadKg ? deloadKg : (plan || '');
@@ -381,6 +410,24 @@ function _saveProgSaisie(prog, week, dayName) {
   if(!day) return;
 
   day.exercices.forEach(ex => {
+    // Cardio : log durée / RPE / distance / réalisée (pas de séries kg/reps)
+    if(ex.kind === 'cardio') {
+      const durEl  = document.getElementById(`cdur_${ex.id}`);
+      const rpeEl  = document.getElementById(`crpe_${ex.id}`);
+      const distEl = document.getElementById(`cdist_${ex.id}`);
+      const doneEl = document.getElementById(`cdone_${ex.id}`);
+      const durationMin = durEl && durEl.value !== '' ? parseFloat(durEl.value) : null;
+      const rpe         = rpeEl?.value || '';
+      const distance    = distEl && distEl.value !== '' ? parseFloat(distEl.value) : null;
+      const done        = doneEl?.checked === true;
+      if(durationMin == null && !rpe && distance == null && !done) return;
+      setProgRecord(prog.id, ex.id, week, {
+        cardio: true, durationMin, rpe, distance, done, ts: Date.now(),
+        sessionStatus: getProgExStatus(prog.id, ex.id, week),
+      });
+      return;
+    }
+
     // Lire autant de séries que la grille en affiche (cohérence render ↔ save)
     const nSets = Math.max(_parseSetsGeneric(ex.scheme), 4);
     const sets  = [];

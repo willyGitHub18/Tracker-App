@@ -4,7 +4,7 @@
  */
 
 import { filterExercises } from './exercises-db.js';
-import { AGE_MODIFIERS, MIXTE_SPLITS, GROSSESSE_MOIS_CONFIG, GROSSESSE_EXERCISES_PRENATAL, GROSSESSE_SEMAINE_TYPE, POSTNATAL_PHASES, PILATES_VIDEOS } from './data.js';
+import { AGE_MODIFIERS, MIXTE_SPLITS, GROSSESSE_MOIS_CONFIG, GROSSESSE_EXERCISES_PRENATAL, GROSSESSE_SEMAINE_TYPE, POSTNATAL_PHASES, PILATES_VIDEOS, CARDIO_ZONES, CARDIO_MODALITIES, CARDIO_SESSION_TYPES } from './data.js';
 
 // ── Phase structures by duration ──────────────────────────────────────────────
 
@@ -108,6 +108,11 @@ export function generateProgram(config, newProgramId) {
   // ── Grossesse: special generation ──────────────────────────────────────────
   if(domaine === 'grossesse') {
     return _generateGrossesseProg(config, newProgramId);
+  }
+
+  // ── Cardio / Endurance: modèle de prescription dédié (zones, intervalles) ───
+  if(domaine === 'cardio') {
+    return _generateCardioProg(config, newProgramId);
   }
 
   // 1. Get phase template
@@ -522,6 +527,293 @@ function _generateGrossesseProg(config, id) {
     orm:        {},
     totalWeeks,
   };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CARDIO / ENDURANCE — modèle dédié (distinct du modèle force %1RM)
+// Réf : Documentation/cardio-program-design.md
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Périodisation endurance par durée (semaines de base + qualité par bloc + affûtage).
+// `quality` = type de séance qualité du bloc ; `vol` = facteur de volume de base du bloc.
+const CARDIO_PHASE_TEMPLATES = {
+  8:  [
+    { nom:'Base aérobie',       weeks:4, quality:'tempo',     vol:1.00 },
+    { nom:'Développement seuil',weeks:3, quality:'threshold', vol:1.15 },
+    { nom:'Affûtage',           weeks:1, quality:'vo2max',    vol:0.55, isTaper:true },
+  ],
+  12: [
+    { nom:'Base aérobie',       weeks:5, quality:'tempo',     vol:1.00 },
+    { nom:'Développement seuil',weeks:4, quality:'threshold', vol:1.20 },
+    { nom:'Pic VO₂max',         weeks:2, quality:'vo2max',    vol:1.05 },
+    { nom:'Affûtage',           weeks:1, quality:'vo2max',    vol:0.55, isTaper:true },
+  ],
+  16: [
+    { nom:'Base aérobie',       weeks:6, quality:'tempo',     vol:1.00 },
+    { nom:'Développement seuil',weeks:5, quality:'threshold', vol:1.25 },
+    { nom:'Pic VO₂max',         weeks:4, quality:'vo2max',    vol:1.10 },
+    { nom:'Affûtage',           weeks:1, quality:'vo2max',    vol:0.55, isTaper:true },
+  ],
+};
+
+// Durées de base (min) et cap d'intensité par niveau.
+const CARDIO_LEVEL = {
+  debutant:      { easy:25, long:35, quality:20, zoneCap:3, walkRun:true },
+  intermediaire: { easy:40, long:55, quality:30, zoneCap:5 },
+  avance:        { easy:50, long:80, quality:35, zoneCap:5 },
+};
+
+// Plan hebdomadaire (types de séance) par nombre de séances. 'quality' résolu
+// selon le bloc ; 'quality2' = seconde séance qualité (avancé uniquement, sinon endurance).
+const CARDIO_WEEK_PLANS = {
+  2: ['long', 'quality'],
+  3: ['endurance', 'quality', 'long'],
+  4: ['endurance', 'quality', 'endurance', 'long'],
+  5: ['endurance', 'quality', 'recovery', 'quality2', 'long'],
+};
+
+function _generateCardioProg(config, id) {
+  const {
+    niveau, age, seancesParSemaine, duree, competition, name,
+    materiel = [], cardioModalities = [],
+  } = config;
+
+  const level  = CARDIO_LEVEL[niveau] || CARDIO_LEVEL.intermediaire;
+  const ageMod = AGE_MODIFIERS[age || '30-39'] || AGE_MODIFIERS['30-39'];
+  const isBeginner = niveau === 'debutant';
+
+  // Cap de zone effectif : min(niveau, âge). rpeMax faible → pas de VO₂max.
+  const ageZoneCap = ageMod.rpeMax < 7 ? 3 : ageMod.rpeMax < 8 ? 4 : 5;
+  const zoneCap    = Math.min(level.zoneCap, ageZoneCap);
+
+  // Modalités : choix utilisateur filtré par matériel dispo, repli sur course + marche.
+  const modalities = _resolveCardioModalities(cardioModalities, materiel);
+  const mainModality = modalities[0];
+  const easyModalities = modalities.length > 1 ? modalities : [mainModality];
+  const lowImpact = modalities.filter(m => m.impact === 'faible' || m.impact === 'nul');
+
+  // Phases dimensionnées à la durée demandée (deloads insérés entre blocs).
+  const closest  = [8, 12, 16].reduce((p, c) => Math.abs(c - duree) < Math.abs(p - duree) ? c : p);
+  const template = CARDIO_PHASE_TEMPLATES[closest];
+  const phases   = _buildCardioPhases(template, duree);
+
+  const days = DAY_TEMPLATES[Math.min(seancesParSemaine, 5)] || DAY_TEMPLATES[3];
+  const weekPlan = CARDIO_WEEK_PLANS[Math.min(seancesParSemaine, 5)] || CARDIO_WEEK_PLANS[3];
+
+  const semaines = [];
+  let weekNum = 1;
+  let easyRot = 0;  // rotation des modalités sur les séances faciles
+
+  phases.forEach((phase, phaseIdx) => {
+    for(let pw = 0; pw < phase.weeks; pw++) {
+      // Progression de volume intra-bloc : +8 %/sem (règle ~10 %, prudent).
+      const volFactor = phase.vol * (1 + 0.08 * pw);
+
+      const jours = days.map((dayName, di) => {
+        let slot = weekPlan[di] || 'endurance';
+        // Résolution des slots qualité selon le bloc + niveau.
+        if(slot === 'quality')  slot = phase.quality || 'tempo';
+        if(slot === 'quality2') slot = niveau === 'avance' ? 'tempo' : 'endurance';
+
+        // Choix de la modalité : qualité → principale ; récup → faible impact ; facile → rotation.
+        let modality;
+        if(slot === 'recovery')      modality = lowImpact[0] || mainModality;
+        else if(_isQuality(slot))    modality = mainModality;
+        else { modality = easyModalities[easyRot % easyModalities.length]; easyRot++; }
+
+        const session = _buildCardioSession(slot, modality, level, volFactor, zoneCap, weekNum, isBeginner);
+        // ID unique par jour : une même modalité peut revenir sur plusieurs jours
+        // (ex. course lundi ET vendredi) — évite la collision de clé de suivi.
+        session.id = `c${di + 1}_${modality.id}`;
+        session.modalityId = modality.id;
+        return { nom: dayName, split: session.typeLabel, exercices: [session] };
+      });
+
+      const zones = jours.map(j => j.exercices[0].zone);
+      const hard  = zones.filter(z => z >= 3).length;
+      semaines.push({
+        num:     weekNum,
+        phase:   phase.nom,
+        isDeload:false,
+        isTaper: phase.isTaper || false,
+        rpeTarget: phase.isTaper ? '≤ 6' : `Z2 facile · qualité ${CARDIO_ZONES[Math.max(...zones)].rpe}`,
+        intensite: Math.max(...zones) / 5,
+        distribution: `${Math.round((1 - hard / zones.length) * 100)}/${Math.round(hard / zones.length * 100)} facile/dur`,
+        jours,
+      });
+      weekNum++;
+    }
+
+    // Semaine de décharge entre blocs (sauf avant l'affûtage / après le dernier).
+    const nextPhase = phases[phaseIdx + 1];
+    if(nextPhase && !nextPhase.isTaper && !phase.isTaper) {
+      const jours = days.map((dayName, di) => {
+        const modality = easyModalities[di % easyModalities.length];
+        const session  = _buildCardioSession('endurance', modality, level, 0.55, Math.min(2, zoneCap), weekNum, isBeginner);
+        session.id = `c${di + 1}_${modality.id}`;
+        session.modalityId = modality.id;
+        return { nom: dayName, split: session.typeLabel, exercices: [session] };
+      });
+      semaines.push({
+        num: weekNum, phase: `Décharge (${phase.nom})`,
+        isDeload: true, isTaper: false, rpeTarget: '≤ 4 · Z1–Z2',
+        intensite: 0.4, distribution: '100/0 facile/dur', jours,
+      });
+      weekNum++;
+    }
+  });
+
+  return {
+    id,
+    name:       name || `Programme endurance ${duree} sem.`,
+    subtype:    'cardio',
+    status:     'active',
+    createdAt:  Date.now(),
+    config,
+    modalities: modalities.map(m => m.id),
+    modalityLabel: modalities.map(m => m.name).join(' · '),
+    phases: phases.map(p => ({ nom:p.nom, debut:p.startWeek, fin:p.startWeek + p.weeks - 1, intensite:p.vol, rpeTarget:'—' })),
+    semaines,
+    orm:        {},
+    totalWeeks: weekNum - 1,
+  };
+}
+
+function _isQuality(type) {
+  return ['tempo','threshold','vo2max','race','fartlek'].includes(type);
+}
+
+function _resolveCardioModalities(chosen, materiel) {
+  const ids = Array.isArray(chosen) ? chosen.map(c => (typeof c === 'object' ? c.id : c)) : [];
+  let mods = CARDIO_MODALITIES.filter(m => ids.includes(m.id));
+  // Filtrer par matériel : les modalités nécessitant du matériel non dispo sont retirées.
+  mods = mods.filter(m => !m.equip || materiel.includes(m.equip));
+  if(mods.length === 0) {
+    // Repli : course (toujours dispo) + marche pour la récup.
+    mods = CARDIO_MODALITIES.filter(m => m.id === 'run' || m.id === 'walk');
+  }
+  return mods;
+}
+
+function _buildCardioPhases(template, totalWeeks) {
+  const taperWeeks  = 1;
+  const nonTaper    = template.filter(p => !p.isTaper);
+  const deloadWeeks = Math.max(0, nonTaper.length - 1);
+  const mainWeeks   = Math.max(nonTaper.length, totalWeeks - taperWeeks - deloadWeeks);
+  const totalRatio  = nonTaper.reduce((s, p) => s + p.weeks, 0);
+
+  const scaled = nonTaper.map(p => Math.max(1, Math.round(p.weeks / totalRatio * mainWeeks)));
+  // Corriger la dérive d'arrondi : la somme doit valoir exactement mainWeeks
+  // (sinon totalWeeks ≠ durée demandée). On ajuste sur la phase la plus longue.
+  let diff = mainWeeks - scaled.reduce((a, b) => a + b, 0);
+  let guard = 0;
+  while(diff !== 0 && guard++ < 50) {
+    let idx = 0;
+    for(let i = 1; i < scaled.length; i++) if(scaled[i] > scaled[idx]) idx = i;
+    if(diff > 0) { scaled[idx]++; diff--; }
+    else if(scaled[idx] > 1) { scaled[idx]--; diff++; }
+    else break;
+  }
+
+  let cursor = 1;
+  const phases = nonTaper.map((p, i) => {
+    const phase = { ...p, weeks: scaled[i], startWeek: cursor };
+    cursor += scaled[i];
+    return phase;
+  });
+  const taper = template.find(p => p.isTaper);
+  if(taper) { phases.push({ ...taper, weeks: taperWeeks, startWeek: cursor }); cursor += taperWeeks; }
+  return phases;
+}
+
+// Construit une séance cardio (objet exercice avec kind:'cardio').
+function _buildCardioSession(type, modality, level, volFactor, zoneCap, weekNum, isBeginner) {
+  const def = CARDIO_SESSION_TYPES[type] || CARDIO_SESSION_TYPES.endurance;
+  // Si l'intensité prévue dépasse le cap (niveau/âge), on rétrograde vers du tempo continu.
+  let effType = type;
+  if(def.zone > zoneCap && def.format === 'intervals') effType = 'tempo';
+  const effDef = CARDIO_SESSION_TYPES[effType] || def;
+  const zone   = Math.min(effDef.zone, zoneCap);
+  const Z      = CARDIO_ZONES[zone];
+
+  const base = {
+    id: modality.id, nom: modality.name, kind: 'cardio',
+    sessionType: effType, typeLabel: (CARDIO_SESSION_TYPES[effType] || def).label,
+    zone, zoneLabel: Z.label, rpeTarget: Z.rpe, hrPct: Z.hr, zoneBg: Z.bg, zoneCol: Z.col,
+    unit: 'min', dist: modality.dist, muscles: modality.muscles,
+  };
+
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  // ── Débutant : run-walk sur les séances faciles à impact élevé (course) ──────
+  if(isBeginner && level.walkRun && modality.impact === 'élevé' && (effType === 'endurance' || effType === 'long' || effType === 'recovery')) {
+    const dur    = Math.round((effType === 'long' ? level.long : effType === 'recovery' ? level.easy * 0.7 : level.easy) * volFactor);
+    const runSec = clamp(60 + (weekNum - 1) * 25, 60, 600);
+    const walkSec= clamp(90 - (weekNum - 1) * 8, 30, 90);
+    const reps   = Math.max(3, Math.round(dur * 60 / (runSec + walkSec)));
+    return {
+      ...base, format: 'intervals',
+      scheme: `${reps}× (${_fmtSec(runSec)} course / ${_fmtSec(walkSec)} marche)`,
+      duration: dur, totalMin: dur + 10,
+      detail: `Alternance course/marche (${dur} min). Le test de la parole doit rester possible en course. Un jour de repos entre chaque sortie.`,
+    };
+  }
+
+  // ── Intervalles (seuil / VO₂max) ─────────────────────────────────────────────
+  if((CARDIO_SESSION_TYPES[effType] || def).format === 'intervals') {
+    let sets, workMin, restMin;
+    if(effType === 'vo2max') {
+      sets = clamp(Math.round(4 * volFactor), 4, 6); workMin = 3; restMin = 2;
+    } else { // threshold
+      sets = clamp(Math.round(3 * volFactor), 3, 4); workMin = 8; restMin = 2;
+    }
+    const totalWork = sets * workMin;
+    return {
+      ...base, format: 'intervals', sets, workMin, restMin,
+      scheme: `${sets}×${workMin} min ${Z.label.split(' ')[0]} / récup ${restMin} min`,
+      duration: totalWork, totalMin: totalWork + sets * restMin + 20,
+      detail: effType === 'vo2max'
+        ? `Intervalles VO₂max : ${sets}×${workMin} min à allure très soutenue (${totalWork} min cumulées ≥ 90 % VO₂max), récup ${restMin} min en Z1. Échauffement 15 min obligatoire.`
+        : `Intervalles au seuil : ${sets}×${workMin} min à allure « confortablement dure » (Z4), récup ${restMin} min. Échauffement 12 min.`,
+    };
+  }
+
+  // ── Fartlek ──────────────────────────────────────────────────────────────────
+  if((CARDIO_SESSION_TYPES[effType] || def).format === 'fartlek') {
+    const dur = Math.round(level.quality * volFactor + 10);
+    return {
+      ...base, format: 'fartlek',
+      scheme: `${dur} min · jeu d'allures Z2↔Z4`,
+      duration: dur, totalMin: dur + 10,
+      detail: `Fartlek libre (${dur} min) : accélérations spontanées de 1–3 min en Z4 entrecoupées de retour au calme en Z2. Ludique, sans structure rigide.`,
+    };
+  }
+
+  // ── Continu (récup / endurance / long / tempo / race) ────────────────────────
+  const baseMin = effType === 'long' ? level.long
+    : effType === 'recovery' ? Math.round(level.easy * 0.7)
+    : effType === 'tempo' || effType === 'race' ? level.quality + 10
+    : level.easy;
+  const dur = Math.max(15, Math.round(baseMin * volFactor));
+  const detailByType = {
+    recovery:  `Récupération active très facile (${dur} min) en Z1. Objectif : régénérer, pas fatiguer.`,
+    endurance: `Endurance fondamentale (${dur} min) en Z2 — le socle du volume. Allure conversationnelle.`,
+    long:      `Sortie longue (${dur} min) en Z2, à allure conversationnelle. Développe l'endurance aérobie et l'économie.`,
+    tempo:     `Tempo (${dur} min) en Z3, effort « soutenu mais maîtrisé ». Améliore l'endurance de seuil.`,
+    race:      `Séance à allure objectif (${dur} min) en Z3–Z4 pour la spécificité pré-compétition.`,
+  };
+  return {
+    ...base, format: 'continuous',
+    scheme: `${dur} min · ${Z.label.split('·')[0].trim()}`,
+    duration: dur, totalMin: dur + 8,
+    detail: detailByType[effType] || detailByType.endurance,
+  };
+}
+
+function _fmtSec(sec) {
+  if(sec < 60) return `${sec} s`;
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return s ? `${m} min ${s} s` : `${m} min`;
 }
 
 function _selectExercisesForMixte(pool, forced, focuses, count, dayIndex) {

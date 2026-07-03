@@ -254,6 +254,47 @@ export const MIXTE_SPLITS = {
   ],
 };
 
+// ── Cardio / Endurance ──────────────────────────────────────────────────────
+// Modèle d'entraînement d'endurance (distinct du modèle force %1RM).
+// Réf : Seiler (distribution polarisée 80/20), zones 5 paliers standard,
+// Buchheit & Laursen (HIIT), Daniels (allures), Concept2 (rameur), NHS C25K (débutant).
+// Voir Documentation/cardio-program-design.md pour les sources détaillées.
+
+// Zones d'intensité — pilotées PRIORITAIREMENT par le RPE (app RPE-centrée),
+// le %FCmax n'est qu'un repère secondaire (Tanaka : FCmax ≈ 208 − 0,7 × âge).
+export const CARDIO_ZONES = {
+  1: { label:'Z1 · Récupération', hr:'50–60% FCmax', rpe:'1–2',  band:'facile', bg:'#E6F1FB', col:'#185FA5' },
+  2: { label:'Z2 · Endurance',    hr:'60–70% FCmax', rpe:'3–4',  band:'facile', bg:'#E1F5EE', col:'#0F6E56' },
+  3: { label:'Z3 · Tempo',        hr:'70–80% FCmax', rpe:'5–6',  band:'seuil',  bg:'#FAEEDA', col:'#854F0B' },
+  4: { label:'Z4 · Seuil',        hr:'80–90% FCmax', rpe:'7–8',  band:'dur',    bg:'#FDE7DA', col:'#B4480B' },
+  5: { label:'Z5 · VO₂max',       hr:'90–100% FCmax',rpe:'9–10', band:'dur',    bg:'#FDEAEA', col:'#9C2222' },
+};
+
+// Modalités cardio. equip = clé matériel requise (null = toujours dispo : course, marche…).
+export const CARDIO_MODALITIES = [
+  { id:'run',        name:'Course à pied',       icon:'🏃', unit:'min', dist:'km', impact:'élevé',  equip:null,       muscles:['quad','ischio','mollets'] },
+  { id:'bike',       name:'Vélo / Home-trainer', icon:'🚴', unit:'min', dist:'km', impact:'faible', equip:'machines', muscles:['quad','fessiers','mollets'] },
+  { id:'row_erg',    name:'Rameur',              icon:'🚣', unit:'min', dist:'m',  impact:'faible', equip:'machines', muscles:['dorsaux','quad','biceps','core'] },
+  { id:'ski_erg',    name:'Ski-erg',             icon:'⛷',  unit:'min', dist:'m',  impact:'faible', equip:'machines', muscles:['dorsaux','deltPost','core','triceps'] },
+  { id:'bike_erg',   name:'Assault Bike',        icon:'🌀', unit:'min', dist:null, impact:'faible', equip:'machines', muscles:['quad','ischio','core'] },
+  { id:'elliptical', name:'Elliptique',          icon:'🎿', unit:'min', dist:null, impact:'faible', equip:'machines', muscles:['quad','fessiers','ischio'] },
+  { id:'jump_rope',  name:'Corde à sauter',      icon:'🪢', unit:'min', dist:null, impact:'moyen',  equip:null,       muscles:['mollets','core'] },
+  { id:'swim',       name:'Natation',            icon:'🏊', unit:'min', dist:'m',  impact:'nul',    equip:null,       muscles:['dorsaux','pec','deltAnt','core'] },
+  { id:'walk',       name:'Marche / Rando',      icon:'🚶', unit:'min', dist:'km', impact:'faible', equip:null,       muscles:['quad','mollets'] },
+];
+
+// Types de séance : zone par défaut + format (continu | intervalles | fartlek).
+export const CARDIO_SESSION_TYPES = {
+  recovery:  { label:'Récupération',   zone:1, format:'continuous' },
+  endurance: { label:'Endurance',      zone:2, format:'continuous' },
+  long:      { label:'Sortie longue',  zone:2, format:'continuous' },
+  tempo:     { label:'Tempo',          zone:3, format:'continuous' },
+  threshold: { label:'Seuil',          zone:4, format:'intervals'  },
+  vo2max:    { label:'VO₂max',         zone:5, format:'intervals'  },
+  fartlek:   { label:'Fartlek',        zone:3, format:'fartlek'    },
+  race:      { label:'Allure course',  zone:4, format:'continuous' },
+};
+
 // ── Grossesse program config ──────────────────────────────────────────────────
 
 export const GROSSESSE_MOIS_CONFIG = {
