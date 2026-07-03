@@ -13,9 +13,9 @@ import { getPrograms, getActivePrograms, getArchivedPrograms, getProgram, getPro
          setActiveProgram, addActiveProgram, removeActiveProgram, setPrimaryProgram,
          deleteProgram, archiveProgram, closeProgram, newProgramId, saveProgram,
          exportProgramJSON, exportProgramMD, exportAllPrograms, importAllPrograms,
-         getCurrentWeek, setStartDate } from './programs.js';
+         setProgExStatus, getCurrentWeek, setStartDate } from './programs.js';
 import { buildAthxProgram, NUTRITION_PLANS } from './data.js';
-import { getVacances, setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
+import { getRecord, getVacances, setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
 
 // ── Custom confirm modal (iOS PWA-safe) ─────────────────────────────────────
 
@@ -427,12 +427,6 @@ window.renderPrograms  = renderPrograms;
 window.renderActiveProgramDetail = renderActiveProgramDetail;
 
 // Vacances
-window._saveVacances = function() {
-  const d = document.getElementById('vacDebut')?.value;
-  const f = document.getElementById('vacFin')?.value;
-  const a = document.getElementById('vacActivite')?.value || 'sedentaire';
-  if(!d || !f || new Date(f) < new Date(d)) { alert('Dates invalides.'); return; }
-
 window._removeVacances = function(idx) {
   removeVacances(idx);
   renderSaisie();
@@ -442,6 +436,21 @@ window._clearVacances = function() {
   clearAllVacances();
   renderSaisie();
 };
+
+window._saveVacances = function() {
+  const d = document.getElementById('vacDebut')?.value;
+  const f = document.getElementById('vacFin')?.value;
+  const a = document.getElementById('vacActivite')?.value || 'sedentaire';
+  if(!d || !f || new Date(f) < new Date(d)) { alert('Dates invalides.'); return; }
+
+  // Sélecteur "Dernière sem. entraînement" → première semaine sautée
+  //   ""  = Auto (détection)          → null
+  //   "0" = Aucune (reprise directe)  → -1 (sentinelle : firstSkippedWeek = repriseWeek)
+  //   "N" = dernière sem. entraînée   → première sautée = N+1
+  const fsRaw = document.getElementById('vacFirstSkip')?.value;
+  let manualFirstSkip = null;
+  if(fsRaw === '0')      manualFirstSkip = -1;
+  else if(fsRaw)         manualFirstSkip = parseInt(fsRaw, 10) + 1;
 
   addVacances(d, f, a);
 
@@ -651,6 +660,11 @@ function _renderProgDetailView(prog, container) {
   // Basé sur SPLIT_COMPOUNDS du générateur : 2-4 compounds en premier, le reste = accessoires
   const COMPOUNDS_PER_DAY = 3; // les 3 premiers exercices de chaque jour sont considérés "Primaire"
   const CORE_MUSCLES = new Set(['core','lombaires','abdominaux','obliques']);
+  // Exercices compounds (union de SPLIT_COMPOUNDS du générateur) → badge "Primaire".
+  const COMPOUND_IDS = new Set(['bench','press','ohp','dips','deadlift','row_barre','pullup',
+    'rdl','squat','squat_fs','lunges','leg_press','thruster','burpee','box_jump','wall_ball']);
+  // Map des 1RM du programme (utilisée pour estimer l'incrément de charge par bloc).
+  const orm = prog.orm || {};
 
   // Helper: estimate session duration (sets × (time_per_set + rest))
   function _estimateMinutes(exercises) {
@@ -721,7 +735,7 @@ function _renderProgDetailView(prog, container) {
         blocNum++;
         label = bloc.start === bloc.end ? `Bloc ${blocNum} (S${bloc.start})` : `Bloc ${blocNum} (S${bloc.start}–${bloc.end})`;
       }
-      return `<button class="${bi===0?'active':''}" onclick="_showGenBloc(${di},${bi},this)">${esc(label)}</button>`;
+      return `<button class="prog-bloc-btn${bi===0?' active':''}" onclick="_showGenBloc(${di},${bi},this)">${esc(label)}</button>`;
     }).join('');
 
     // Contenu par bloc
@@ -787,7 +801,7 @@ function _renderProgDetailView(prog, container) {
 
         // Time footer
         const blocMin = _estimateMinutes(dayExercises);
-        html += `<div class="p-note">${dayExercises.map(e => `${e.nom} ${e.scheme}`).join(', ')} = ~${blocMin} min. Accessoires en super-set pour gagner du temps.</div>`;
+        html += `<div class="p-note">${dayExercises.map(e => `${esc(e.nom)} ${esc(e.scheme)}`).join(', ')} = ~${blocMin} min. Accessoires en super-set pour gagner du temps.</div>`;
       }
 
       return `<div class="prog-bloc-content ${bi===0?'active':''}" data-day="${di}" data-bloc="${bi}">${html}</div>`;
@@ -1060,7 +1074,7 @@ function renderActiveProgramDetail(weekNum) {
   const daysHtml = week.jours.map(day => `
     <div class="prog-day-card">
       <div class="prog-day-header">
-        <span class="prog-day-name">${day.nom}</span>
+        <span class="prog-day-name">${esc(day.nom)}</span>
         <span class="prog-day-split">${day.split&&day.split!==day.nom?day.split:''}</span>
       </div>
       <div class="prog-ex-list">

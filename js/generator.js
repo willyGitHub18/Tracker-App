@@ -282,21 +282,17 @@ function _buildPhases(template, totalWeeks, competition) {
     return phase;
   });
 
-  // Add taper
+  // Add taper (dernière phase — c'est le pic de récupération avant compétition).
   const taperTemplate = template.find(p => p.isTaper);
   if(taperTemplate) {
     phases.push({ ...taperTemplate, weeks: taperWeeks, startWeek: weekCursor });
     weekCursor += taperWeeks;
   }
 
-  // If competition: insert taper 2 weeks before
-  if(competition?.date) {
-    const compDate   = new Date(competition.date);
-    const startDate  = new Date(); // approximate
-    const weeksToComp = Math.max(1, Math.ceil((compDate - startDate) / 604800000));
-    // Mark competition week
-    phases.compWeek = Math.min(weeksToComp, totalWeeks);
-  }
+  // NB : l'alignement fin du taper sur la date exacte de compétition (raccourcir/
+  // rallonger le programme pour finir la semaine de la compét) reste une évolution
+  // à part entière — voir le plan "startDate". La durée choisie par l'utilisateur
+  // (recommandée par domaine) place déjà le taper en fin de cycle.
 
   return phases;
 }

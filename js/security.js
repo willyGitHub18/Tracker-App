@@ -40,8 +40,10 @@ export function sanitizeRecord(rec) {
   const ts = parseInt(rec.ts, 10);
   if(isFinite(kg) && kg >= 0 && kg < 1000) out.kg = kg;
   if(isFinite(ts) && ts > 0)               out.ts = ts;
-  if(rec.rpe != null)
-    out.rpe = String(rec.rpe).replace(/[^0-9.]/g, '').slice(0, 4);
+  if(rec.rpe != null) {
+    const rpe = parseFloat(rec.rpe);
+    if(isFinite(rpe) && rpe >= 0 && rpe <= 10) out.rpe = String(rpe);
+  }
   if(['normal','hyrox','skipped','deload'].includes(rec.sessionStatus))
     out.sessionStatus = rec.sessionStatus;
 

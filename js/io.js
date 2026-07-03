@@ -2,11 +2,13 @@
  * io.js — JSON and CSV import/export
  */
 
-import { getAllRecords, importRecords, getVacancesList, addVacances } from './store.js';
+import { getAllRecords, importRecords, getVacancesList, addVacances, setVacances } from './store.js';
 import { validateImport }               from './security.js';
 import { EXERCISES }                    from './data.js';
 import { normRecord }                   from './store.js';
 import { repaintMuscles }               from './musculaire.js';
+import { getPrograms, saveProgram }     from './programs.js';
+import { dbGet, dbSet }                 from './db.js';
 
 export function exportJSON() {
   const payload = {
@@ -32,9 +34,9 @@ export function exportCSV() {
       const plan = ex.plan[w - 1] || '';
       const date = r.ts ? new Date(r.ts).toLocaleDateString('fr-FR') : '';
       (r.sets || []).forEach((s, i) => {
-        if(!s?.kg && !s?.reps) return;
-        const delta = plan && s?.kg ? Math.round((s.kg - plan) * 10) / 10 : '';
-        rows.push([ex.name, ex.day, `S${w}`, `S${i+1}`, s?.kg || '', ex.unit, s?.reps || '', s?.rpe || '', plan, delta, date]);
+        if(s?.kg == null && s?.reps == null) return;  // kg:0 (poids de corps) reste valide
+        const delta = plan && s?.kg != null ? Math.round((s.kg - plan) * 10) / 10 : '';
+        rows.push([ex.name, ex.day, `S${w}`, `S${i+1}`, s?.kg ?? '', ex.unit, s?.reps ?? '', s?.rpe ?? '', plan, delta, date]);
       });
     }
   });
@@ -82,13 +84,16 @@ export function importJSON(event) {
       if(Array.isArray(parsed.programs) && parsed.programs.length > 0) {
         const existing = typeof getPrograms === 'function' ? getPrograms() : [];
         // Déduplication par nom + date de création (les IDs wizard sont timestampés → diffèrent à chaque génération)
-        const existingKeys = new Set(existing.map(p => `${p.name}|${p.created||''}`));
+        const existingKeys = new Set(existing.map(p => `${p.name}|${p.createdAt||''}`));
         parsed.programs.forEach(p => {
-          if(!p?.id || typeof saveProgram !== 'function') return;
-          const key = `${p.name}|${p.created||''}`;
+          if(!p || typeof p !== 'object' || Array.isArray(p) || !p.id || typeof saveProgram !== 'function') return;
+          // Sanitisation légère des champs affichés (validation numérique gérée à l'affichage via esc()/sanitizeRecord)
+          p.name = String(p.name || 'Programme').slice(0, 120);
+          p.id   = String(p.id).slice(0, 80);
+          const key = `${p.name}|${p.createdAt||''}`;
           // Si un programme avec le même nom ET la même date existe déjà → skip
           if(existingKeys.has(key)) {
-            console.log('[import] programme dupliqué ignoré:', p.name, p.created);
+            console.log('[import] programme dupliqué ignoré:', p.name, p.createdAt);
             return;
           }
           existingKeys.add(key);

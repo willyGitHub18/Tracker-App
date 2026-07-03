@@ -82,18 +82,26 @@ function dbSetAll(obj) {
   _dbPersistAll();
 }
 
+/** Miroir localStorage best-effort du cache complet.
+ *  Écrit SYSTÉMATIQUEMENT (pas seulement en cas d'échec IDB) : dbOpen() met _db
+ *  en cache et ne rejette plus après le premier succès, donc l'ancien fallback
+ *  logé dans le catch ne se déclenchait jamais. Garantit une récupération si
+ *  IndexedDB est évincé plus tard (iOS). */
+function _mirror() {
+  try { localStorage.setItem('athx_charges_v2', JSON.stringify(_cache)); } catch(_) {}
+}
+
 async function _dbPersist(key, value) {
+  _mirror();
   try {
     const db = await dbOpen();
     const tx = db.transaction(STORE_NAME, 'readwrite');
     tx.objectStore(STORE_NAME).put({ key, value });
-  } catch(_) {
-    // Fallback: localStorage mirror
-    try { localStorage.setItem('athx_charges_v2', JSON.stringify(_cache)); } catch(_) {}
-  }
+  } catch(_) {}
 }
 
 async function _dbPersistDelete(key) {
+  _mirror();
   try {
     const db = await dbOpen();
     const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -102,27 +110,25 @@ async function _dbPersistDelete(key) {
 }
 
 async function _dbPersistAll() {
+  _mirror();
   try {
     const db = await dbOpen();
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
     store.clear();
     Object.entries(_cache).forEach(([key, value]) => store.put({ key, value }));
-  } catch(_) {
-    try { localStorage.setItem('athx_charges_v2', JSON.stringify(_cache)); } catch(_) {}
-  }
+  } catch(_) {}
 }
 
 /** Wipe everything (reset) */
 async function dbClear() {
   _cache = {};
+  try { localStorage.removeItem('athx_charges_v2'); } catch(_) {}
   try {
     const db = await dbOpen();
     const tx = db.transaction(STORE_NAME, 'readwrite');
     tx.objectStore(STORE_NAME).clear();
-  } catch(_) {
-    try { localStorage.removeItem('athx_charges_v2'); } catch(_) {}
-  }
+  } catch(_) {}
 }
 
 export { dbInit, dbGet, dbGetAll, dbSet, dbDelete, dbSetAll, dbClear };

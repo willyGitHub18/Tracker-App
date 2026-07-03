@@ -22,6 +22,15 @@ import { getActiveProgram, getAllActivePrograms, getActiveProgramById,
 // Currently displayed program (may differ from primary active)
 let _currentProgId = null;
 
+// Délégation d'événements sur #saisieContent : liée UNE seule fois (l'élément
+// persiste, seul son innerHTML est remplacé). L'état courant (prog/semaine) est
+// relu depuis ces variables de module à chaque évènement — évite l'empilement
+// de listeners (et donc les sauvegardes multipliées) à chaque renderSaisie().
+let _progSaisieBound = false;
+let _legacySaisieBound = false;
+let _curSaisieProg = null;
+let _curLegacyWeek = null;
+
 function _hasAthxData() {
   return ['press','squat','deadlift','gtoh','sandbag','lunges'].some(id => {
     for(let w = 1; w <= 17; w++) { if(getRecord(id, w)) return true; }
@@ -161,7 +170,7 @@ function _renderProgSaisie(prog) {
   semaine.jours.forEach(day => {
     html += `<div class="day-card">
       <div class="day-header">
-        <span class="day-name">${day.nom}</span>
+        <span class="day-name">${esc(day.nom)}</span>
         ${day.split && day.split !== day.nom ? `<span style="font-size:11px;color:var(--text3)">${esc(day.split)}</span>` : ''}
       </div>
       <div class="ex-wrap">`;
@@ -323,6 +332,10 @@ function _renderProgSaisie(prog) {
 }
 
 function _bindProgSaisieEvents(prog, week) {
+  // État courant relu par les handlers délégués (liés une seule fois).
+  _curSaisieProg = prog;
+  if(_progSaisieBound) return;
+  _progSaisieBound = true;
   const content = document.getElementById('saisieContent');
 
   // Status buttons
@@ -332,7 +345,6 @@ function _bindProgSaisieEvents(prog, week) {
     const { progex, ex, status } = btn.dataset;
     setProgExStatus(progex, ex, parseInt(btn.dataset.week), status);
     // Update button styles without re-rendering the whole form
-    const week_n = parseInt(btn.dataset.week);
     btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
       b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
     });
@@ -355,7 +367,7 @@ function _bindProgSaisieEvents(prog, week) {
   content.addEventListener('click', e => {
     const btn = e.target.closest('[data-prog-day]');
     if(!btn) return;
-    _saveProgSaisie(prog, parseInt(btn.dataset.progWeek), btn.dataset.progDay);
+    _saveProgSaisie(_curSaisieProg, parseInt(btn.dataset.progWeek), btn.dataset.progDay);
   });
 
   // Vacances
@@ -702,18 +714,24 @@ function _renderLegacySaisie() {
 }
 
 function _bindLegacyEvents(week) {
-  document.getElementById('saisieContent').addEventListener('click', e => {
+  // État courant relu par les handlers délégués (liés une seule fois).
+  _curLegacyWeek = week;
+  if(_legacySaisieBound) return;
+  _legacySaisieBound = true;
+  const content = document.getElementById('saisieContent');
+
+  content.addEventListener('click', e => {
     const btn = e.target.closest('[data-status]:not([data-progex])');
     if(!btn) return;
     const { ex, status } = btn.dataset;
-    setExStatus(ex, week, status);
+    setExStatus(ex, _curLegacyWeek, status);
     // Update button styles without re-rendering
     btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
       b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
     });
   });
 
-  document.getElementById('saisieContent').addEventListener('input', e => {
+  content.addEventListener('input', e => {
     const inp = e.target.closest('.set-inp[data-idx="0"]');
     if(!inp) return;
     const val = parseFloat(inp.value);
@@ -725,7 +743,7 @@ function _bindLegacyEvents(week) {
     }
   });
 
-  document.getElementById('saisieContent').addEventListener('click', e => {
+  content.addEventListener('click', e => {
     const btn = e.target.closest('.save-btn[data-day]');
     if(!btn) return;
     saveSaisie(parseInt(btn.dataset.week), btn.dataset.day);
@@ -744,7 +762,7 @@ export function saveSaisie(week, day) {
       nSets = 4;
       if(ex.sets) { for(let w = week-2; w >= 0; w--) { if(ex.sets[w] != null) { nSets = ex.sets[w]; break; } } }
     } else {
-      nSets = parseSets(scheme) || 3;
+      nSets = parseSets(scheme) || 4;  // aligné sur la grille affichée (renderer: || 4)
     }
     const sets = [];
     let anyData = false;

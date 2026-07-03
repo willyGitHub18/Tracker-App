@@ -6,7 +6,7 @@
  *   pour invalider le cache sur tous les appareils.
  */
 
-const APP_VERSION = '3.5.0';  // ← incrémenter à chaque déploiement
+const APP_VERSION = '3.5.1';  // ← incrémenter à chaque déploiement
 const CACHE_NAME  = `just2train-${APP_VERSION}`;
 const BASE        = self.registration.scope;
 
@@ -15,6 +15,7 @@ const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
   BASE + 'manifest.json',
+  BASE + 'icons/icon-180.png',
   BASE + 'icons/icon-192.png',
   BASE + 'icons/icon-512.png',
 ];

@@ -11,7 +11,7 @@
  */
 
 import { EXERCISES } from './data.js';
-import { getRecord, getExStatus, normRecord, repriseCoeff } from './store.js';
+import { getRecord, getExStatus, normRecord, repriseCoeff, getVacancesList, repriseCoeffForWeek } from './store.js';
 
 export function parseSets(scheme) {
   if(!scheme || ['Deload','—','Taper','Repos'].includes(scheme)) return 0;
@@ -127,13 +127,16 @@ export function getNextPlan(ex, week) {
     const ratio   = skippedSets.length / nSets0;
     const severe  = ratio >= 0.5;
     const p0      = palier(ex);
-    // Base de référence : dernière charge connue (n'importe quelle semaine antérieure)
-    let refKg = ex.plan[week - 1] || ex.plan[week] || null;
+    // Base de référence : dernière charge RÉELLEMENT soulevée (semaine antérieure
+    // avec données), sinon repli sur la charge planifiée. Chercher l'historique
+    // d'abord, sans quoi la réduction de sécurité s'applique au plan et non au réel.
+    let refKg = null;
     for(let w = week - 1; w >= 1 && !refKg; w--) {
       const prevRec = normRecord(getRecord(ex.id, w));
-      const prevKg  = prevRec ? Math.max(...(prevRec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0)) : 0;
+      const prevKg  = prevRec ? Math.max(0, ...(prevRec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0)) : 0;
       if(prevKg > 0) refKg = prevKg;
     }
+    if(!refKg) refKg = ex.plan[week - 1] || ex.plan[week] || null;
     if(!refKg) return null;
     const reduction = severe ? 2 * p0 : p0;
     const nextKg = Math.max(refKg - reduction, p0);

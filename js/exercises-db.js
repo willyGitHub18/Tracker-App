@@ -98,7 +98,8 @@ export async function loadExercisesDB() {
   // 2. Try wger API
   try {
     const exercises = await _fetchFromWger();
-    if(exercises.length > 50) {
+    // On accepte toute réponse au moins aussi riche que le fallback intégré.
+    if(exercises.length >= FALLBACK_EXERCISES.length) {
       dbSet(CACHE_KEY, { ts: Date.now(), data: exercises });
       return { exercises, fromApi: true };
     }
@@ -106,7 +107,12 @@ export async function loadExercisesDB() {
     console.warn('[exercises-db] wger fetch failed:', err.message);
   }
 
-  // 3. Fallback to built-in list
+  // 3. Repli : réutiliser le cache même périmé (bien plus complet que le fallback)
+  if(cached?.data?.length) {
+    return { exercises: cached.data, fromCache: true, stale: true };
+  }
+
+  // 4. Dernier recours : liste intégrée
   return { exercises: FALLBACK_EXERCISES, fromFallback: true };
 }
 
@@ -167,7 +173,15 @@ async function _fetchFromWger() {
   const maxPages = 10;
 
   while(url && page < maxPages) {
-    const res  = await fetch(url);
+    // Timeout 8 s : une connexion suspendue ne doit pas bloquer le repli fallback.
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    let res;
+    try {
+      res = await fetch(url, { signal: ctrl.signal });
+    } finally {
+      clearTimeout(timer);
+    }
     if(!res.ok) throw new Error(`wger API error: ${res.status}`);
     const data = await res.json();
 

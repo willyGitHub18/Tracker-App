@@ -4,6 +4,8 @@
  * Reprend fidèlement la logique du fichier programme-sport-grossesse.html
  */
 
+import { esc } from './security.js';
+
 // ── Config par mois ───────────────────────────────────────────────────────────
 
 const MOIS_CONFIG = {

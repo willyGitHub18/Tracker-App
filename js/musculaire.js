@@ -25,10 +25,16 @@ export function calcGlobalMuscleLoad() {
 
   // Toujours inclure les programmes générés actifs
   if(activeProgs.length > 0) {
+    // Un enregistrement est clé par exId_week (sans jour) : si un exercice figure
+    // sur plusieurs jours d'une même semaine, ne le compter qu'une fois.
+    const counted = new Set();
     activeProgs.forEach(prog => {
       prog.semaines?.forEach((sem, wi) => {
         sem.jours?.forEach(day => {
           day.exercices?.forEach(ex => {
+            const dedupKey = `${prog.id}|${ex.id}|${wi + 1}`;
+            if(counted.has(dedupKey)) return;
+            counted.add(dedupKey);
             const rec = normRecord(getProgRecord(prog.id, ex.id, wi + 1));
             if(!rec?.sets) return;
             const ts = rec.ts || 0;

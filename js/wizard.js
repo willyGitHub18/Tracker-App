@@ -652,7 +652,7 @@ function _collectStep() {
     if(isFinite(bw) && bw >= 30 && bw <= 200) _config.bodyWeight = bw;
   }
 
-  if(_step === 6) {
+  if(_step === 8) {  // step6() (compétition) est rendu à l'index 8 du renderer
     const dateEl = document.getElementById('competDate');
     const typeEl = document.getElementById('competType');
     if(_config.competition && dateEl) {

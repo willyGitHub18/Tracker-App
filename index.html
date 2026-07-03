@@ -1903,18 +1903,26 @@ function dbSetAll(obj) {
   _dbPersistAll();
 }
 
+/** Miroir localStorage best-effort du cache complet.
+ *  Écrit SYSTÉMATIQUEMENT (pas seulement en cas d'échec IDB) : dbOpen() met _db
+ *  en cache et ne rejette plus après le premier succès, donc l'ancien fallback
+ *  logé dans le catch ne se déclenchait jamais. Garantit une récupération si
+ *  IndexedDB est évincé plus tard (iOS). */
+function _mirror() {
+  try { localStorage.setItem('athx_charges_v2', JSON.stringify(_cache)); } catch(_) {}
+}
+
 async function _dbPersist(key, value) {
+  _mirror();
   try {
     const db = await dbOpen();
     const tx = db.transaction(STORE_NAME, 'readwrite');
     tx.objectStore(STORE_NAME).put({ key, value });
-  } catch(_) {
-    // Fallback: localStorage mirror
-    try { localStorage.setItem('athx_charges_v2', JSON.stringify(_cache)); } catch(_) {}
-  }
+  } catch(_) {}
 }
 
 async function _dbPersistDelete(key) {
+  _mirror();
   try {
     const db = await dbOpen();
     const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -1923,27 +1931,25 @@ async function _dbPersistDelete(key) {
 }
 
 async function _dbPersistAll() {
+  _mirror();
   try {
     const db = await dbOpen();
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
     store.clear();
     Object.entries(_cache).forEach(([key, value]) => store.put({ key, value }));
-  } catch(_) {
-    try { localStorage.setItem('athx_charges_v2', JSON.stringify(_cache)); } catch(_) {}
-  }
+  } catch(_) {}
 }
 
 /** Wipe everything (reset) */
 async function dbClear() {
   _cache = {};
+  try { localStorage.removeItem('athx_charges_v2'); } catch(_) {}
   try {
     const db = await dbOpen();
     const tx = db.transaction(STORE_NAME, 'readwrite');
     tx.objectStore(STORE_NAME).clear();
-  } catch(_) {
-    try { localStorage.removeItem('athx_charges_v2'); } catch(_) {}
-  }
+  } catch(_) {}
 }
 
 
@@ -1991,8 +1997,10 @@ function sanitizeRecord(rec) {
   const ts = parseInt(rec.ts, 10);
   if(isFinite(kg) && kg >= 0 && kg < 1000) out.kg = kg;
   if(isFinite(ts) && ts > 0)               out.ts = ts;
-  if(rec.rpe != null)
-    out.rpe = String(rec.rpe).replace(/[^0-9.]/g, '').slice(0, 4);
+  if(rec.rpe != null) {
+    const rpe = parseFloat(rec.rpe);
+    if(isFinite(rpe) && rpe >= 0 && rpe <= 10) out.rpe = String(rpe);
+  }
   if(['normal','hyrox','skipped','deload'].includes(rec.sessionStatus))
     out.sessionStatus = rec.sessionStatus;
 
@@ -3033,13 +3041,16 @@ function getNextPlan(ex, week) {
     const ratio   = skippedSets.length / nSets0;
     const severe  = ratio >= 0.5;
     const p0      = palier(ex);
-    // Base de référence : dernière charge connue (n'importe quelle semaine antérieure)
-    let refKg = ex.plan[week - 1] || ex.plan[week] || null;
+    // Base de référence : dernière charge RÉELLEMENT soulevée (semaine antérieure
+    // avec données), sinon repli sur la charge planifiée. Chercher l'historique
+    // d'abord, sans quoi la réduction de sécurité s'applique au plan et non au réel.
+    let refKg = null;
     for(let w = week - 1; w >= 1 && !refKg; w--) {
       const prevRec = normRecord(getRecord(ex.id, w));
-      const prevKg  = prevRec ? Math.max(...(prevRec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0)) : 0;
+      const prevKg  = prevRec ? Math.max(0, ...(prevRec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0)) : 0;
       if(prevKg > 0) refKg = prevKg;
     }
+    if(!refKg) refKg = ex.plan[week - 1] || ex.plan[week] || null;
     if(!refKg) return null;
     const reduction = severe ? 2 * p0 : p0;
     const nextKg = Math.max(refKg - reduction, p0);
@@ -3313,6 +3324,15 @@ function _calcBaseline(ex, upToWeek) {
 // Currently displayed program (may differ from primary active)
 let _currentProgId = null;
 
+// Délégation d'événements sur #saisieContent : liée UNE seule fois (l'élément
+// persiste, seul son innerHTML est remplacé). L'état courant (prog/semaine) est
+// relu depuis ces variables de module à chaque évènement — évite l'empilement
+// de listeners (et donc les sauvegardes multipliées) à chaque renderSaisie().
+let _progSaisieBound = false;
+let _legacySaisieBound = false;
+let _curSaisieProg = null;
+let _curLegacyWeek = null;
+
 function _hasAthxData() {
   return ['press','squat','deadlift','gtoh','sandbag','lunges'].some(id => {
     for(let w = 1; w <= 17; w++) { if(getRecord(id, w)) return true; }
@@ -3452,7 +3472,7 @@ function _renderProgSaisie(prog) {
   semaine.jours.forEach(day => {
     html += `<div class="day-card">
       <div class="day-header">
-        <span class="day-name">${day.nom}</span>
+        <span class="day-name">${esc(day.nom)}</span>
         ${day.split && day.split !== day.nom ? `<span style="font-size:11px;color:var(--text3)">${esc(day.split)}</span>` : ''}
       </div>
       <div class="ex-wrap">`;
@@ -3614,6 +3634,10 @@ function _renderProgSaisie(prog) {
 }
 
 function _bindProgSaisieEvents(prog, week) {
+  // État courant relu par les handlers délégués (liés une seule fois).
+  _curSaisieProg = prog;
+  if(_progSaisieBound) return;
+  _progSaisieBound = true;
   const content = document.getElementById('saisieContent');
 
   // Status buttons
@@ -3623,7 +3647,6 @@ function _bindProgSaisieEvents(prog, week) {
     const { progex, ex, status } = btn.dataset;
     setProgExStatus(progex, ex, parseInt(btn.dataset.week), status);
     // Update button styles without re-rendering the whole form
-    const week_n = parseInt(btn.dataset.week);
     btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
       b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
     });
@@ -3646,7 +3669,7 @@ function _bindProgSaisieEvents(prog, week) {
   content.addEventListener('click', e => {
     const btn = e.target.closest('[data-prog-day]');
     if(!btn) return;
-    _saveProgSaisie(prog, parseInt(btn.dataset.progWeek), btn.dataset.progDay);
+    _saveProgSaisie(_curSaisieProg, parseInt(btn.dataset.progWeek), btn.dataset.progDay);
   });
 
   // Vacances
@@ -3993,18 +4016,24 @@ function _renderLegacySaisie() {
 }
 
 function _bindLegacyEvents(week) {
-  document.getElementById('saisieContent').addEventListener('click', e => {
+  // État courant relu par les handlers délégués (liés une seule fois).
+  _curLegacyWeek = week;
+  if(_legacySaisieBound) return;
+  _legacySaisieBound = true;
+  const content = document.getElementById('saisieContent');
+
+  content.addEventListener('click', e => {
     const btn = e.target.closest('[data-status]:not([data-progex])');
     if(!btn) return;
     const { ex, status } = btn.dataset;
-    setExStatus(ex, week, status);
+    setExStatus(ex, _curLegacyWeek, status);
     // Update button styles without re-rendering
     btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
       b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
     });
   });
 
-  document.getElementById('saisieContent').addEventListener('input', e => {
+  content.addEventListener('input', e => {
     const inp = e.target.closest('.set-inp[data-idx="0"]');
     if(!inp) return;
     const val = parseFloat(inp.value);
@@ -4016,7 +4045,7 @@ function _bindLegacyEvents(week) {
     }
   });
 
-  document.getElementById('saisieContent').addEventListener('click', e => {
+  content.addEventListener('click', e => {
     const btn = e.target.closest('.save-btn[data-day]');
     if(!btn) return;
     saveSaisie(parseInt(btn.dataset.week), btn.dataset.day);
@@ -4035,7 +4064,7 @@ function saveSaisie(week, day) {
       nSets = 4;
       if(ex.sets) { for(let w = week-2; w >= 0; w--) { if(ex.sets[w] != null) { nSets = ex.sets[w]; break; } } }
     } else {
-      nSets = parseSets(scheme) || 3;
+      nSets = parseSets(scheme) || 4;  // aligné sur la grille affichée (renderer: || 4)
     }
     const sets = [];
     let anyData = false;
@@ -4639,10 +4668,16 @@ function calcGlobalMuscleLoad() {
 
   // Toujours inclure les programmes générés actifs
   if(activeProgs.length > 0) {
+    // Un enregistrement est clé par exId_week (sans jour) : si un exercice figure
+    // sur plusieurs jours d'une même semaine, ne le compter qu'une fois.
+    const counted = new Set();
     activeProgs.forEach(prog => {
       prog.semaines?.forEach((sem, wi) => {
         sem.jours?.forEach(day => {
           day.exercices?.forEach(ex => {
+            const dedupKey = `${prog.id}|${ex.id}|${wi + 1}`;
+            if(counted.has(dedupKey)) return;
+            counted.add(dedupKey);
             const rec = normRecord(getProgRecord(prog.id, ex.id, wi + 1));
             if(!rec?.sets) return;
             const ts = rec.ts || 0;
@@ -4966,9 +5001,9 @@ function exportCSV() {
       const plan = ex.plan[w - 1] || '';
       const date = r.ts ? new Date(r.ts).toLocaleDateString('fr-FR') : '';
       (r.sets || []).forEach((s, i) => {
-        if(!s?.kg && !s?.reps) return;
-        const delta = plan && s?.kg ? Math.round((s.kg - plan) * 10) / 10 : '';
-        rows.push([ex.name, ex.day, `S${w}`, `S${i+1}`, s?.kg || '', ex.unit, s?.reps || '', s?.rpe || '', plan, delta, date]);
+        if(s?.kg == null && s?.reps == null) return;  // kg:0 (poids de corps) reste valide
+        const delta = plan && s?.kg != null ? Math.round((s.kg - plan) * 10) / 10 : '';
+        rows.push([ex.name, ex.day, `S${w}`, `S${i+1}`, s?.kg ?? '', ex.unit, s?.reps ?? '', s?.rpe ?? '', plan, delta, date]);
       });
     }
   });
@@ -5016,13 +5051,16 @@ function importJSON(event) {
       if(Array.isArray(parsed.programs) && parsed.programs.length > 0) {
         const existing = typeof getPrograms === 'function' ? getPrograms() : [];
         // Déduplication par nom + date de création (les IDs wizard sont timestampés → diffèrent à chaque génération)
-        const existingKeys = new Set(existing.map(p => `${p.name}|${p.created||''}`));
+        const existingKeys = new Set(existing.map(p => `${p.name}|${p.createdAt||''}`));
         parsed.programs.forEach(p => {
-          if(!p?.id || typeof saveProgram !== 'function') return;
-          const key = `${p.name}|${p.created||''}`;
+          if(!p || typeof p !== 'object' || Array.isArray(p) || !p.id || typeof saveProgram !== 'function') return;
+          // Sanitisation légère des champs affichés (validation numérique gérée à l'affichage via esc()/sanitizeRecord)
+          p.name = String(p.name || 'Programme').slice(0, 120);
+          p.id   = String(p.id).slice(0, 80);
+          const key = `${p.name}|${p.createdAt||''}`;
           // Si un programme avec le même nom ET la même date existe déjà → skip
           if(existingKeys.has(key)) {
-            console.log('[import] programme dupliqué ignoré:', p.name, p.created);
+            console.log('[import] programme dupliqué ignoré:', p.name, p.createdAt);
             return;
           }
           existingKeys.add(key);
@@ -5201,7 +5239,8 @@ async function loadExercisesDB() {
   // 2. Try wger API
   try {
     const exercises = await _fetchFromWger();
-    if(exercises.length > 50) {
+    // On accepte toute réponse au moins aussi riche que le fallback intégré.
+    if(exercises.length >= FALLBACK_EXERCISES.length) {
       dbSet(CACHE_KEY, { ts: Date.now(), data: exercises });
       return { exercises, fromApi: true };
     }
@@ -5209,7 +5248,12 @@ async function loadExercisesDB() {
     console.warn('[exercises-db] wger fetch failed:', err.message);
   }
 
-  // 3. Fallback to built-in list
+  // 3. Repli : réutiliser le cache même périmé (bien plus complet que le fallback)
+  if(cached?.data?.length) {
+    return { exercises: cached.data, fromCache: true, stale: true };
+  }
+
+  // 4. Dernier recours : liste intégrée
   return { exercises: FALLBACK_EXERCISES, fromFallback: true };
 }
 
@@ -5270,7 +5314,15 @@ async function _fetchFromWger() {
   const maxPages = 10;
 
   while(url && page < maxPages) {
-    const res  = await fetch(url);
+    // Timeout 8 s : une connexion suspendue ne doit pas bloquer le repli fallback.
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    let res;
+    try {
+      res = await fetch(url, { signal: ctrl.signal });
+    } finally {
+      clearTimeout(timer);
+    }
     if(!res.ok) throw new Error(`wger API error: ${res.status}`);
     const data = await res.json();
 
@@ -5957,21 +6009,17 @@ function _buildPhases(template, totalWeeks, competition) {
     return phase;
   });
 
-  // Add taper
+  // Add taper (dernière phase — c'est le pic de récupération avant compétition).
   const taperTemplate = template.find(p => p.isTaper);
   if(taperTemplate) {
     phases.push({ ...taperTemplate, weeks: taperWeeks, startWeek: weekCursor });
     weekCursor += taperWeeks;
   }
 
-  // If competition: insert taper 2 weeks before
-  if(competition?.date) {
-    const compDate   = new Date(competition.date);
-    const startDate  = new Date(); // approximate
-    const weeksToComp = Math.max(1, Math.ceil((compDate - startDate) / 604800000));
-    // Mark competition week
-    phases.compWeek = Math.min(weeksToComp, totalWeeks);
-  }
+  // NB : l'alignement fin du taper sur la date exacte de compétition (raccourcir/
+  // rallonger le programme pour finir la semaine de la compét) reste une évolution
+  // à part entière — voir le plan "startDate". La durée choisie par l'utilisateur
+  // (recommandée par domaine) place déjà le taper en fin de cycle.
 
   return phases;
 }
@@ -6239,6 +6287,7 @@ function _shuffle(arr) {
  * Basé sur les recommandations CNSF, HAS, SOGC/CSEP
  * Reprend fidèlement la logique du fichier programme-sport-grossesse.html
  */
+
 
 // ── Config par mois ───────────────────────────────────────────────────────────
 
@@ -7255,7 +7304,7 @@ function _collectStep() {
     if(isFinite(bw) && bw >= 30 && bw <= 200) _config.bodyWeight = bw;
   }
 
-  if(_step === 6) {
+  if(_step === 8) {  // step6() (compétition) est rendu à l'index 8 du renderer
     const dateEl = document.getElementById('competDate');
     const typeEl = document.getElementById('competType');
     if(_config.competition && dateEl) {
@@ -7778,12 +7827,6 @@ window.renderPrograms  = renderPrograms;
 window.renderActiveProgramDetail = renderActiveProgramDetail;
 
 // Vacances
-window._saveVacances = function() {
-  const d = document.getElementById('vacDebut')?.value;
-  const f = document.getElementById('vacFin')?.value;
-  const a = document.getElementById('vacActivite')?.value || 'sedentaire';
-  if(!d || !f || new Date(f) < new Date(d)) { alert('Dates invalides.'); return; }
-
 window._removeVacances = function(idx) {
   removeVacances(idx);
   renderSaisie();
@@ -7793,6 +7836,21 @@ window._clearVacances = function() {
   clearAllVacances();
   renderSaisie();
 };
+
+window._saveVacances = function() {
+  const d = document.getElementById('vacDebut')?.value;
+  const f = document.getElementById('vacFin')?.value;
+  const a = document.getElementById('vacActivite')?.value || 'sedentaire';
+  if(!d || !f || new Date(f) < new Date(d)) { alert('Dates invalides.'); return; }
+
+  // Sélecteur "Dernière sem. entraînement" → première semaine sautée
+  //   ""  = Auto (détection)          → null
+  //   "0" = Aucune (reprise directe)  → -1 (sentinelle : firstSkippedWeek = repriseWeek)
+  //   "N" = dernière sem. entraînée   → première sautée = N+1
+  const fsRaw = document.getElementById('vacFirstSkip')?.value;
+  let manualFirstSkip = null;
+  if(fsRaw === '0')      manualFirstSkip = -1;
+  else if(fsRaw)         manualFirstSkip = parseInt(fsRaw, 10) + 1;
 
   addVacances(d, f, a);
 
@@ -8002,6 +8060,11 @@ function _renderProgDetailView(prog, container) {
   // Basé sur SPLIT_COMPOUNDS du générateur : 2-4 compounds en premier, le reste = accessoires
   const COMPOUNDS_PER_DAY = 3; // les 3 premiers exercices de chaque jour sont considérés "Primaire"
   const CORE_MUSCLES = new Set(['core','lombaires','abdominaux','obliques']);
+  // Exercices compounds (union de SPLIT_COMPOUNDS du générateur) → badge "Primaire".
+  const COMPOUND_IDS = new Set(['bench','press','ohp','dips','deadlift','row_barre','pullup',
+    'rdl','squat','squat_fs','lunges','leg_press','thruster','burpee','box_jump','wall_ball']);
+  // Map des 1RM du programme (utilisée pour estimer l'incrément de charge par bloc).
+  const orm = prog.orm || {};
 
   // Helper: estimate session duration (sets × (time_per_set + rest))
   function _estimateMinutes(exercises) {
@@ -8072,7 +8135,7 @@ function _renderProgDetailView(prog, container) {
         blocNum++;
         label = bloc.start === bloc.end ? `Bloc ${blocNum} (S${bloc.start})` : `Bloc ${blocNum} (S${bloc.start}–${bloc.end})`;
       }
-      return `<button class="${bi===0?'active':''}" onclick="_showGenBloc(${di},${bi},this)">${esc(label)}</button>`;
+      return `<button class="prog-bloc-btn${bi===0?' active':''}" onclick="_showGenBloc(${di},${bi},this)">${esc(label)}</button>`;
     }).join('');
 
     // Contenu par bloc
@@ -8138,7 +8201,7 @@ function _renderProgDetailView(prog, container) {
 
         // Time footer
         const blocMin = _estimateMinutes(dayExercises);
-        html += `<div class="p-note">${dayExercises.map(e => `${e.nom} ${e.scheme}`).join(', ')} = ~${blocMin} min. Accessoires en super-set pour gagner du temps.</div>`;
+        html += `<div class="p-note">${dayExercises.map(e => `${esc(e.nom)} ${esc(e.scheme)}`).join(', ')} = ~${blocMin} min. Accessoires en super-set pour gagner du temps.</div>`;
       }
 
       return `<div class="prog-bloc-content ${bi===0?'active':''}" data-day="${di}" data-bloc="${bi}">${html}</div>`;
@@ -8411,7 +8474,7 @@ function renderActiveProgramDetail(weekNum) {
   const daysHtml = week.jours.map(day => `
     <div class="prog-day-card">
       <div class="prog-day-header">
-        <span class="prog-day-name">${day.nom}</span>
+        <span class="prog-day-name">${esc(day.nom)}</span>
         <span class="prog-day-split">${day.split&&day.split!==day.nom?day.split:''}</span>
       </div>
       <div class="prog-ex-list">
