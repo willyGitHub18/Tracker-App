@@ -5,7 +5,7 @@
  */
 
 import { esc }            from './security.js';
-import { EXERCISES, PHASES, PHASE_LABELS, PHASE_STYLE, MUSCLE_MAP } from './data.js';
+import { EXERCISES, PHASES, PHASE_LABELS, PHASE_STYLE, MUSCLE_MAP, EXERCISE_CUES } from './data.js';
 import { getRecord, setRecord, getExStatus, setExStatus,
          normRecord, bestKg, getLatestWeek,
          getVacancesList, addVacances, removeVacances, clearAllVacances,
@@ -307,6 +307,10 @@ function _renderProgSaisie(prog) {
         html += `</div></div>`; // cardio-ex-body + ex-block
         return; // skip normal grid
       }
+
+      // Repère technique (mouvement) — programmes générés force/gym/hyrox
+      const _cue = EXERCISE_CUES[ex.id];
+      if(_cue) html += `<div class="ex-cue">🎯 ${esc(_cue)}</div>`;
 
       // Sets grid (show for all statuses except skipped)
       if(showGrid) {

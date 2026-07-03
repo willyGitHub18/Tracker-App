@@ -19,6 +19,7 @@ Application de suivi d'entraînement personnalisée — PWA déployable sur iPho
   - **Post-compét** : RPE corrigé +1.5, analyse vs historique perso, aucune recommandation de charge
   - **Sautée** : séance ignorée dans le calcul de plateau, plan S+1 reconduit
 - **Sélecteur de programme** en haut du tracker si plusieurs programmes actifs simultanément
+- **Repères techniques** par exercice (mouvement, posture, tempo) affichés dans la vue détail **et** la grille de saisie des programmes générés (force/gym/hyrox) ; allure/ressenti + technique par modalité pour le cardio
 
 ### 🏖 Gestion vacances / congés
 - Ajout de plusieurs périodes avec dates et **niveau d'activité** (sédentaire, activité légère, sport régulier, programme vacances, musculation légère)
@@ -46,13 +47,25 @@ Création de programme personnalisé en 8 étapes :
 2. **Niveau** — Débutant / Intermédiaire / Avancé
 3. **Âge** — 5 tranches (18–29, 30–39, 40–49, 50–59, 60+) avec adaptations automatiques selon recommandations ACSM/Israetel
 4. **Disponibilité** — 2 à 5 séances/semaine + durée par séance
-5. **Matériel** — sélection multiple (barre, haltères, kettlebell, PdC, machines, élastiques)
-6. **Exercices** — inclure/exclure depuis la base wger.de (cache IndexedDB offline)
+5. **Matériel** — sélection multiple (barre, haltères, kettlebell, PdC, machines, élastiques). **Optionnel pour le cardio** (course/marche = aucun matériel requis)
+6. **Exercices / Activités** — force/gym : inclure/exclure depuis la base wger.de (cache IndexedDB offline) ; **cardio : choix des modalités** (course, vélo, rameur, ski-erg, assault bike, elliptique, corde, natation, marche)
 7. **Durée + compétition** — avec recommandation expert par domaine et calcul du taper
-8. **Récapitulatif + 1RM** — pré-remplis depuis le tracker, modifiables
+8. **Récapitulatif + 1RM** — pré-remplis depuis le tracker, modifiables (force/hyrox uniquement)
+
+#### 🏃 Cardio / Endurance
+Modèle d'endurance dédié (distinct du modèle force %1RM) — voir `Documentation/cardio-program-design.md`.
+- **Distribution polarisée ~80/20** (Seiler) : l'essentiel du volume en zone facile (Z1–Z2), une minorité en qualité (seuil/VO₂max).
+- **Zones Z1–Z5** pilotées par le **RPE** (app RPE-centrée) + %FCmax en repère (Tanaka).
+- **Types de séance** : récupération, endurance, sortie longue, tempo, seuil (intervalles), VO₂max (intervalles ≥ 7–10 min > 90 % VO₂max), fartlek, allure course.
+- **Périodisation** : Base aérobie → Développement seuil → Pic VO₂max → Affûtage ; progression de volume ~8 %/sem, semaines de décharge entre blocs, taper final.
+- **Débutant** : run-walk progressif (façon Couch-to-5K), pas de Z4/Z5 tant que la base n'est pas établie. **Âge** : intensité plafonnée (50-59 → pas de Z5).
+- **Multi-modalités** : choisir une ou plusieurs activités ; les séances qualité portent sur la principale, les faciles/récup peuvent tourner (cross-training). Les séances faciles suggèrent explicitement le remplacement par vélo/rameur/ergo/sport au choix.
+- **Suivi** : durée réelle / RPE / distance (optionnelle) au lieu de la grille kg/reps.
+- **Vue détail façon ATHX** : pills par jour → sous-boutons par semaine → fiche séance (intensité, allure/ressenti, description, repères techniques par modalité, durée estimée).
+- Sources : Seiler, Daniels (allures), Buchheit & Laursen (HIIT), ACSM, Concept2 (rameur), NHS C25K.
 
 #### Type Mixte / Santé globale
-Programme équilibré sur la semaine : Force + Cardio + Hypertrophie + Mobilité/Récupération. Structure adaptée au nombre de séances par semaine.
+Programme équilibré sur la semaine : Force + Cardio + Hypertrophie + Mobilité/Récupération. Structure adaptée au nombre de séances par semaine. *(La composante cardio du Mixte utilise encore l'ancien modèle — refonte prévue après le module Cardio.)*
 
 #### Adaptations selon l'âge
 | Paramètre | 18–29 | 40–49 | 60+ |

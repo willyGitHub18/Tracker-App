@@ -308,6 +308,41 @@ export const CARDIO_SESSION_TYPES = {
   race:      { label:'Allure course',  zone:4, format:'continuous' },
 };
 
+// ── Repères techniques par exercice (force / gym / hyrox) ──────────────────────
+// Recommandations de mouvement / posture / tempo, affichées en vue détail + tracker.
+export const EXERCISE_CUES = {
+  squat:      'Descente 3 s, pause 1 s en bas, poussée explosive. Profondeur hanche sous genou, genoux dans l\'axe des pieds, dos gainé.',
+  squat_fs:   'Coudes hauts, position de rack propre. Descente contrôlée, rebond actif en bas. Core très engagé, buste vertical.',
+  deadlift:   'Dos neutre, pression pieds milieu/talons. Barre le long des tibias. Verrouillage hanches + épaules simultané. Pas d\'arrondi lombaire.',
+  rdl:        'Charnière de hanche, barre le long des cuisses. Genoux légèrement fléchis, étirement ischios, dos neutre. Amplitude contrôlée.',
+  press:      'Gainage abdo + fessiers, barre dans l\'axe du nez. Pas de cambrure excessive. Extension complète en haut, tête qui avance après passage.',
+  ohp:        'Core engagé, tête en avant une fois la barre passée. Trajectoire verticale, pas d\'inclinaison arrière. Jambes contribuent (push press).',
+  bench:      'Rétraction scapulaire, pieds ancrés au sol. Barre au niveau des tétons, coudes à ~45°. Descente contrôlée, poussée explosive.',
+  row_barre:  'Buste à ~45°, tirer vers le nombril. Serrer les omoplates en haut, contrôler la descente. Pas de triche lombaire.',
+  thruster:   'Front squat propre + press explosif enchaînés. Utiliser l\'élan des jambes. Respiration entre chaque rep.',
+  pullup:     'Rétraction scapulaire en bas, tirer coudes vers les hanches. Extension complète bras tendus. Éviter le balancement.',
+  pushup:     'Corps gainé en planche, coudes à ~45°. Poitrine au sol, extension complète. Bassin ne s\'affaisse pas.',
+  dips:       'Légère inclinaison avant pour cibler les pecs. Descente contrôlée, coudes ~90°. Épaules loin des oreilles.',
+  lunges:     'Pas long, genou arrière frôle le sol. Poids sur le talon avant, tronc vertical. Poussée contrôlée.',
+  lunges_db:  'Haltères le long du corps, pas long. Genou arrière proche du sol, buste droit. Alterner ou par jambe.',
+  leg_press:  'Amplitude complète sans décoller le bassin. Ne pas verrouiller violemment les genoux. Pieds largeur d\'épaules.',
+  db_press:   'Haltères au niveau des pecs, coudes ~45°. Poussée vers le haut et légèrement vers l\'intérieur. Contrôle en descente.',
+  db_row:     'Appui sur banc, dos plat. Tirer le coude vers la hanche, serrer l\'omoplate. Pas de rotation du buste.',
+  db_curl:    'Coudes fixes le long du corps, pas de balancement. Contraction complète en haut, descente contrôlée. Supination.',
+  db_shoulder:'Élévations latérales : coudes légèrement fléchis, monter à l\'horizontale. Pas d\'à-coups, épaules basses.',
+  kb_swing:   'Charnière de hanche explosive (pas un squat), fessiers qui claquent. Bras relâchés, la puissance vient des hanches. Dos neutre.',
+  kb_clean:   'Trajectoire proche du corps, réceptionner en rack sans choc sur l\'avant-bras. Gainage, puis press.',
+  kb_goblet:  'Kettlebell contre la poitrine, coudes à l\'intérieur des genoux en bas. Buste droit, descente profonde contrôlée.',
+  gtoh:       'Épaule engagée, verrouillage complet overhead. Alterner les bras, gainage anti-rotation. Souffle à la montée.',
+  sandbag:    'Sac serré contre le buste, dos gainé. Pas courts et rapides sur le carry. Respiration régulière, ne pas retenir.',
+  wall_ball:  'Squat complet + lancer explosif à la cible. Réceptionner en amortissant vers le squat suivant. Enchaînement fluide.',
+  box_jump:   'Armé bras + hanche, réception souple genoux fléchis au centre de la box. Descendre (pas sauter) en arrière. Contrôle.',
+  burpee:     'Poitrine au sol, ramener les pieds sous les hanches, saut vertical. Garder un rythme soutenable. Gainage constant.',
+  plank:      'Corps aligné tête-bassin-talons, abdos + fessiers serrés. Pas de bassin qui creuse. Respiration continue.',
+  pistol:     'Squat sur une jambe, autre jambe tendue devant. Descente lente, talon au sol, bras en contrepoids. Contrôle total.',
+  hspu:       'Gainage total en appui tête, coudes serrés. Descente contrôlée front vers le sol, poussée explosive. Progression au mur.',
+};
+
 // ── Grossesse program config ──────────────────────────────────────────────────
 
 export const GROSSESSE_MOIS_CONFIG = {

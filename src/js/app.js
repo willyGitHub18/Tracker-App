@@ -14,7 +14,7 @@ import { getPrograms, getActivePrograms, getArchivedPrograms, getProgram, getPro
          deleteProgram, archiveProgram, closeProgram, newProgramId, saveProgram,
          exportProgramJSON, exportProgramMD, exportAllPrograms, importAllPrograms,
          setProgExStatus, getCurrentWeek, setStartDate } from './programs.js';
-import { buildAthxProgram } from './data.js';
+import { buildAthxProgram, EXERCISE_CUES } from './data.js';
 import { getRecord, getVacances, setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
 import { renderNutritionSection, bindNutritionEvents } from './nutrition-plan.js';
 
@@ -690,22 +690,8 @@ function _renderProgDetailView(prog, container) {
   }
 
 
-  // Coaching cues par exercice — descriptions techniques riches (style ATHX legacy)
-  const EX_CUES = {
-    squat:     'Focus : descente 3 sec, pause 1 sec en bas, poussée explosive. Vérifier profondeur (hanche sous genou). Genoux dans l\'axe des pieds.',
-    deadlift:  'Focus : dos neutre, pression pieds milieu/talons. Tirer la barre le long des tibias. Verrouillage hanches + épaules simultané.',
-    press:     'Focus : gainage abdo, fessiers contractés, barre dans l\'axe du nez. Pas de cambrure excessive. Extension complète en haut.',
-    bench:     'Focus : rétraction scapulaire, pieds ancrés au sol. Barre au niveau des tétons, coudes à 45°. Poussée explosive.',
-    ohp:       'Focus : core engagé, tête en avant une fois la barre passée. Trajectoire verticale, pas d\'inclinaison arrière.',
-    squat_fs:  'Focus : coudes hauts, position de rack propre. Descente contrôlée, rebond actif en bas. Core très engagé.',
-    rdl:       'Focus : charnière de hanche, barre le long des cuisses. Étirement ischio-jambiers, genoux légèrement fléchis. Dos neutre.',
-    row_barre: 'Focus : buste à 45°, tirer vers le nombril. Serrer les omoplates en haut. Contrôler la descente.',
-    thruster:  'Focus : front squat propre + press explosif en haut. Utiliser l\'élan des jambes. Respiration entre chaque rep.',
-    pullup:    'Focus : rétraction scapulaire en bas, traction coudes vers les hanches. Extension complète bras tendus.',
-    pushup:    'Focus : corps gainé en planche, coudes à 45°. Poitrine au sol, extension complète.',
-    dips:      'Focus : inclinaison légère vers l\'avant pour cibler les pecs. Descente contrôlée, coudes à 90°.',
-    lunges:    'Focus : pas long, genou arrière frôle le sol. Poids sur le talon avant. Tronc vertical.',
-  };
+  // Repères techniques par exercice : partagés (data.js), affichés par ligne d'exercice.
+  const EX_CUES = EXERCISE_CUES;
 
   // Progression description par exercice dans un bloc
   const EX_PROG_DESC = {
@@ -791,10 +777,11 @@ function _renderProgDetailView(prog, container) {
             const role = gi === 0 ? 'Primaire' : (ex.muscles?.some(m => CORE_MUSCLES.has(m)) ? 'Core' : 'Accessoire');
             const roleClass = role === 'Primaire' ? 'p-tag-f' : (role === 'Core' ? 'p-tag-r' : 'p-tag-f');
             const rest = ex.pct1rm >= 85 ? 'Repos 3–4 min.' : ex.pct1rm >= 75 ? 'Repos 2–3 min.' : 'Repos 1–2 min.';
+            const cue  = EX_CUES[ex.id];
             html += `<div class="p-ex-row">
               <div class="p-ex-num">${ex.idx + 1}</div>
               <div class="p-ex-name">${esc(ex.nom)}</div>
-              <div class="p-ex-detail">${ex.scheme} @ ${ex.kgPlan ? ex.kgPlan+'kg' : ex.pct1rm+'%'}. ${rest}</div>
+              <div class="p-ex-detail">${ex.scheme} @ ${ex.kgPlan ? ex.kgPlan+'kg' : ex.pct1rm+'%'}. ${rest}${cue ? `<br><span style="color:var(--text3)">${esc(cue)}</span>` : ''}</div>
               <div class="p-ex-tag ${roleClass}">${role}</div>
             </div>`;
           });
