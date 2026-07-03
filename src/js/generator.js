@@ -630,7 +630,8 @@ function _generateCardioProg(config, id) {
       });
 
       const zones = jours.map(j => j.exercices[0].zone);
-      const hard  = zones.filter(z => z >= 3).length;
+      const easyN = zones.filter(z => z < 3).length;
+      const hardN = zones.length - easyN;
       semaines.push({
         num:     weekNum,
         phase:   phase.nom,
@@ -638,7 +639,9 @@ function _generateCardioProg(config, id) {
         isTaper: phase.isTaper || false,
         rpeTarget: phase.isTaper ? '≤ 6' : `Z2 facile · qualité ${CARDIO_ZONES[Math.max(...zones)].rpe}`,
         intensite: Math.max(...zones) / 5,
-        distribution: `${Math.round((1 - hard / zones.length) * 100)}/${Math.round(hard / zones.length * 100)} facile/dur`,
+        distribution: hardN
+          ? `${easyN} séance${easyN > 1 ? 's' : ''} facile${easyN > 1 ? 's' : ''} · ${hardN} qualité`
+          : `${easyN} séance${easyN > 1 ? 's' : ''} facile${easyN > 1 ? 's' : ''}`,
         jours,
       });
       weekNum++;
@@ -657,7 +660,7 @@ function _generateCardioProg(config, id) {
       semaines.push({
         num: weekNum, phase: `Décharge (${phase.nom})`,
         isDeload: true, isTaper: false, rpeTarget: '≤ 4 · Z1–Z2',
-        intensite: 0.4, distribution: '100/0 facile/dur', jours,
+        intensite: 0.4, distribution: 'tout facile · décharge', jours,
       });
       weekNum++;
     }
@@ -744,6 +747,11 @@ function _buildCardioSession(type, modality, level, volFactor, zoneCap, weekNum,
 
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
+  // Séances faciles (Z1–Z2) : suggérer le cross-training même sans modalité dédiée choisie.
+  const crossNote = zone <= 2
+    ? ` Séance facile : remplaçable par vélo, rameur, elliptique, natation ou tout sport d'endurance à même intensité (Z${zone}) — varier réduit l'impact.`
+    : '';
+
   // ── Débutant : run-walk sur les séances faciles à impact élevé (course) ──────
   if(isBeginner && level.walkRun && modality.impact === 'élevé' && (effType === 'endurance' || effType === 'long' || effType === 'recovery')) {
     const dur    = Math.round((effType === 'long' ? level.long : effType === 'recovery' ? level.easy * 0.7 : level.easy) * volFactor);
@@ -754,7 +762,7 @@ function _buildCardioSession(type, modality, level, volFactor, zoneCap, weekNum,
       ...base, format: 'intervals',
       scheme: `${reps}× (${_fmtSec(runSec)} course / ${_fmtSec(walkSec)} marche)`,
       duration: dur, totalMin: dur + 10,
-      detail: `Alternance course/marche (${dur} min). Le test de la parole doit rester possible en course. Un jour de repos entre chaque sortie.`,
+      detail: `Alternance course/marche (${dur} min). Le test de la parole doit rester possible en course. Un jour de repos entre chaque sortie.${crossNote}`,
     };
   }
 
@@ -805,7 +813,7 @@ function _buildCardioSession(type, modality, level, volFactor, zoneCap, weekNum,
     ...base, format: 'continuous',
     scheme: `${dur} min · ${Z.label.split('·')[0].trim()}`,
     duration: dur, totalMin: dur + 8,
-    detail: detailByType[effType] || detailByType.endurance,
+    detail: (detailByType[effType] || detailByType.endurance) + crossNote,
   };
 }
 
