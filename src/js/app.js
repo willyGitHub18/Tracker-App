@@ -360,6 +360,20 @@ function _promptStartDate(progId, callback) {
   };
 }
 
+// Programme fraîchement créé par le wizard : le rendre actif ET affiché dans le tracker
+// (sinon getCurrentProgram reste sur ATHX legacy → le nouveau n'apparaît jamais), puis
+// proposer la date de démarrage (le wizard contournait ce flux → aucune date saisie).
+window._activateNewProgram = function(id) {
+  addActiveProgram(id);
+  setCurrentProgram(id);
+  _promptStartDate(id, () => {
+    _showSaveToast('✓ Programme créé et activé');
+    window.showSection('programmes');
+    renderPrograms();
+    initWeekSel();
+  });
+};
+
 window.setPrimaryProg = function(id) {
   setPrimaryProgram(id);
   setCurrentProgram(id);

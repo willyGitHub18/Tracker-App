@@ -594,11 +594,16 @@ export function wizGenerate() {
   const id      = newProgramId();
   const program = generateProgram(_config, id);
   saveProgram(program);
-  setActiveProgram(id);
 
-  // Navigate to program view
-  window.showSection('programmes');
-  window.renderPrograms?.();
+  // Activation via le flux complet : actif + affiché dans le tracker + prompt date de
+  // démarrage. Repli si le handler global n'est pas dispo (setActiveProgram seul).
+  if(typeof window._activateNewProgram === 'function') {
+    window._activateNewProgram(id);
+  } else {
+    setActiveProgram(id);
+    window.showSection('programmes');
+    window.renderPrograms?.();
+  }
 }
 
 export function wizSearchEx(type) {
