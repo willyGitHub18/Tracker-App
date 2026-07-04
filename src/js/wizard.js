@@ -588,6 +588,13 @@ export function wizBack() {
 }
 
 export function wizGenerate() {
+  // Mobilité : gérée dans la section dédiée 🧘 (routine quotidienne adaptative),
+  // pas comme un programme cadencé. Le focus cadrable via wizard arrive en C2.
+  if(_config.domaine === 'mobilite') {
+    window._showSaveToast?.('🧘 La mobilité se gère dans la section dédiée');
+    window.showSection?.('mobilite-section');
+    return;
+  }
   if(!_validateStep()) return;
   _collectStep();
 

@@ -732,6 +732,75 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
 .nutri-tips-block{background:var(--amber-bg);border-color:rgba(124,74,0,.2)}
 .nutri-tips-block .nutri-block-title{color:#7c4a00}
 
+/* mobilite.css — Section Mobilité (bilan + routine du jour + progrès) */
+
+.mob-tabs{display:flex;gap:6px;margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.mob-tabs::-webkit-scrollbar{display:none}
+.mob-tab{flex:0 0 auto;font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:999px;cursor:pointer;white-space:nowrap}
+.mob-tab.active{background:var(--text);color:var(--surface);border-color:var(--text)}
+
+/* Routine du jour */
+.mob-dur-row{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.mob-dur-lbl{font-size:13px;color:var(--text2)}
+.mob-dur-btn{font-size:13px;font-weight:500;padding:6px 14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:999px;cursor:pointer}
+.mob-dur-btn.active{background:#185FA5;color:#fff;border-color:#185FA5}
+.mob-focus-note{font-size:13px;color:var(--text);background:var(--surface2);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px}
+.mob-why-tag{font-size:11px;color:var(--text2);background:var(--surface);border-radius:6px;padding:1px 6px;margin-left:2px}
+
+.mob-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;margin-bottom:12px}
+.mob-block-cars{border-left:3px solid #185FA5}
+.mob-block-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+.mob-cars-sub{font-size:12px;color:var(--text2);margin-bottom:8px}
+
+.mob-drill{border-top:1px solid var(--border);padding:8px 0}
+.mob-drill:first-of-type{border-top:none}
+.mob-drill-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.mob-drill-name{font-size:14px;font-weight:500;color:var(--text)}
+.mob-drill-scheme{font-size:12px;font-weight:600;color:#185FA5;white-space:nowrap}
+.mob-drill-cue{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.4}
+.mob-caution{font-size:11px;color:var(--amber);background:var(--amber-bg);border-radius:6px;padding:4px 8px;margin-top:5px}
+
+.mob-disclaimer{font-size:11px;color:var(--text3);line-height:1.4;margin-top:14px;text-align:center}
+.mob-inline-link{background:none;border:none;color:#185FA5;font-size:inherit;font-weight:600;padding:0;cursor:pointer;text-decoration:underline}
+
+/* Bilan */
+.mob-zone{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;margin-bottom:10px}
+.mob-zone-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.mob-zone-name{font-size:15px;font-weight:600;color:var(--text)}
+.mob-test-name{font-size:12px;font-weight:600;color:var(--text2)}
+.mob-test-proto{font-size:12px;color:var(--text2);line-height:1.4;margin:4px 0}
+.mob-test-criteria{display:flex;flex-direction:column;gap:2px;margin:6px 0}
+.mob-crit{font-size:11px;line-height:1.3}
+.mob-crit-good{color:var(--green)}
+.mob-crit-mid{color:var(--amber)}
+.mob-crit-poor{color:var(--red)}
+.mob-score-btns{display:flex;gap:6px;margin-top:8px}
+.mob-score-btn{flex:1;font-size:13px;font-weight:500;padding:8px 0;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:var(--radius);cursor:pointer}
+.mob-score-btn.sel-poor{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+.mob-score-btn.sel-mid{background:var(--amber-bg);border-color:var(--amber);color:var(--amber)}
+.mob-score-btn.sel-good{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+
+.mob-chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px}
+.mob-chip-none{background:var(--surface2);color:var(--text3)}
+.mob-chip-good{background:var(--green-bg);color:var(--green)}
+.mob-chip-mid{background:var(--amber-bg);color:var(--amber)}
+.mob-chip-poor{background:var(--red-bg);color:var(--red)}
+
+.mob-cm{margin-top:8px}
+.mob-cm label{font-size:11px;color:var(--text2);display:block;margin-bottom:3px}
+.mob-cm-input{width:110px;font-size:14px;padding:6px 8px;border:1px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text)}
+
+/* Progrès */
+.mob-stats{display:flex;gap:10px}
+.mob-stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;text-align:center}
+.mob-stat-val{font-size:22px;font-weight:600;color:var(--text)}
+.mob-stat-lbl{font-size:11px;color:var(--text2);margin-top:2px}
+.mob-prog-row{display:flex;align-items:center;gap:8px;margin:6px 0}
+.mob-prog-name{flex:0 0 42%;font-size:13px;color:var(--text)}
+.mob-prog-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.mob-prog-fill{height:8px;border-radius:4px}
+.mob-prog-val{flex:0 0 auto;font-size:11px;color:var(--text2);min-width:48px;text-align:right}
+
 .top-nav-btn:nth-child(3){display:none}
 </style></head><body>
 <header><h1>Just2Train</h1><span class="sub">Ton entraînement, ton programme</span></header>
@@ -1863,6 +1932,25 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
     </div>
   </template>
 </div>
+<div id="mobilite-section" class="section-panel">
+  <div class="wiz-header">
+    <div class="wiz-header-top">
+      <div>
+        <div class="wiz-header-title">Mobilité</div>
+        <div class="wiz-header-sub">Un peu chaque jour · adapté à tes entraînements</div>
+      </div>
+    </div>
+    <div class="mob-tabs">
+      <button class="mob-tab active" data-mob-tab="routine" onclick="showMobiliteTab('routine')">🧘 Routine du jour</button>
+      <button class="mob-tab" data-mob-tab="bilan" onclick="showMobiliteTab('bilan')">📋 Bilan</button>
+      <button class="mob-tab" data-mob-tab="progres" onclick="showMobiliteTab('progres')">📈 Progrès</button>
+    </div>
+  </div>
+
+  <div id="mob-routine-view" class="prog-view active-view"><div id="mobRoutineContent"></div></div>
+  <div id="mob-bilan-view" class="prog-view"><div id="mobBilanContent"></div></div>
+  <div id="mob-progres-view" class="prog-view"><div id="mobProgresContent"></div></div>
+</div>
 
 </div>
 <nav class="bottom-nav">
@@ -1870,6 +1958,7 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
   <button class="bottom-nav-btn" data-section="nutrition-section" onclick="showSection('nutrition-section')"><span class="tab-icon">🥗</span><span>Nutrition</span></button>
   <button class="bottom-nav-btn active" data-section="tracker" onclick="showSection('tracker')"><span class="tab-icon">📈</span><span>Tracker</span></button>
   <button class="bottom-nav-btn" data-section="musculaire" onclick="showSection('musculaire');renderMusculaire()"><span class="tab-icon">⚡</span><span>Muscles</span></button>
+  <button class="bottom-nav-btn" data-section="mobilite-section" onclick="showSection('mobilite-section')"><span class="tab-icon">🧘</span><span>Mobilité</span></button>
   <button class="bottom-nav-btn" data-section="doc" onclick="showSection('doc')"><span class="tab-icon">📖</span><span>Docs</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script><script>
@@ -2451,6 +2540,111 @@ const EXERCISE_CUES = {
   pistol:     'Squat sur une jambe, autre jambe tendue devant. Descente lente, talon au sol, bras en contrepoids. Contrôle total.',
   hspu:       'Gainage total en appui tête, coudes serrés. Descente contrôlée front vers le sol, poussée explosive. Progression au mur.',
 };
+
+// ── Mobilité ──────────────────────────────────────────────────────────────────
+// Modèle de mobilité (distinct du modèle force %1RM et du modèle cardio).
+// Réf : ACSM Position Stand (Garber 2011), consensus Delphi 2025 (dosage statique/
+// dynamique/PNF), FRC/CARs & PAILs/RAILs (Spina — méthode, preuve émergente),
+// inspiration produit GOWOD (bilan par zone → ciblage). Sources détaillées dans
+// Documentation/mobilite-program-design.md.
+
+// Échelle de charge mobilité pour la carte musculaire (SRA) — très faible : la
+// mobilité est peu coûteuse systémiquement, elle ne doit pas gonfler la fatigue.
+// (Utilisé par la contribution SRA — cf. musculaire.js.)
+const MOBILITY_LOAD_SCALE = 0.1;
+
+// Zones de mobilité. `muscles` = IDs SRA reliés (signal « zone chargée »).
+// `car` = id du drill CARs socle de la zone (null si pas de CAR dédié).
+const MOBILITY_ZONES = [
+  { id:'cou',         label:'Cou',                  icon:'🙆', muscles:['trapeze'],                     car:'cou_car' },
+  { id:'epaules',     label:'Épaules',              icon:'🤸', muscles:['deltAnt','deltPost','pec','trapeze'], car:'epaules_car' },
+  { id:'thoracique',  label:'Colonne thoracique',   icon:'🌀', muscles:['dorsaux','trapeze'],           car:'thoracique_car' },
+  { id:'hanches',     label:'Hanches',              icon:'🦵', muscles:['fessiers','quad','core'],      car:'hanches_car' },
+  { id:'chaine_post', label:'Chaîne postérieure',   icon:'🔗', muscles:['ischio','lombaires','fessiers'], car:null },
+  { id:'chevilles',   label:'Chevilles',            icon:'🦶', muscles:['mollets'],                     car:'chevilles_car' },
+  { id:'poignets',    label:'Poignets',             icon:'✋', muscles:['avantbras'],                   car:'poignets_car' },
+];
+
+// Méthodes : minLevel = niveau minimal requis (0 débutant, 1 intermédiaire, 2 avancé).
+const MOBILITY_METHODS = {
+  car:         { label:'CARs',        minLevel:0 },
+  dynamic:     { label:'Dynamique',   minLevel:0 },
+  static:      { label:'Statique',    minLevel:0 },
+  pnf:         { label:'PNF',         minLevel:1 },
+  pails_rails: { label:'PAILs/RAILs', minLevel:2 },
+  massage:     { label:'Auto-massage',minLevel:0 },
+};
+
+// Auto-bilan par zone (auto-scorable : 0 faible / 1 limité / 2 bon).
+// `cm:true` → un champ centimètres optionnel en plus (tendance plus fine).
+const MOBILITY_TESTS = {
+  chevilles:   { name:'Knee-to-Wall', protocol:'Pied derrière un repère, talon au sol, avancer le genou pour toucher le mur ; reculer au max où le talon reste au sol. Mesurer orteil→mur.', good:'≥ 10 cm', limited:'5–9 cm', poor:'< 5 cm', cm:true },
+  hanches:     { name:'Deep Squat (FMS)', protocol:'Pieds largeur épaules, bâton tendu au-dessus de la tête, descendre le plus profond possible, talons au sol.', good:'Hanches sous parallèle, talons au sol, buste droit, bâton reste au-dessus', limited:'Seulement avec compensation (talons qui lèvent / buste qui penche)', poor:'N’atteint pas la profondeur', cm:false },
+  chaine_post: { name:'ASLR + Sit-and-Reach', protocol:'Allongé, lever une jambe tendue au maximum, l’autre à plat au sol.', good:'Cheville dépasse le milieu de la cuisse', limited:'Entre le genou et le milieu de cuisse', poor:'Reste sous le genou', cm:true },
+  thoracique:  { name:'Rotation assise', protocol:'Assis, genoux serrés, bâton sur les épaules ; tourner le buste au maximum de chaque côté (verrouille le lombaire).', good:'≈ 45° / côté, symétrique', limited:'Nettement < 45° ou asymétrie', poor:'Rotation très limitée', cm:false },
+  epaules:     { name:'FMS Shoulder Mobility', protocol:'Mesurer sa main. Un poing par-dessus l’épaule dans le dos, l’autre par le bas ; mesurer l’écart entre les deux poings.', good:'≤ 1 longueur de main', limited:'≤ 1,5 longueur', poor:'> 1,5 longueur', cm:false },
+  poignets:    { name:'Prayer test', protocol:'Paumes jointes devant la poitrine, coudes écartés, descendre les mains pour horizontaliser les avant-bras.', good:'Avant-bras ≈ horizontaux', limited:'Partiel', poor:'Très limité', cm:false },
+  cou:         { name:'Rotation cervicale', protocol:'Tourner la tête pour regarder par-dessus chaque épaule.', good:'Menton ≈ à l’épaule (~80°)', limited:'Nettement moins / asymétrie', poor:'Très limité', cm:false },
+};
+
+// Emphase par défaut selon le domaine du/des programme(s) actif(s).
+const MOBILITY_PROGRAM_FOCUS = {
+  force:     ['hanches','thoracique','epaules'],
+  hyrox:     ['hanches','thoracique','epaules'],
+  cardio:    ['chevilles','hanches','chaine_post'],
+  gym:       [],
+  mixte:     [],
+  grossesse: [],
+};
+
+// Bibliothèque de drills. minLevel : 0 débutant+, 1 intermédiaire+, 2 avancé.
+// scheme = libellé de dosage lisible (bornes issues de la littérature, cf. §7 du doc).
+const MOBILITY_DRILLS = [
+  // Cou
+  { id:'cou_car',   zone:'cou',  method:'car',     nom:'CARs cervicaux',            scheme:'3–5 cercles lents / sens',        cue:'Le menton dessine le plus grand cercle indolore. Épaules relâchées, très lent.',                                 muscles:['trapeze'], minLevel:0 },
+  { id:'cou_dyn',   zone:'cou',  method:'dynamic', nom:'Rotations & inclinaisons',  scheme:'8 lentes / direction',            cue:'Amplitude douce, sans à-coup. Regarder loin.',                                                                    muscles:['trapeze'], minLevel:0 },
+  { id:'cou_stat',  zone:'cou',  method:'static',  nom:'Étirement trapèze sup.',    scheme:'2 × 20 s / côté',                 cue:'Oreille vers l’épaule, la main accompagne sans tirer fort. Gêne légère.',                                          muscles:['trapeze'], minLevel:0 },
+
+  // Épaules
+  { id:'epaules_car',  zone:'epaules', method:'car',        nom:'CARs d’épaule',              scheme:'3–5 cercles lents / sens · par bras', cue:'Bras tendu, plus grand cercle possible, buste immobile.',                                            muscles:['deltAnt','deltPost'], minLevel:0 },
+  { id:'epaules_dyn',  zone:'epaules', method:'dynamic',    nom:'Dislocates au bâton',        scheme:'2 × 8–10',                            cue:'Prise large (bâton/élastique), bras tendus, passage lent devant → dos.',                             muscles:['deltAnt','pec'], minLevel:0 },
+  { id:'epaules_stat', zone:'epaules', method:'static',     nom:'Étirement pec au chambranle',scheme:'2 × 30 s / côté',                     cue:'Avant-bras contre le mur, avancer doucement le buste. Gêne légère.',                                 muscles:['pec','deltAnt'], minLevel:0 },
+  { id:'epaules_pnf',  zone:'epaules', method:'pnf',        nom:'Contract-relâché épaule',    scheme:'3 × (6 s poussée + 20 s étirement)',  cue:'Pousser doucement dans le mur 6 s, relâcher, gagner l’amplitude.',                                    muscles:['deltAnt','pec'], minLevel:1, caution:'Ne pas bloquer la respiration (Valsalva).' },
+  { id:'epaules_pails',zone:'epaules', method:'pails_rails',nom:'PAILs/RAILs suspension',     scheme:'2 × (10 s PAIL + 10 s RAIL)',         cue:'En fin d’amplitude : contracter DANS l’étirement (PAIL), puis tirer plus loin activement (RAIL).',    muscles:['deltAnt','deltPost'], minLevel:2, caution:'Avancé — jamais dans la douleur.' },
+
+  // Thoracique
+  { id:'thoracique_car',  zone:'thoracique', method:'car',     nom:'CARs colonne thoracique', scheme:'3–5 / sens',                cue:'Rotation segmentaire lente, bassin fixe.',                                                muscles:['dorsaux'], minLevel:0 },
+  { id:'thoracique_dyn',  zone:'thoracique', method:'dynamic', nom:'Open-book',               scheme:'2 × 8 / côté',              cue:'Sur le côté, genoux empilés : ouvrir le bras du dessus vers l’arrière, suivre la main du regard.', muscles:['dorsaux','pec'], minLevel:0 },
+  { id:'thoracique_stat', zone:'thoracique', method:'static',  nom:'Extension sur rouleau',   scheme:'2 × 30 s',                  cue:'Rouleau sous les omoplates, mains derrière la tête, souffler en s’étendant.',              muscles:['dorsaux'], minLevel:0 },
+  { id:'thoracique_pnf',  zone:'thoracique', method:'pnf',     nom:'RAIL de rotation assise', scheme:'3 × (6 s + amplitude)',     cue:'En rotation maximale, contracter pour aller activement plus loin.',                        muscles:['dorsaux'], minLevel:1 },
+
+  // Hanches
+  { id:'hanches_car',        zone:'hanches', method:'car',        nom:'CARs de hanche',            scheme:'2 × 4 cercles lents / sens · par hanche', cue:'Bassin stable, le genou dessine le plus grand cercle indolore (~10 s/cercle).',        muscles:['fessiers','quad'], minLevel:0 },
+  { id:'hanches_dyn',        zone:'hanches', method:'dynamic',    nom:'Transitions 90/90',         scheme:'8–10 passages',                            cue:'Assis au sol, passer d’un côté à l’autre, dos droit.',                                  muscles:['fessiers'], minLevel:0 },
+  { id:'hanches_stat_pigeon',zone:'hanches', method:'static',     nom:'Pigeon (fessier)',          scheme:'2 × 30 s / côté',                          cue:'Tibia devant, hanches carrées, le buste descend progressivement.',                      muscles:['fessiers'], minLevel:0 },
+  { id:'hanches_stat_psoas', zone:'hanches', method:'static',     nom:'Fente psoas',               scheme:'2 × 30 s / côté',                          cue:'Genou arrière au sol, bassin en rétroversion, ne pas cambrer.',                          muscles:['quad'], minLevel:0 },
+  { id:'hanches_pnf',        zone:'hanches', method:'pnf',        nom:'Contract-relâché adducteurs',scheme:'3 × (6 s + 20 s)',                        cue:'Position grenouille : pousser les genoux 6 s puis relâcher et descendre.',               muscles:['fessiers'], minLevel:1, caution:'Ne pas bloquer la respiration.' },
+  { id:'hanches_pails',      zone:'hanches', method:'pails_rails',nom:'PAILs/RAILs en 90/90',      scheme:'2 × (10–15 s PAIL + 10 s RAIL)',           cue:'En fin d’amplitude de rotation, contracter dans puis tirer plus loin activement.',       muscles:['fessiers','quad'], minLevel:2, caution:'Avancé — sans douleur.' },
+
+  // Chaîne postérieure
+  { id:'cp_dyn',     zone:'chaine_post', method:'dynamic',     nom:'Balancers de jambe',      scheme:'2 × 10 / jambe',        cue:'Amplitude progressive, buste stable, appui gainé.',                              muscles:['ischio'], minLevel:0 },
+  { id:'cp_stat',    zone:'chaine_post', method:'static',      nom:'Étirement ischios debout',scheme:'2 × 30 s / côté',       cue:'Charnière de hanche, dos droit, gêne légère derrière la cuisse.',                 muscles:['ischio'], minLevel:0 },
+  { id:'cp_stat_sr', zone:'chaine_post', method:'static',      nom:'Sit-and-reach au sol',    scheme:'2 × 30 s',              cue:'Jambes tendues, avancer les mains vers les orteils sans arrondir violemment.',    muscles:['ischio','lombaires'], minLevel:0 },
+  { id:'cp_pnf',     zone:'chaine_post', method:'pnf',         nom:'Hold-relâché ischios',    scheme:'3 × (6 s + amplitude)', cue:'Jambe tendue en l’air : pousser contre la main/sangle 6 s puis relâcher et gagner.', muscles:['ischio'], minLevel:1, caution:'Ne pas bloquer la respiration.' },
+  { id:'cp_pails',   zone:'chaine_post', method:'pails_rails', nom:'PAILs/RAILs ischios (pike)',scheme:'2 × (10–15 s PAIL + 10 s RAIL)', cue:'En flexion maximale, contracter dans l’étirement puis tirer activement plus loin.', muscles:['ischio'], minLevel:2, caution:'Avancé.' },
+
+  // Chevilles
+  { id:'chevilles_car',      zone:'chevilles', method:'car',        nom:'CARs de cheville',        scheme:'3–5 cercles / sens · par pied', cue:'Grand cercle lent, jambe immobile.',                                       muscles:['mollets'], minLevel:0 },
+  { id:'chevilles_dyn',      zone:'chevilles', method:'dynamic',    nom:'Knee-to-wall dynamique',  scheme:'2 × 10 / côté',                 cue:'Genou vers le mur, talon au sol, chercher l’amplitude à chaque répétition.', muscles:['mollets'], minLevel:0 },
+  { id:'chevilles_stat',     zone:'chevilles', method:'static',     nom:'Étirement mollet au mur', scheme:'2 × 30 s / côté',               cue:'Jambe arrière tendue, talon au sol.',                                      muscles:['mollets'], minLevel:0 },
+  { id:'chevilles_stat_sol', zone:'chevilles', method:'static',     nom:'Étirement soléaire',      scheme:'2 × 30 s / côté',               cue:'Même position, genou fléchi : cible le bas du mollet.',                     muscles:['mollets'], minLevel:0 },
+  { id:'chevilles_pails',    zone:'chevilles', method:'pails_rails',nom:'Dorsiflexion chargée',    scheme:'2 × (10 s PAIL + 10 s RAIL)',   cue:'Genou au-dessus des orteils, charger et contrôler la fin d’amplitude.',    muscles:['mollets'], minLevel:2, caution:'Avancé.' },
+
+  // Poignets
+  { id:'poignets_car',  zone:'poignets', method:'car',     nom:'CARs de poignet',            scheme:'5 cercles / sens', cue:'Avant-bras fixe, cercle complet lent.',                              muscles:['avantbras'], minLevel:0 },
+  { id:'poignets_dyn',  zone:'poignets', method:'dynamic', nom:'Flexions/extensions à genoux',scheme:'2 × 8',           cue:'Paumes puis dos des mains au sol, charge progressive et contrôlée.',  muscles:['avantbras'], minLevel:0 },
+  { id:'poignets_stat', zone:'poignets', method:'static',  nom:'Étirement fléchisseurs',     scheme:'2 × 20–30 s',      cue:'Bras tendu, doigts vers le bas, tirer doucement.',                    muscles:['avantbras'], minLevel:0 },
+];
 
 // ── Grossesse program config ──────────────────────────────────────────────────
 
@@ -5310,6 +5504,8 @@ function exportJSON() {
     active_programs: (typeof dbGet === 'function' ? dbGet('programs_active') : null) || [],
     active_program: (typeof dbGet === 'function' ? dbGet('program_active') : null) || null,
     nutrition_plans: (typeof dbGet === 'function' ? dbGet('nutrition_plans') : null) || [],
+    mobility_assessment: (typeof dbGet === 'function' ? dbGet('mobility_assessment') : null) || null,
+    mobility_logs: (typeof dbGet === 'function' ? dbGet('mobility_logs') : null) || [],
   };
   _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
 }
@@ -5395,6 +5591,12 @@ function importJSON(event) {
       }
       if(Array.isArray(parsed.nutrition_plans) && typeof dbSet === 'function') {
         dbSet('nutrition_plans', parsed.nutrition_plans);
+      }
+      if(parsed.mobility_assessment && typeof dbSet === 'function') {
+        dbSet('mobility_assessment', parsed.mobility_assessment);
+      }
+      if(Array.isArray(parsed.mobility_logs) && typeof dbSet === 'function') {
+        dbSet('mobility_logs', parsed.mobility_logs);
       }
       if(Array.isArray(parsed.active_programs) && parsed.active_programs.length > 0 && typeof dbSet === 'function') {
         dbSet('programs_active', parsed.active_programs);
@@ -7866,6 +8068,13 @@ function wizBack() {
 }
 
 function wizGenerate() {
+  // Mobilité : gérée dans la section dédiée 🧘 (routine quotidienne adaptative),
+  // pas comme un programme cadencé. Le focus cadrable via wizard arrive en C2.
+  if(_config.domaine === 'mobilite') {
+    window._showSaveToast?.('🧘 La mobilité se gère dans la section dédiée');
+    window.showSection?.('mobilite-section');
+    return;
+  }
   if(!_validateStep()) return;
   _collectStep();
 
@@ -8440,6 +8649,343 @@ function bindNutritionEvents() {
 }
 
 
+/* -- mobilite.js -- */
+/**
+ * mobilite.js — Section Mobilité (bilan par zone + routine du jour adaptative)
+ *
+ * Esprit GOWOD : un auto-bilan note chaque zone, puis une routine quotidienne
+ * courte cible les zones prioritaires. Le ciblage combine 3 signaux :
+ *   1. zones faibles au bilan,
+ *   2. zones chargées (tracker muscles SRA, calcGlobalMuscleLoad),
+ *   3. type de programme actif (emphase par défaut).
+ * Modèle souple : pas de calendrier — « un peu chaque jour ».
+ * Réf & décisions : Documentation/mobilite-program-design.md.
+ */
+
+
+const ASSESS_KEY = 'mobility_assessment';
+const LOGS_KEY   = 'mobility_logs';
+const LEVELS     = { debutant: 0, intermediaire: 1, avance: 2 };
+const SCORE_LBL  = { 0: 'Faible', 1: 'Limité', 2: 'Bon' };
+
+// ── Stockage ────────────────────────────────────────────────────────────────
+
+function getAssessment() {
+  const a = dbGet(ASSESS_KEY);
+  return (a && typeof a === 'object') ? a : { date: null, scores: {}, cm: {}, history: [] };
+}
+function saveAssessment(a) { dbSet(ASSESS_KEY, a); }
+
+function getMobilityLogs() {
+  const l = dbGet(LOGS_KEY);
+  return Array.isArray(l) ? l : [];
+}
+function addMobilityLog(entry) {
+  const l = getMobilityLogs();
+  l.push(entry);
+  // Garde borné (les logs anciens ne servent plus au streak récent)
+  dbSet(LOGS_KEY, l.slice(-400));
+}
+
+// ── Profil (niveau/âge) déduit du programme actif le plus récent ────────────────
+
+function _userProfile() {
+  let niveau = 'intermediaire', age = '30-39';
+  const progs = getAllActivePrograms();
+  if(progs.length) {
+    const p = [...progs].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+    niveau = p.config?.niveau || niveau;
+    age    = p.config?.age || age;
+  }
+  return { niveau, age, lvl: LEVELS[niveau] ?? 1, older: age === '50-59' || age === '60+' };
+}
+
+function _activeFocusSet() {
+  const set = new Set();
+  getAllActivePrograms().forEach(p => {
+    (MOBILITY_PROGRAM_FOCUS[p.config?.domaine] || []).forEach(z => set.add(z));
+  });
+  return set;
+}
+
+// ── Priorités par zone (3 signaux pondérés) ────────────────────────────────────
+
+function _zonePriorities() {
+  const a        = getAssessment();
+  const load     = calcGlobalMuscleLoad();
+  const focusSet = _activeFocusSet();
+
+  return MOBILITY_ZONES.map(z => {
+    const score  = a.scores?.[z.id];
+    // Bilan : score bas → priorité haute. Inconnu → neutre (0.5).
+    const bilan  = (score == null) ? 0.5 : (2 - score) / 2;
+    // SRA : charge max des muscles de la zone (0–1).
+    let charge = 0;
+    z.muscles.forEach(m => { charge = Math.max(charge, musclePercent(m, load)); });
+    const sra    = Math.min(1, charge / 100);
+    const typ    = focusSet.has(z.id) ? 1 : 0;
+    const priority = 1.0 * bilan + 0.6 * sra + 0.4 * typ;
+    return { zone: z, score, charge, priority };
+  }).sort((x, y) => y.priority - x.priority);
+}
+
+// ── Génération de la routine du jour ───────────────────────────────────────────
+
+let _currentRoutine = null;
+
+function _drillById(id) { return MOBILITY_DRILLS.find(d => d.id === id) || null; }
+
+function _pickFocusDrills(zoneId, lvl, older, maxN) {
+  let pool = MOBILITY_DRILLS.filter(d =>
+    d.zone === zoneId && d.method !== 'car' && d.method !== 'massage' && d.minLevel <= lvl);
+  // Personnes âgées : privilégier statique/CARs, écarter le end-range chargé.
+  if(older) pool = pool.filter(d => d.method !== 'pails_rails');
+  // Diversité : un dynamique, un statique, puis la méthode la plus avancée dispo.
+  const order = { dynamic: 0, static: 1, pnf: 2, pails_rails: 3 };
+  pool.sort((a, b) => (order[a.method] ?? 9) - (order[b.method] ?? 9));
+  const out = [];
+  const seenMethod = new Set();
+  pool.forEach(d => {
+    if(out.length >= maxN) return;
+    if(seenMethod.has(d.method)) return;
+    seenMethod.add(d.method);
+    out.push(d);
+  });
+  return out.length ? out : pool.slice(0, maxN);
+}
+
+function generateDailyRoutine(durMin) {
+  const { lvl, older } = _userProfile();
+  const focusN     = durMin <= 5 ? 2 : durMin <= 10 ? 3 : 4;
+  const perZone    = durMin <= 5 ? 1 : 2;
+  const prio       = _zonePriorities();
+  const focus      = prio.slice(0, focusN);
+
+  // Socle CARs : toutes les zones qui ont un CAR dédié.
+  const cars = MOBILITY_ZONES.filter(z => z.car).map(z => _drillById(z.car)).filter(Boolean);
+
+  const blocks = focus.map(p => ({
+    zone:   p.zone,
+    score:  p.score,
+    charge: Math.round(p.charge),
+    drills: _pickFocusDrills(p.zone.id, lvl, older, perZone),
+  }));
+
+  _currentRoutine = { durMin, cars, blocks, older, ts: Date.now() };
+  return _currentRoutine;
+}
+
+// ── Rendu : navigation par onglets ─────────────────────────────────────────────
+
+function _showMobView(id) {
+  const sec = document.getElementById('mobilite-section');
+  if(!sec) return;
+  sec.querySelectorAll('.prog-view').forEach(v => v.classList.remove('active-view'));
+  document.getElementById(id)?.classList.add('active-view');
+  sec.querySelectorAll('.mob-tab').forEach(b => b.classList.remove('active'));
+  sec.querySelector(`.mob-tab[data-mob-tab="${id.replace('mob-', '').replace('-view', '')}"]`)?.classList.add('active');
+}
+
+/** Point d'entrée appelé par showSection('mobilite-section'). */
+function renderMobiliteSection() {
+  const a = getAssessment();
+  // Sans bilan → démarrer sur le Bilan ; sinon Routine du jour.
+  if(!a.date) { _showMobView('mob-bilan-view'); _renderBilan(); }
+  else        { _showMobView('mob-routine-view'); _renderRoutine(10); }
+}
+
+// ── Rendu : routine du jour ────────────────────────────────────────────────────
+
+function _durSelector(cur) {
+  return [5, 10, 15].map(d =>
+    `<button class="mob-dur-btn ${d === cur ? 'active' : ''}" onclick="_mobSetDuration(${d})">${d} min</button>`).join('');
+}
+
+function _drillCard(d) {
+  const cau = d.caution ? `<div class="mob-caution">⚠️ ${esc(d.caution)}</div>` : '';
+  return `<div class="mob-drill">
+      <div class="mob-drill-head"><span class="mob-drill-name">${esc(d.nom)}</span><span class="mob-drill-scheme">${esc(d.scheme)}</span></div>
+      <div class="mob-drill-cue">${esc(d.cue)}</div>${cau}
+    </div>`;
+}
+
+function _renderRoutine(durMin) {
+  const el = document.getElementById('mobRoutineContent');
+  if(!el) return;
+  const r = generateDailyRoutine(durMin);
+  const a = getAssessment();
+  const { older } = r;
+
+  const whyBits = r.blocks.map(b => {
+    const bits = [];
+    if(b.score != null && b.score <= 1) bits.push('bilan');
+    if(b.charge >= 40) bits.push('chargée');
+    return `${b.zone.icon} ${esc(b.zone.label)}${bits.length ? ` <span class="mob-why-tag">${bits.join(' · ')}</span>` : ''}`;
+  }).join(' · ');
+
+  const holdNote = older
+    ? `<div class="wiz-note" style="margin-top:8px">👴 50 ans + : tiens les étirements statiques <strong>30–60 s</strong> et évite le end-range chargé.</div>`
+    : '';
+
+  const carsHtml = r.cars.map(_drillCard).join('');
+  const blocksHtml = r.blocks.map(b => `
+    <div class="mob-block">
+      <div class="mob-block-title">${b.zone.icon} ${esc(b.zone.label)}</div>
+      ${b.drills.map(_drillCard).join('')}
+    </div>`).join('');
+
+  const noAssess = !a.date
+    ? `<div class="wiz-note" style="margin-bottom:10px">💡 Fais le <button class="mob-inline-link" onclick="showMobiliteTab('bilan')">bilan</button> pour personnaliser la sélection selon tes zones faibles.</div>`
+    : '';
+
+  el.innerHTML = `
+    ${noAssess}
+    <div class="mob-dur-row"><span class="mob-dur-lbl">Durée</span>${_durSelector(durMin)}</div>
+    <div class="mob-focus-note">🎯 Zones du jour : ${whyBits}</div>
+    ${holdNote}
+    <div class="mob-block mob-block-cars">
+      <div class="mob-block-title">🔄 CARs — réveil articulaire (tout le corps)</div>
+      <div class="mob-cars-sub">Rotations articulaires contrôlées, lentes, en début de routine.</div>
+      ${carsHtml}
+    </div>
+    ${blocksHtml}
+    <button class="save-btn" style="width:100%;margin-top:12px" onclick="_mobLogDone()">✓ J'ai fait ma routine</button>
+    <div class="mob-disclaimer">La mobilité est peu fatigante : à faire un peu chaque jour. Aucun mouvement ne doit être douloureux — en cas de douleur, arrête et consulte si besoin.</div>`;
+}
+
+// ── Rendu : bilan ──────────────────────────────────────────────────────────────
+
+function _scoreChip(score) {
+  if(score == null) return `<span class="mob-chip mob-chip-none">Non testé</span>`;
+  const cls = score === 2 ? 'mob-chip-good' : score === 1 ? 'mob-chip-mid' : 'mob-chip-poor';
+  return `<span class="mob-chip ${cls}">${SCORE_LBL[score]}</span>`;
+}
+
+function _renderBilan() {
+  const el = document.getElementById('mobBilanContent');
+  if(!el) return;
+  const a = getAssessment();
+  const done = Object.keys(a.scores || {}).length;
+
+  const intro = `<div class="wiz-note" style="margin-bottom:12px">
+    📋 Auto-teste chaque zone et note-toi. Le programme ciblera d'abord tes zones les plus faibles.
+    Refais le bilan toutes les ~4 semaines pour suivre tes progrès.
+    ${a.date ? `<br><span style="color:var(--text3)">Dernier bilan : ${esc(a.date)} · ${done}/${MOBILITY_ZONES.length} zones</span>` : ''}
+  </div>`;
+
+  const rows = MOBILITY_ZONES.map(z => {
+    const t = MOBILITY_TESTS[z.id];
+    const score = a.scores?.[z.id];
+    const cm = a.cm?.[z.id];
+    const cmField = t?.cm
+      ? `<div class="mob-cm"><label>Mesure (cm, optionnel)</label><input type="number" inputmode="decimal" class="mob-cm-input" value="${cm != null ? esc(String(cm)) : ''}" onchange="_mobSetCm('${z.id}', this.value)" placeholder="ex : 10"></div>`
+      : '';
+    return `
+    <div class="mob-zone">
+      <div class="mob-zone-head">
+        <span class="mob-zone-name">${z.icon} ${esc(z.label)}</span>
+        ${_scoreChip(score)}
+      </div>
+      <div class="mob-test-name">${esc(t?.name || '')}</div>
+      <div class="mob-test-proto">${esc(t?.protocol || '')}</div>
+      <div class="mob-test-criteria">
+        <span class="mob-crit mob-crit-good">Bon : ${esc(t?.good || '')}</span>
+        <span class="mob-crit mob-crit-mid">Limité : ${esc(t?.limited || '')}</span>
+        <span class="mob-crit mob-crit-poor">Faible : ${esc(t?.poor || '')}</span>
+      </div>
+      <div class="mob-score-btns">
+        <button class="mob-score-btn ${score === 0 ? 'sel-poor' : ''}" onclick="_mobSetScore('${z.id}',0)">Faible</button>
+        <button class="mob-score-btn ${score === 1 ? 'sel-mid' : ''}" onclick="_mobSetScore('${z.id}',1)">Limité</button>
+        <button class="mob-score-btn ${score === 2 ? 'sel-good' : ''}" onclick="_mobSetScore('${z.id}',2)">Bon</button>
+      </div>
+      ${cmField}
+    </div>`;
+  }).join('');
+
+  const cta = done >= MOBILITY_ZONES.length
+    ? `<button class="save-btn" style="width:100%;margin-top:12px" onclick="showMobiliteTab('routine')">🧘 Voir ma routine du jour</button>`
+    : '';
+
+  el.innerHTML = intro + rows + cta +
+    `<div class="mob-disclaimer">Ces tests sont des repères d'auto-dépistage (pass/limité/faible), pas un diagnostic. En cas de douleur pendant un test : note « Faible » et consulte un professionnel si elle persiste.</div>`;
+}
+
+// ── Rendu : progrès ────────────────────────────────────────────────────────────
+
+function _streakDays() {
+  const days = new Set(getMobilityLogs().map(l => new Date(l.ts).toISOString().slice(0, 10)));
+  return days.size;
+}
+
+function _renderProgres() {
+  const el = document.getElementById('mobProgresContent');
+  if(!el) return;
+  const a = getAssessment();
+  const logs = getMobilityLogs();
+  const streak = _streakDays();
+  const last7 = logs.filter(l => l.ts >= Date.now() - 7 * 864e5).length;
+
+  const bars = MOBILITY_ZONES.map(z => {
+    const s = a.scores?.[z.id];
+    const pct = s == null ? 0 : (s / 2) * 100;
+    const col = s == null ? 'var(--surface2)' : s === 2 ? 'var(--green)' : s === 1 ? 'var(--amber)' : 'var(--red)';
+    return `<div class="mob-prog-row">
+        <span class="mob-prog-name">${z.icon} ${esc(z.label)}</span>
+        <div class="mob-prog-track"><div class="mob-prog-fill" style="width:${pct}%;background:${col}"></div></div>
+        <span class="mob-prog-val">${s == null ? '—' : SCORE_LBL[s]}</span>
+      </div>`;
+  }).join('');
+
+  const staleNote = a.date && (Date.now() - new Date(a.date).getTime() > 28 * 864e5)
+    ? `<div class="wiz-note" style="margin-top:10px">⏰ Ton bilan date de plus de 4 semaines — <button class="mob-inline-link" onclick="showMobiliteTab('bilan')">refais-le</button> pour objectiver tes gains.</div>`
+    : '';
+
+  el.innerHTML = `
+    <div class="mob-stats">
+      <div class="mob-stat"><div class="mob-stat-val">🔥 ${streak}</div><div class="mob-stat-lbl">jours de mobilité</div></div>
+      <div class="mob-stat"><div class="mob-stat-val">${last7}</div><div class="mob-stat-lbl">routines (7 j)</div></div>
+    </div>
+    <div class="p-sec-title" style="margin-top:14px">Niveau de mobilité par zone</div>
+    ${a.date ? bars : '<div class="wiz-note">Fais le bilan pour voir ton profil de mobilité.</div>'}
+    ${staleNote}`;
+}
+
+// ── Handlers exposés (onclick inline) ──────────────────────────────────────────
+
+window.showMobiliteTab = function(tab) {
+  if(tab === 'routine') { _showMobView('mob-routine-view'); _renderRoutine(10); }
+  else if(tab === 'bilan') { _showMobView('mob-bilan-view'); _renderBilan(); }
+  else if(tab === 'progres') { _showMobView('mob-progres-view'); _renderProgres(); }
+};
+
+window._mobSetDuration = function(d) { _renderRoutine(d); };
+
+window._mobSetScore = function(zoneId, score) {
+  const a = getAssessment();
+  a.scores = a.scores || {};
+  a.scores[zoneId] = score;
+  a.date = new Date().toISOString().slice(0, 10);
+  saveAssessment(a);
+  _renderBilan();
+};
+
+window._mobSetCm = function(zoneId, val) {
+  const a = getAssessment();
+  a.cm = a.cm || {};
+  const n = parseFloat(val);
+  if(isNaN(n)) delete a.cm[zoneId]; else a.cm[zoneId] = n;
+  a.date = new Date().toISOString().slice(0, 10);
+  saveAssessment(a);
+};
+
+window._mobLogDone = function() {
+  const r = _currentRoutine;
+  const zones = r ? r.blocks.map(b => b.zone.id) : [];
+  addMobilityLog({ ts: Date.now(), duree: r?.durMin || 10, zones, type: 'daily' });
+  if(typeof window._showSaveToast === 'function') window._showSaveToast('✓ Routine mobilité enregistrée');
+};
+
+
 /* -- app.js -- */
 /**
  * app.js — Entry point
@@ -8525,6 +9071,7 @@ function showSection(id) {
   }
   if(id === 'musculaire')  renderMusculaire();
   if(id === 'nutrition-section') renderNutritionSection();
+  if(id === 'mobilite-section') renderMobiliteSection();
   if(id === 'programmes')  renderPrograms();
   if(id === 'programme') {
     // Redirect to Programmes tab — Programme tab is hidden

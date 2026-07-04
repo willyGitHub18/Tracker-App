@@ -1,0 +1,19 @@
+<div id="mobilite-section" class="section-panel">
+  <div class="wiz-header">
+    <div class="wiz-header-top">
+      <div>
+        <div class="wiz-header-title">Mobilité</div>
+        <div class="wiz-header-sub">Un peu chaque jour · adapté à tes entraînements</div>
+      </div>
+    </div>
+    <div class="mob-tabs">
+      <button class="mob-tab active" data-mob-tab="routine" onclick="showMobiliteTab('routine')">🧘 Routine du jour</button>
+      <button class="mob-tab" data-mob-tab="bilan" onclick="showMobiliteTab('bilan')">📋 Bilan</button>
+      <button class="mob-tab" data-mob-tab="progres" onclick="showMobiliteTab('progres')">📈 Progrès</button>
+    </div>
+  </div>
+
+  <div id="mob-routine-view" class="prog-view active-view"><div id="mobRoutineContent"></div></div>
+  <div id="mob-bilan-view" class="prog-view"><div id="mobBilanContent"></div></div>
+  <div id="mob-progres-view" class="prog-view"><div id="mobProgresContent"></div></div>
+</div>

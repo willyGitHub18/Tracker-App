@@ -343,6 +343,111 @@ export const EXERCISE_CUES = {
   hspu:       'Gainage total en appui tête, coudes serrés. Descente contrôlée front vers le sol, poussée explosive. Progression au mur.',
 };
 
+// ── Mobilité ──────────────────────────────────────────────────────────────────
+// Modèle de mobilité (distinct du modèle force %1RM et du modèle cardio).
+// Réf : ACSM Position Stand (Garber 2011), consensus Delphi 2025 (dosage statique/
+// dynamique/PNF), FRC/CARs & PAILs/RAILs (Spina — méthode, preuve émergente),
+// inspiration produit GOWOD (bilan par zone → ciblage). Sources détaillées dans
+// Documentation/mobilite-program-design.md.
+
+// Échelle de charge mobilité pour la carte musculaire (SRA) — très faible : la
+// mobilité est peu coûteuse systémiquement, elle ne doit pas gonfler la fatigue.
+// (Utilisé par la contribution SRA — cf. musculaire.js.)
+export const MOBILITY_LOAD_SCALE = 0.1;
+
+// Zones de mobilité. `muscles` = IDs SRA reliés (signal « zone chargée »).
+// `car` = id du drill CARs socle de la zone (null si pas de CAR dédié).
+export const MOBILITY_ZONES = [
+  { id:'cou',         label:'Cou',                  icon:'🙆', muscles:['trapeze'],                     car:'cou_car' },
+  { id:'epaules',     label:'Épaules',              icon:'🤸', muscles:['deltAnt','deltPost','pec','trapeze'], car:'epaules_car' },
+  { id:'thoracique',  label:'Colonne thoracique',   icon:'🌀', muscles:['dorsaux','trapeze'],           car:'thoracique_car' },
+  { id:'hanches',     label:'Hanches',              icon:'🦵', muscles:['fessiers','quad','core'],      car:'hanches_car' },
+  { id:'chaine_post', label:'Chaîne postérieure',   icon:'🔗', muscles:['ischio','lombaires','fessiers'], car:null },
+  { id:'chevilles',   label:'Chevilles',            icon:'🦶', muscles:['mollets'],                     car:'chevilles_car' },
+  { id:'poignets',    label:'Poignets',             icon:'✋', muscles:['avantbras'],                   car:'poignets_car' },
+];
+
+// Méthodes : minLevel = niveau minimal requis (0 débutant, 1 intermédiaire, 2 avancé).
+export const MOBILITY_METHODS = {
+  car:         { label:'CARs',        minLevel:0 },
+  dynamic:     { label:'Dynamique',   minLevel:0 },
+  static:      { label:'Statique',    minLevel:0 },
+  pnf:         { label:'PNF',         minLevel:1 },
+  pails_rails: { label:'PAILs/RAILs', minLevel:2 },
+  massage:     { label:'Auto-massage',minLevel:0 },
+};
+
+// Auto-bilan par zone (auto-scorable : 0 faible / 1 limité / 2 bon).
+// `cm:true` → un champ centimètres optionnel en plus (tendance plus fine).
+export const MOBILITY_TESTS = {
+  chevilles:   { name:'Knee-to-Wall', protocol:'Pied derrière un repère, talon au sol, avancer le genou pour toucher le mur ; reculer au max où le talon reste au sol. Mesurer orteil→mur.', good:'≥ 10 cm', limited:'5–9 cm', poor:'< 5 cm', cm:true },
+  hanches:     { name:'Deep Squat (FMS)', protocol:'Pieds largeur épaules, bâton tendu au-dessus de la tête, descendre le plus profond possible, talons au sol.', good:'Hanches sous parallèle, talons au sol, buste droit, bâton reste au-dessus', limited:'Seulement avec compensation (talons qui lèvent / buste qui penche)', poor:'N’atteint pas la profondeur', cm:false },
+  chaine_post: { name:'ASLR + Sit-and-Reach', protocol:'Allongé, lever une jambe tendue au maximum, l’autre à plat au sol.', good:'Cheville dépasse le milieu de la cuisse', limited:'Entre le genou et le milieu de cuisse', poor:'Reste sous le genou', cm:true },
+  thoracique:  { name:'Rotation assise', protocol:'Assis, genoux serrés, bâton sur les épaules ; tourner le buste au maximum de chaque côté (verrouille le lombaire).', good:'≈ 45° / côté, symétrique', limited:'Nettement < 45° ou asymétrie', poor:'Rotation très limitée', cm:false },
+  epaules:     { name:'FMS Shoulder Mobility', protocol:'Mesurer sa main. Un poing par-dessus l’épaule dans le dos, l’autre par le bas ; mesurer l’écart entre les deux poings.', good:'≤ 1 longueur de main', limited:'≤ 1,5 longueur', poor:'> 1,5 longueur', cm:false },
+  poignets:    { name:'Prayer test', protocol:'Paumes jointes devant la poitrine, coudes écartés, descendre les mains pour horizontaliser les avant-bras.', good:'Avant-bras ≈ horizontaux', limited:'Partiel', poor:'Très limité', cm:false },
+  cou:         { name:'Rotation cervicale', protocol:'Tourner la tête pour regarder par-dessus chaque épaule.', good:'Menton ≈ à l’épaule (~80°)', limited:'Nettement moins / asymétrie', poor:'Très limité', cm:false },
+};
+
+// Emphase par défaut selon le domaine du/des programme(s) actif(s).
+export const MOBILITY_PROGRAM_FOCUS = {
+  force:     ['hanches','thoracique','epaules'],
+  hyrox:     ['hanches','thoracique','epaules'],
+  cardio:    ['chevilles','hanches','chaine_post'],
+  gym:       [],
+  mixte:     [],
+  grossesse: [],
+};
+
+// Bibliothèque de drills. minLevel : 0 débutant+, 1 intermédiaire+, 2 avancé.
+// scheme = libellé de dosage lisible (bornes issues de la littérature, cf. §7 du doc).
+export const MOBILITY_DRILLS = [
+  // Cou
+  { id:'cou_car',   zone:'cou',  method:'car',     nom:'CARs cervicaux',            scheme:'3–5 cercles lents / sens',        cue:'Le menton dessine le plus grand cercle indolore. Épaules relâchées, très lent.',                                 muscles:['trapeze'], minLevel:0 },
+  { id:'cou_dyn',   zone:'cou',  method:'dynamic', nom:'Rotations & inclinaisons',  scheme:'8 lentes / direction',            cue:'Amplitude douce, sans à-coup. Regarder loin.',                                                                    muscles:['trapeze'], minLevel:0 },
+  { id:'cou_stat',  zone:'cou',  method:'static',  nom:'Étirement trapèze sup.',    scheme:'2 × 20 s / côté',                 cue:'Oreille vers l’épaule, la main accompagne sans tirer fort. Gêne légère.',                                          muscles:['trapeze'], minLevel:0 },
+
+  // Épaules
+  { id:'epaules_car',  zone:'epaules', method:'car',        nom:'CARs d’épaule',              scheme:'3–5 cercles lents / sens · par bras', cue:'Bras tendu, plus grand cercle possible, buste immobile.',                                            muscles:['deltAnt','deltPost'], minLevel:0 },
+  { id:'epaules_dyn',  zone:'epaules', method:'dynamic',    nom:'Dislocates au bâton',        scheme:'2 × 8–10',                            cue:'Prise large (bâton/élastique), bras tendus, passage lent devant → dos.',                             muscles:['deltAnt','pec'], minLevel:0 },
+  { id:'epaules_stat', zone:'epaules', method:'static',     nom:'Étirement pec au chambranle',scheme:'2 × 30 s / côté',                     cue:'Avant-bras contre le mur, avancer doucement le buste. Gêne légère.',                                 muscles:['pec','deltAnt'], minLevel:0 },
+  { id:'epaules_pnf',  zone:'epaules', method:'pnf',        nom:'Contract-relâché épaule',    scheme:'3 × (6 s poussée + 20 s étirement)',  cue:'Pousser doucement dans le mur 6 s, relâcher, gagner l’amplitude.',                                    muscles:['deltAnt','pec'], minLevel:1, caution:'Ne pas bloquer la respiration (Valsalva).' },
+  { id:'epaules_pails',zone:'epaules', method:'pails_rails',nom:'PAILs/RAILs suspension',     scheme:'2 × (10 s PAIL + 10 s RAIL)',         cue:'En fin d’amplitude : contracter DANS l’étirement (PAIL), puis tirer plus loin activement (RAIL).',    muscles:['deltAnt','deltPost'], minLevel:2, caution:'Avancé — jamais dans la douleur.' },
+
+  // Thoracique
+  { id:'thoracique_car',  zone:'thoracique', method:'car',     nom:'CARs colonne thoracique', scheme:'3–5 / sens',                cue:'Rotation segmentaire lente, bassin fixe.',                                                muscles:['dorsaux'], minLevel:0 },
+  { id:'thoracique_dyn',  zone:'thoracique', method:'dynamic', nom:'Open-book',               scheme:'2 × 8 / côté',              cue:'Sur le côté, genoux empilés : ouvrir le bras du dessus vers l’arrière, suivre la main du regard.', muscles:['dorsaux','pec'], minLevel:0 },
+  { id:'thoracique_stat', zone:'thoracique', method:'static',  nom:'Extension sur rouleau',   scheme:'2 × 30 s',                  cue:'Rouleau sous les omoplates, mains derrière la tête, souffler en s’étendant.',              muscles:['dorsaux'], minLevel:0 },
+  { id:'thoracique_pnf',  zone:'thoracique', method:'pnf',     nom:'RAIL de rotation assise', scheme:'3 × (6 s + amplitude)',     cue:'En rotation maximale, contracter pour aller activement plus loin.',                        muscles:['dorsaux'], minLevel:1 },
+
+  // Hanches
+  { id:'hanches_car',        zone:'hanches', method:'car',        nom:'CARs de hanche',            scheme:'2 × 4 cercles lents / sens · par hanche', cue:'Bassin stable, le genou dessine le plus grand cercle indolore (~10 s/cercle).',        muscles:['fessiers','quad'], minLevel:0 },
+  { id:'hanches_dyn',        zone:'hanches', method:'dynamic',    nom:'Transitions 90/90',         scheme:'8–10 passages',                            cue:'Assis au sol, passer d’un côté à l’autre, dos droit.',                                  muscles:['fessiers'], minLevel:0 },
+  { id:'hanches_stat_pigeon',zone:'hanches', method:'static',     nom:'Pigeon (fessier)',          scheme:'2 × 30 s / côté',                          cue:'Tibia devant, hanches carrées, le buste descend progressivement.',                      muscles:['fessiers'], minLevel:0 },
+  { id:'hanches_stat_psoas', zone:'hanches', method:'static',     nom:'Fente psoas',               scheme:'2 × 30 s / côté',                          cue:'Genou arrière au sol, bassin en rétroversion, ne pas cambrer.',                          muscles:['quad'], minLevel:0 },
+  { id:'hanches_pnf',        zone:'hanches', method:'pnf',        nom:'Contract-relâché adducteurs',scheme:'3 × (6 s + 20 s)',                        cue:'Position grenouille : pousser les genoux 6 s puis relâcher et descendre.',               muscles:['fessiers'], minLevel:1, caution:'Ne pas bloquer la respiration.' },
+  { id:'hanches_pails',      zone:'hanches', method:'pails_rails',nom:'PAILs/RAILs en 90/90',      scheme:'2 × (10–15 s PAIL + 10 s RAIL)',           cue:'En fin d’amplitude de rotation, contracter dans puis tirer plus loin activement.',       muscles:['fessiers','quad'], minLevel:2, caution:'Avancé — sans douleur.' },
+
+  // Chaîne postérieure
+  { id:'cp_dyn',     zone:'chaine_post', method:'dynamic',     nom:'Balancers de jambe',      scheme:'2 × 10 / jambe',        cue:'Amplitude progressive, buste stable, appui gainé.',                              muscles:['ischio'], minLevel:0 },
+  { id:'cp_stat',    zone:'chaine_post', method:'static',      nom:'Étirement ischios debout',scheme:'2 × 30 s / côté',       cue:'Charnière de hanche, dos droit, gêne légère derrière la cuisse.',                 muscles:['ischio'], minLevel:0 },
+  { id:'cp_stat_sr', zone:'chaine_post', method:'static',      nom:'Sit-and-reach au sol',    scheme:'2 × 30 s',              cue:'Jambes tendues, avancer les mains vers les orteils sans arrondir violemment.',    muscles:['ischio','lombaires'], minLevel:0 },
+  { id:'cp_pnf',     zone:'chaine_post', method:'pnf',         nom:'Hold-relâché ischios',    scheme:'3 × (6 s + amplitude)', cue:'Jambe tendue en l’air : pousser contre la main/sangle 6 s puis relâcher et gagner.', muscles:['ischio'], minLevel:1, caution:'Ne pas bloquer la respiration.' },
+  { id:'cp_pails',   zone:'chaine_post', method:'pails_rails', nom:'PAILs/RAILs ischios (pike)',scheme:'2 × (10–15 s PAIL + 10 s RAIL)', cue:'En flexion maximale, contracter dans l’étirement puis tirer activement plus loin.', muscles:['ischio'], minLevel:2, caution:'Avancé.' },
+
+  // Chevilles
+  { id:'chevilles_car',      zone:'chevilles', method:'car',        nom:'CARs de cheville',        scheme:'3–5 cercles / sens · par pied', cue:'Grand cercle lent, jambe immobile.',                                       muscles:['mollets'], minLevel:0 },
+  { id:'chevilles_dyn',      zone:'chevilles', method:'dynamic',    nom:'Knee-to-wall dynamique',  scheme:'2 × 10 / côté',                 cue:'Genou vers le mur, talon au sol, chercher l’amplitude à chaque répétition.', muscles:['mollets'], minLevel:0 },
+  { id:'chevilles_stat',     zone:'chevilles', method:'static',     nom:'Étirement mollet au mur', scheme:'2 × 30 s / côté',               cue:'Jambe arrière tendue, talon au sol.',                                      muscles:['mollets'], minLevel:0 },
+  { id:'chevilles_stat_sol', zone:'chevilles', method:'static',     nom:'Étirement soléaire',      scheme:'2 × 30 s / côté',               cue:'Même position, genou fléchi : cible le bas du mollet.',                     muscles:['mollets'], minLevel:0 },
+  { id:'chevilles_pails',    zone:'chevilles', method:'pails_rails',nom:'Dorsiflexion chargée',    scheme:'2 × (10 s PAIL + 10 s RAIL)',   cue:'Genou au-dessus des orteils, charger et contrôler la fin d’amplitude.',    muscles:['mollets'], minLevel:2, caution:'Avancé.' },
+
+  // Poignets
+  { id:'poignets_car',  zone:'poignets', method:'car',     nom:'CARs de poignet',            scheme:'5 cercles / sens', cue:'Avant-bras fixe, cercle complet lent.',                              muscles:['avantbras'], minLevel:0 },
+  { id:'poignets_dyn',  zone:'poignets', method:'dynamic', nom:'Flexions/extensions à genoux',scheme:'2 × 8',           cue:'Paumes puis dos des mains au sol, charge progressive et contrôlée.',  muscles:['avantbras'], minLevel:0 },
+  { id:'poignets_stat', zone:'poignets', method:'static',  nom:'Étirement fléchisseurs',     scheme:'2 × 20–30 s',      cue:'Bras tendu, doigts vers le bas, tirer doucement.',                    muscles:['avantbras'], minLevel:0 },
+];
+
 // ── Grossesse program config ──────────────────────────────────────────────────
 
 export const GROSSESSE_MOIS_CONFIG = {

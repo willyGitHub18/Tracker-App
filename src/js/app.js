@@ -17,6 +17,7 @@ import { getPrograms, getActivePrograms, getArchivedPrograms, getProgram, getPro
 import { buildAthxProgram, EXERCISE_CUES } from './data.js';
 import { getRecord, getVacances, setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
 import { renderNutritionSection, bindNutritionEvents } from './nutrition-plan.js';
+import { renderMobiliteSection } from './mobilite.js';
 
 // ── Custom confirm modal (iOS PWA-safe) ─────────────────────────────────────
 
@@ -96,6 +97,7 @@ export function showSection(id) {
   }
   if(id === 'musculaire')  renderMusculaire();
   if(id === 'nutrition-section') renderNutritionSection();
+  if(id === 'mobilite-section') renderMobiliteSection();
   if(id === 'programmes')  renderPrograms();
   if(id === 'programme') {
     // Redirect to Programmes tab — Programme tab is hidden

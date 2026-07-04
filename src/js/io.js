@@ -21,6 +21,8 @@ export function exportJSON() {
     active_programs: (typeof dbGet === 'function' ? dbGet('programs_active') : null) || [],
     active_program: (typeof dbGet === 'function' ? dbGet('program_active') : null) || null,
     nutrition_plans: (typeof dbGet === 'function' ? dbGet('nutrition_plans') : null) || [],
+    mobility_assessment: (typeof dbGet === 'function' ? dbGet('mobility_assessment') : null) || null,
+    mobility_logs: (typeof dbGet === 'function' ? dbGet('mobility_logs') : null) || [],
   };
   _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
 }
@@ -106,6 +108,12 @@ export function importJSON(event) {
       }
       if(Array.isArray(parsed.nutrition_plans) && typeof dbSet === 'function') {
         dbSet('nutrition_plans', parsed.nutrition_plans);
+      }
+      if(parsed.mobility_assessment && typeof dbSet === 'function') {
+        dbSet('mobility_assessment', parsed.mobility_assessment);
+      }
+      if(Array.isArray(parsed.mobility_logs) && typeof dbSet === 'function') {
+        dbSet('mobility_logs', parsed.mobility_logs);
       }
       if(Array.isArray(parsed.active_programs) && parsed.active_programs.length > 0 && typeof dbSet === 'function') {
         dbSet('programs_active', parsed.active_programs);

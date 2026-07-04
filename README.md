@@ -40,7 +40,7 @@ Application de suivi d'entraînement personnalisée — PWA déployable sur iPho
 - **Cumul automatique** de tous les programmes actifs simultanément, aligné par timestamps réels
 - **Séances cardio incluses** : charge = `durée(min) × RPE/10 × 0.2`, répartie sur les muscles de la modalité (course → quadriceps/mollets, rameur → dos/jambes…)
 - Dégradé de couleur continu : gris (repos) → vert → ambre → orange → rouge
-- Détail par muscle : charge résiduelle %, estimation de récupération, exercices contributeurs
+- Détail par muscle : charge résiduelle %, estimation de récupération, exercices contributeurs (legacy ATHX + programmes générés + séances cardio, en charge résiduelle décroissante)
 
 ### 🎯 Wizard de construction de programme
 Création de programme personnalisé en 8 étapes :
