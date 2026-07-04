@@ -2561,7 +2561,7 @@ const MOBILITY_LOAD_SCALE = 0.1;
 // `car` = id du drill CARs socle de la zone (null si pas de CAR dédié).
 const MOBILITY_ZONES = [
   { id:'cou',         label:'Cou',                  icon:'🙆', muscles:['trapeze'],                     car:'cou_car' },
-  { id:'epaules',     label:'Épaules',              icon:'🤸', muscles:['deltAnt','deltPost','pec','trapeze'], car:'epaules_car' },
+  { id:'epaules',     label:'Épaules / bras',       icon:'🤸', muscles:['deltAnt','deltPost','pec','trapeze','triceps','biceps'], car:'epaules_car' },
   { id:'thoracique',  label:'Colonne thoracique',   icon:'🌀', muscles:['dorsaux','trapeze'],           car:'thoracique_car' },
   { id:'hanches',     label:'Hanches',              icon:'🦵', muscles:['fessiers','quad','core'],      car:'hanches_car' },
   { id:'chaine_post', label:'Chaîne postérieure',   icon:'🔗', muscles:['ischio','lombaires','fessiers'], car:null },
@@ -2615,6 +2615,8 @@ const MOBILITY_DRILLS = [
   { id:'epaules_stat', zone:'epaules', method:'static',     nom:'Étirement pec au chambranle',scheme:'2 × 30 s / côté',                     cue:'Avant-bras contre le mur, avancer doucement le buste. Gêne légère.',                                 muscles:['pec','deltAnt'], minLevel:0 },
   { id:'epaules_pnf',  zone:'epaules', method:'pnf',        nom:'Contract-relâché épaule',    scheme:'3 × (6 s poussée + 20 s étirement)',  cue:'Pousser doucement dans le mur 6 s, relâcher, gagner l’amplitude.',                                    muscles:['deltAnt','pec'], minLevel:1, caution:'Ne pas bloquer la respiration (Valsalva).' },
   { id:'epaules_pails',zone:'epaules', method:'pails_rails',nom:'PAILs/RAILs suspension',     scheme:'2 × (10 s PAIL + 10 s RAIL)',         cue:'En fin d’amplitude : contracter DANS l’étirement (PAIL), puis tirer plus loin activement (RAIL).',    muscles:['deltAnt','deltPost'], minLevel:2, caution:'Avancé — jamais dans la douleur.' },
+  { id:'epaules_stat_tri',zone:'epaules', method:'static', nom:'Étirement triceps overhead',  scheme:'2 × 30 s / côté', cue:'Coude en l’air, la main descend dans le dos ; l’autre main tire doucement le coude.',            muscles:['triceps'], minLevel:0 },
+  { id:'epaules_stat_bi', zone:'epaules', method:'static', nom:'Étirement biceps',            scheme:'2 × 30 s / côté', cue:'Bras tendu en arrière, paume vers l’arrière contre un mur/montant ; pivoter légèrement le buste.', muscles:['biceps'], minLevel:0 },
 
   // Thoracique
   { id:'thoracique_car',  zone:'thoracique', method:'car',     nom:'CARs colonne thoracique', scheme:'3–5 / sens',                cue:'Rotation segmentaire lente, bassin fixe.',                                                muscles:['dorsaux'], minLevel:0 },
@@ -2652,6 +2654,7 @@ const MOBILITY_DRILLS = [
   // Auto-massage (récup post-séance — GOWOD Recover)
   { id:'cou_mass',         zone:'cou',         method:'massage', nom:'Détente nuque / trapèzes',    scheme:'30–45 s / côté', cue:'Balle contre le mur sur le trapèze, petits mouvements, respiration lente.',            muscles:['trapeze'], minLevel:0 },
   { id:'epaules_mass',     zone:'epaules',     method:'massage', nom:'Balle pec / deltoïde',        scheme:'30–60 s / côté', cue:'Balle contre un mur sur le pectoral et le deltoïde, rouler lentement, s’attarder sur les points sensibles.', muscles:['pec','deltAnt'], minLevel:0 },
+  { id:'bras_mass',        zone:'epaules',     method:'massage', nom:'Auto-massage bras (triceps/biceps)', scheme:'30–45 s / côté', cue:'Rouleau ou balle sur le triceps puis le biceps, pression modérée, lent.',              muscles:['triceps','biceps'], minLevel:0 },
   { id:'thoracique_mass',  zone:'thoracique',  method:'massage', nom:'Rouleau haut du dos',         scheme:'30–60 s',        cue:'Rouleau sous les omoplates, rouler doucement le long de la colonne thoracique (pas les lombaires).', muscles:['dorsaux'], minLevel:0 },
   { id:'hanches_mass',     zone:'hanches',     method:'massage', nom:'Rouleau fessiers / quadriceps',scheme:'30–60 s / côté',cue:'Assis sur le rouleau pour le fessier, puis à plat ventre pour le quadriceps. Lent, respiration.', muscles:['fessiers','quad'], minLevel:0 },
   { id:'cp_mass',          zone:'chaine_post', method:'massage', nom:'Rouleau ischios / mollets',   scheme:'30–60 s / côté', cue:'Rouler l’arrière de la cuisse puis le mollet, du bas vers le haut. Éviter l’arrière du genou.', muscles:['ischio','mollets'], minLevel:0 },
@@ -9185,6 +9188,18 @@ function _renderProgres() {
 
 let _currentRecup = null;
 
+const RECUP_THRESH = 10;  // % de charge résiduelle au-delà duquel une zone est « sollicitée »
+
+// Muscles les plus chargés (mêmes valeurs que l'onglet Muscles) — pour la transparence.
+function _topLoadedMuscles(n) {
+  const load = calcGlobalMuscleLoad();
+  return Object.keys(MUSCLE_LABELS)
+    .map(m => ({ label: MUSCLE_LABELS[m], pct: musclePercent(m, load) }))
+    .filter(e => e.pct >= 5)
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, n);
+}
+
 // Zones classées par charge musculaire résiduelle (SRA) décroissante.
 function _recupZones() {
   const load = calcGlobalMuscleLoad();
@@ -9200,7 +9215,7 @@ function _recupZones() {
 function _computeRecup() {
   const seed   = _daySeed();
   const ranked = _recupZones();
-  const loaded = ranked.filter(r => r.charge >= 15);   // seuil « sollicité »
+  const loaded = ranked.filter(r => r.charge >= RECUP_THRESH);
   const picks  = (loaded.length ? loaded : ranked).slice(0, 3);
   const blocks = picks.map(p => {
     const statics = MOBILITY_DRILLS.filter(d => d.zone === p.zone.id && d.method === 'static');
@@ -9210,7 +9225,7 @@ function _computeRecup() {
     if(mass.length)    drills.push(mass[seed % mass.length]);
     return { zone: p.zone, charge: Math.round(p.charge), drills };
   }).filter(b => b.drills.length);
-  return { blocks, hasLoad: loaded.length > 0 };
+  return { blocks, hasLoad: loaded.length > 0, topMuscles: _topLoadedMuscles(3) };
 }
 
 function _renderRecup() {
@@ -9219,13 +9234,13 @@ function _renderRecup() {
   const r = _computeRecup();
   _currentRecup = r;
 
-  const intro = r.hasLoad
-    ? `<div class="mob-focus-note">💆 Récup ciblée sur tes muscles les plus sollicités récemment (d'après le suivi muscles).</div>`
-    : `<div class="wiz-note" style="margin-bottom:10px">Aucune séance récente détectée — voici une récup générale douce. Respiration lente tout du long.</div>`;
+  const intro = r.topMuscles.length
+    ? `<div class="mob-focus-note">💆 Récup ciblée d'après le suivi muscles — les plus chargés : ${r.topMuscles.map(t => `${esc(t.label)} ${t.pct}%`).join(' · ')}.</div>`
+    : `<div class="wiz-note" style="margin-bottom:10px">Aucune charge récente détectée dans le suivi muscles — récup générale douce. Respiration lente tout du long.</div>`;
 
   const blocksHtml = r.blocks.map(b => `
     <div class="mob-block">
-      <div class="mob-block-title">${b.zone.icon} ${esc(b.zone.label)}${b.charge >= 15 ? ` <span class="mob-why-tag">chargée</span>` : ''}</div>
+      <div class="mob-block-title">${b.zone.icon} ${esc(b.zone.label)}${b.charge >= RECUP_THRESH ? ` <span class="mob-why-tag">${b.charge}% chargée</span>` : ''}</div>
       ${b.drills.map(_drillCard).join('')}
     </div>`).join('');
 

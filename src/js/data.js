@@ -359,7 +359,7 @@ export const MOBILITY_LOAD_SCALE = 0.1;
 // `car` = id du drill CARs socle de la zone (null si pas de CAR dédié).
 export const MOBILITY_ZONES = [
   { id:'cou',         label:'Cou',                  icon:'🙆', muscles:['trapeze'],                     car:'cou_car' },
-  { id:'epaules',     label:'Épaules',              icon:'🤸', muscles:['deltAnt','deltPost','pec','trapeze'], car:'epaules_car' },
+  { id:'epaules',     label:'Épaules / bras',       icon:'🤸', muscles:['deltAnt','deltPost','pec','trapeze','triceps','biceps'], car:'epaules_car' },
   { id:'thoracique',  label:'Colonne thoracique',   icon:'🌀', muscles:['dorsaux','trapeze'],           car:'thoracique_car' },
   { id:'hanches',     label:'Hanches',              icon:'🦵', muscles:['fessiers','quad','core'],      car:'hanches_car' },
   { id:'chaine_post', label:'Chaîne postérieure',   icon:'🔗', muscles:['ischio','lombaires','fessiers'], car:null },
@@ -413,6 +413,8 @@ export const MOBILITY_DRILLS = [
   { id:'epaules_stat', zone:'epaules', method:'static',     nom:'Étirement pec au chambranle',scheme:'2 × 30 s / côté',                     cue:'Avant-bras contre le mur, avancer doucement le buste. Gêne légère.',                                 muscles:['pec','deltAnt'], minLevel:0 },
   { id:'epaules_pnf',  zone:'epaules', method:'pnf',        nom:'Contract-relâché épaule',    scheme:'3 × (6 s poussée + 20 s étirement)',  cue:'Pousser doucement dans le mur 6 s, relâcher, gagner l’amplitude.',                                    muscles:['deltAnt','pec'], minLevel:1, caution:'Ne pas bloquer la respiration (Valsalva).' },
   { id:'epaules_pails',zone:'epaules', method:'pails_rails',nom:'PAILs/RAILs suspension',     scheme:'2 × (10 s PAIL + 10 s RAIL)',         cue:'En fin d’amplitude : contracter DANS l’étirement (PAIL), puis tirer plus loin activement (RAIL).',    muscles:['deltAnt','deltPost'], minLevel:2, caution:'Avancé — jamais dans la douleur.' },
+  { id:'epaules_stat_tri',zone:'epaules', method:'static', nom:'Étirement triceps overhead',  scheme:'2 × 30 s / côté', cue:'Coude en l’air, la main descend dans le dos ; l’autre main tire doucement le coude.',            muscles:['triceps'], minLevel:0 },
+  { id:'epaules_stat_bi', zone:'epaules', method:'static', nom:'Étirement biceps',            scheme:'2 × 30 s / côté', cue:'Bras tendu en arrière, paume vers l’arrière contre un mur/montant ; pivoter légèrement le buste.', muscles:['biceps'], minLevel:0 },
 
   // Thoracique
   { id:'thoracique_car',  zone:'thoracique', method:'car',     nom:'CARs colonne thoracique', scheme:'3–5 / sens',                cue:'Rotation segmentaire lente, bassin fixe.',                                                muscles:['dorsaux'], minLevel:0 },
@@ -450,6 +452,7 @@ export const MOBILITY_DRILLS = [
   // Auto-massage (récup post-séance — GOWOD Recover)
   { id:'cou_mass',         zone:'cou',         method:'massage', nom:'Détente nuque / trapèzes',    scheme:'30–45 s / côté', cue:'Balle contre le mur sur le trapèze, petits mouvements, respiration lente.',            muscles:['trapeze'], minLevel:0 },
   { id:'epaules_mass',     zone:'epaules',     method:'massage', nom:'Balle pec / deltoïde',        scheme:'30–60 s / côté', cue:'Balle contre un mur sur le pectoral et le deltoïde, rouler lentement, s’attarder sur les points sensibles.', muscles:['pec','deltAnt'], minLevel:0 },
+  { id:'bras_mass',        zone:'epaules',     method:'massage', nom:'Auto-massage bras (triceps/biceps)', scheme:'30–45 s / côté', cue:'Rouleau ou balle sur le triceps puis le biceps, pression modérée, lent.',              muscles:['triceps','biceps'], minLevel:0 },
   { id:'thoracique_mass',  zone:'thoracique',  method:'massage', nom:'Rouleau haut du dos',         scheme:'30–60 s',        cue:'Rouleau sous les omoplates, rouler doucement le long de la colonne thoracique (pas les lombaires).', muscles:['dorsaux'], minLevel:0 },
   { id:'hanches_mass',     zone:'hanches',     method:'massage', nom:'Rouleau fessiers / quadriceps',scheme:'30–60 s / côté',cue:'Assis sur le rouleau pour le fessier, puis à plat ventre pour le quadriceps. Lent, respiration.', muscles:['fessiers','quad'], minLevel:0 },
   { id:'cp_mass',          zone:'chaine_post', method:'massage', nom:'Rouleau ischios / mollets',   scheme:'30–60 s / côté', cue:'Rouler l’arrière de la cuisse puis le mollet, du bas vers le haut. Éviter l’arrière du genou.', muscles:['ischio','mollets'], minLevel:0 },

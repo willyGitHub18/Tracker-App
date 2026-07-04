@@ -12,7 +12,7 @@
 
 import { esc } from './security.js';
 import { dbGet, dbSet } from './db.js';
-import { MOBILITY_ZONES, MOBILITY_DRILLS, MOBILITY_TESTS, MOBILITY_PROGRAM_FOCUS } from './data.js';
+import { MOBILITY_ZONES, MOBILITY_DRILLS, MOBILITY_TESTS, MOBILITY_PROGRAM_FOCUS, MUSCLE_LABELS } from './data.js';
 import { calcGlobalMuscleLoad, musclePercent } from './musculaire.js';
 import { getAllActivePrograms } from './programs.js';
 
@@ -367,6 +367,18 @@ function _renderProgres() {
 
 let _currentRecup = null;
 
+const RECUP_THRESH = 10;  // % de charge résiduelle au-delà duquel une zone est « sollicitée »
+
+// Muscles les plus chargés (mêmes valeurs que l'onglet Muscles) — pour la transparence.
+function _topLoadedMuscles(n) {
+  const load = calcGlobalMuscleLoad();
+  return Object.keys(MUSCLE_LABELS)
+    .map(m => ({ label: MUSCLE_LABELS[m], pct: musclePercent(m, load) }))
+    .filter(e => e.pct >= 5)
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, n);
+}
+
 // Zones classées par charge musculaire résiduelle (SRA) décroissante.
 function _recupZones() {
   const load = calcGlobalMuscleLoad();
@@ -382,7 +394,7 @@ function _recupZones() {
 function _computeRecup() {
   const seed   = _daySeed();
   const ranked = _recupZones();
-  const loaded = ranked.filter(r => r.charge >= 15);   // seuil « sollicité »
+  const loaded = ranked.filter(r => r.charge >= RECUP_THRESH);
   const picks  = (loaded.length ? loaded : ranked).slice(0, 3);
   const blocks = picks.map(p => {
     const statics = MOBILITY_DRILLS.filter(d => d.zone === p.zone.id && d.method === 'static');
@@ -392,7 +404,7 @@ function _computeRecup() {
     if(mass.length)    drills.push(mass[seed % mass.length]);
     return { zone: p.zone, charge: Math.round(p.charge), drills };
   }).filter(b => b.drills.length);
-  return { blocks, hasLoad: loaded.length > 0 };
+  return { blocks, hasLoad: loaded.length > 0, topMuscles: _topLoadedMuscles(3) };
 }
 
 function _renderRecup() {
@@ -401,13 +413,13 @@ function _renderRecup() {
   const r = _computeRecup();
   _currentRecup = r;
 
-  const intro = r.hasLoad
-    ? `<div class="mob-focus-note">💆 Récup ciblée sur tes muscles les plus sollicités récemment (d'après le suivi muscles).</div>`
-    : `<div class="wiz-note" style="margin-bottom:10px">Aucune séance récente détectée — voici une récup générale douce. Respiration lente tout du long.</div>`;
+  const intro = r.topMuscles.length
+    ? `<div class="mob-focus-note">💆 Récup ciblée d'après le suivi muscles — les plus chargés : ${r.topMuscles.map(t => `${esc(t.label)} ${t.pct}%`).join(' · ')}.</div>`
+    : `<div class="wiz-note" style="margin-bottom:10px">Aucune charge récente détectée dans le suivi muscles — récup générale douce. Respiration lente tout du long.</div>`;
 
   const blocksHtml = r.blocks.map(b => `
     <div class="mob-block">
-      <div class="mob-block-title">${b.zone.icon} ${esc(b.zone.label)}${b.charge >= 15 ? ` <span class="mob-why-tag">chargée</span>` : ''}</div>
+      <div class="mob-block-title">${b.zone.icon} ${esc(b.zone.label)}${b.charge >= RECUP_THRESH ? ` <span class="mob-why-tag">${b.charge}% chargée</span>` : ''}</div>
       ${b.drills.map(_drillCard).join('')}
     </div>`).join('');
 
