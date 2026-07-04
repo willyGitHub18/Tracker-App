@@ -277,6 +277,18 @@ function _renderProgSaisie(prog) {
         return; // skip normal grid
       }
 
+      // Mobilité : pas de grille kg/reps — repère technique + case « réalisé »
+      if(ex.kind === 'mobility') {
+        const mraw = getProgRecord(prog.id, ex.id, week) || {};
+        html += `<div class="cardio-ex-body">`;
+        if(ex.cue)     html += `<div class="cardio-detail"><strong>Repère :</strong> ${esc(ex.cue)}</div>`;
+        if(ex.caution) html += `<div class="mob-caution">⚠️ ${esc(ex.caution)}</div>`;
+        html += `<label class="cardio-check"><input type="checkbox" id="mdone_${ex.id}" ${mraw.done?'checked':''}> Réalisé</label>`;
+        if(mraw.done) html += `<div class="sets-summary">✓ Réalisé</div>`;
+        html += `</div></div>`; // cardio-ex-body + ex-block
+        return; // skip normal grid
+      }
+
       // Cardio : pas de grille kg/reps — carte séance (zone/scheme) + log durée/RPE/distance
       if(ex.kind === 'cardio') {
         const craw = getProgRecord(prog.id, ex.id, week) || {};
@@ -426,6 +438,16 @@ function _saveProgSaisie(prog, week, dayName) {
   if(!day) return;
 
   day.exercices.forEach(ex => {
+    // Mobilité : case « réalisé » (pas de séries kg/reps)
+    if(ex.kind === 'mobility') {
+      const doneEl = document.getElementById(`mdone_${ex.id}`);
+      const done   = doneEl?.checked === true;
+      const prev   = getProgRecord(prog.id, ex.id, week)?.done === true;
+      if(!done && !prev) return;
+      setProgRecord(prog.id, ex.id, week, { mobility: true, done, ts: Date.now() });
+      return;
+    }
+
     // Cardio : log durée / RPE / distance / réalisée (pas de séries kg/reps)
     if(ex.kind === 'cardio') {
       const durEl  = document.getElementById(`cdur_${ex.id}`);

@@ -3,7 +3,7 @@
  */
 
 import { loadExercisesDB, searchExercises, FALLBACK_EXERCISES } from './exercises-db.js';
-import { AGE_TRANCHES, AGE_MODIFIERS, GROSSESSE_MOIS_CONFIG, POSTNATAL_PHASES, CARDIO_MODALITIES } from './data.js';
+import { AGE_TRANCHES, AGE_MODIFIERS, GROSSESSE_MOIS_CONFIG, POSTNATAL_PHASES, CARDIO_MODALITIES, MOBILITY_ZONES } from './data.js';
 import { generateProgram }  from './generator.js';
 import { saveProgram, setActiveProgram, newProgramId } from './programs.js';
 import { getPrograms }      from './programs.js';
@@ -24,6 +24,7 @@ const _config = {
   dureeSeance:      60,
   materiel:         [],
   cardioModalities: [],  // ids modalités cardio (course, vélo, rameur, skierg…)
+  mobilityZones:    [],  // ids zones mobilité ciblées (épaules, hanches, chevilles…)
   exercicesForces:  [],
   exercicesExclus:  [],
   duree:            12,
@@ -82,7 +83,7 @@ export async function initWizard() {
     domaine: null, niveau: null, age: null, seancesParSemaine: 3,
     grossesse_type: null, mois_grossesse: 5, postnatal_phase: null,
     nutrition: null,
-    dureeSeance: 60, materiel: [], cardioModalities: [], exercicesForces: [], exercicesExclus: [],
+    dureeSeance: 60, materiel: [], cardioModalities: [], mobilityZones: [], exercicesForces: [], exercicesExclus: [],
     duree: 12, competition: null, name: '', orm: {}, bodyWeight: null,
   });
 
@@ -315,10 +316,10 @@ function step3() {
 // ── Step 4 — Matériel ──────────────────────────────────────────────────────
 
 function step4() {
-  const isCardio = _config.domaine === 'cardio';
+  const noMat = _config.domaine === 'cardio' || _config.domaine === 'mobilite';
   return `
     <div class="wiz-title">Quel matériel as-tu disponible ?</div>
-    <div class="wiz-subtitle">${isCardio ? 'Optionnel pour un programme cardio' : 'Sélectionne tout ce dont tu disposes'}</div>
+    <div class="wiz-subtitle">${noMat ? 'Optionnel — ce programme ne requiert pas de matériel' : 'Sélectionne tout ce dont tu disposes'}</div>
     <div class="wiz-materiel-grid">
       ${MATERIELS.map(m => `
         <div class="wiz-materiel-item ${_config.materiel.includes(m.id) ? 'selected' : ''}"
@@ -327,8 +328,10 @@ function step4() {
           <span class="wiz-mat-label">${m.label}</span>
         </div>`).join('')}
     </div>
-    <div class="wiz-note">${isCardio
+    <div class="wiz-note">${_config.domaine === 'cardio'
       ? '💡 Aucun matériel requis — tu choisiras tes activités (course, vélo, rameur, ski-erg…) à l\'étape suivante. Tu peux passer directement.'
+      : _config.domaine === 'mobilite'
+      ? '💡 Aucun matériel requis (un tapis, éventuellement une balle/un rouleau pour l\'auto-massage). Tu choisiras tes zones à l\'étape suivante.'
       : '💡 Le programme s\'adapte automatiquement au matériel sélectionné.'}</div>`;
 }
 
@@ -338,6 +341,7 @@ function step5() {
   // Cardio : sélection des modalités (course, vélo, rameur, ski-erg…) au lieu de la
   // recherche d'exercices — le programme d'endurance se construit autour des modalités.
   if(_config.domaine === 'cardio') return step5_cardio();
+  if(_config.domaine === 'mobilite') return step5_mobilite();
 
   const forcedHtml = _config.exercicesForces.map((ex, i) =>
     `<div class="wiz-ex-tag">
@@ -397,6 +401,26 @@ function step5_cardio() {
       }).join('')}
     </div>
     ${_config.cardioModalities.length === 0 ? '<div class="wiz-note">Aucune sélection = course à pied par défaut (+ marche pour la récupération).</div>' : ''}`;
+}
+
+// ── Step 5 (mobilité) — Zones à travailler ─────────────────────────────────────
+
+function step5_mobilite() {
+  return `
+    <div class="wiz-title">Quelles zones veux-tu travailler ?</div>
+    <div class="wiz-subtitle">Choisis tes zones prioritaires (ou laisse vide = toutes). Le focus alterne ces zones sur la semaine, avec une progression douce. Tu peux aussi t'appuyer sur ton bilan dans la section 🧘 Mobilité.</div>
+    <div class="wiz-materiel-grid">
+      ${MOBILITY_ZONES.map(z => {
+        const sel = _config.mobilityZones.includes(z.id);
+        return `
+        <div class="wiz-materiel-item ${sel ? 'selected' : ''}"
+             data-toggle="mobilityZones" data-value="${z.id}">
+          <span class="wiz-mat-icon">${z.icon}</span>
+          <span class="wiz-mat-label">${z.label}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    ${_config.mobilityZones.length === 0 ? '<div class="wiz-note">Aucune sélection = toutes les zones (mobilité générale).</div>' : ''}`;
 }
 
 // ── Step 6 — Durée & compétition ──────────────────────────────────────────────
@@ -534,6 +558,7 @@ function step7() {
       <div class="wiz-recap-row"><span>Durée</span><strong>${_config.duree} semaines</strong></div>
       ${_config.competition ? `<div class="wiz-recap-row"><span>Compétition</span><strong>${_config.competition.type || 'Oui'} · ${_fmtDate(_config.competition.date)}</strong></div>` : ''}
       ${_config.exercicesForces.length ? `<div class="wiz-recap-row"><span>Exercices forcés</span><strong>${_config.exercicesForces.map(e=>e.name).join(', ')}</strong></div>` : ''}
+      ${_config.domaine === 'mobilite' ? `<div class="wiz-recap-row"><span>Zones</span><strong>${_config.mobilityZones.length ? _config.mobilityZones.map(zid => MOBILITY_ZONES.find(z=>z.id===zid)?.label).filter(Boolean).join(', ') : 'Toutes'}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'prenatal' ? `<div class="wiz-recap-row"><span>Mois de grossesse</span><strong>${GROSSESSE_MOIS_CONFIG[_config.mois_grossesse]?.label}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'postnatal' ? `<div class="wiz-recap-row"><span>Phase post-natale</span><strong>${POSTNATAL_PHASES.find(p=>p.id===_config.postnatal_phase)?.label||'—'}</strong></div>` : ''}
     </div>
@@ -588,13 +613,6 @@ export function wizBack() {
 }
 
 export function wizGenerate() {
-  // Mobilité : gérée dans la section dédiée 🧘 (routine quotidienne adaptative),
-  // pas comme un programme cadencé. Le focus cadrable via wizard arrive en C2.
-  if(_config.domaine === 'mobilite') {
-    window._showSaveToast?.('🧘 La mobilité se gère dans la section dédiée');
-    window.showSection?.('mobilite-section');
-    return;
-  }
   if(!_validateStep()) return;
   _collectStep();
 
@@ -648,8 +666,8 @@ function _validateStep() {
     if(_config.grossesse_type === 'postnatal' && !_config.postnatal_phase) { _showError('Sélectionne ta phase post-natale.'); return false; }
     return true;
   }
-  // Matériel (step4 @ idx 5) requis — sauf cardio (course/marche sans matériel).
-  if(_step === 5 && _config.materiel.length === 0 && _config.domaine !== 'cardio') {
+  // Matériel (step4 @ idx 5) requis — sauf cardio et mobilité (sans matériel).
+  if(_step === 5 && _config.materiel.length === 0 && _config.domaine !== 'cardio' && _config.domaine !== 'mobilite') {
     _showError('Sélectionne au moins un type de matériel.');
     return false;
   }

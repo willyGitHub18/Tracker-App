@@ -4,7 +4,7 @@
  */
 
 import { filterExercises } from './exercises-db.js';
-import { AGE_MODIFIERS, MIXTE_SPLITS, GROSSESSE_MOIS_CONFIG, GROSSESSE_EXERCISES_PRENATAL, GROSSESSE_SEMAINE_TYPE, POSTNATAL_PHASES, PILATES_VIDEOS, CARDIO_ZONES, CARDIO_MODALITIES, CARDIO_SESSION_TYPES, CARDIO_CUES } from './data.js';
+import { AGE_MODIFIERS, MIXTE_SPLITS, GROSSESSE_MOIS_CONFIG, GROSSESSE_EXERCISES_PRENATAL, GROSSESSE_SEMAINE_TYPE, POSTNATAL_PHASES, PILATES_VIDEOS, CARDIO_ZONES, CARDIO_MODALITIES, CARDIO_SESSION_TYPES, CARDIO_CUES, MOBILITY_ZONES, MOBILITY_DRILLS } from './data.js';
 
 // ── Phase structures by duration ──────────────────────────────────────────────
 
@@ -113,6 +113,10 @@ export function generateProgram(config, newProgramId) {
   // ── Cardio / Endurance: modèle de prescription dédié (zones, intervalles) ───
   if(domaine === 'cardio') {
     return _generateCardioProg(config, newProgramId);
+  }
+
+  if(domaine === 'mobilite') {
+    return _generateMobiliteProg(config, newProgramId);
   }
 
   // 1. Get phase template
@@ -684,6 +688,98 @@ function _generateCardioProg(config, id) {
 
 function _isQuality(type) {
   return ['tempo','threshold','vo2max','race','fartlek'].includes(type);
+}
+
+// ── Mobilité — focus cadrable (souple, modèle kind:'mobility') ──────────────────
+// Programme non cadencé au jour près : des séances de mobilité sur les zones cibles,
+// avec progression douce (PNF puis fin d'amplitude introduits selon niveau/avancée).
+const _MOB_LVL = { debutant: 0, intermediaire: 1, avance: 2 };
+
+function _mobDrill(id) { return MOBILITY_DRILLS.find(d => d.id === id); }
+
+function _mobExFromDrill(d, zone) {
+  if(!d) return null;
+  return {
+    id: d.id, nom: d.nom, kind: 'mobility', method: d.method,
+    zone: zone.id, zoneLabel: zone.label,
+    scheme: d.scheme, cue: d.cue, caution: d.caution || null,
+    muscles: d.muscles || zone.muscles,
+  };
+}
+
+function _generateMobiliteProg(config, id) {
+  const { niveau, age, seancesParSemaine, duree, name, mobilityZones = [] } = config;
+  const lvl   = _MOB_LVL[niveau] ?? 1;
+  const older = age === '50-59' || age === '60+';
+
+  // Zones cibles : choix du wizard, sinon toutes.
+  const chosen = Array.isArray(mobilityZones) ? mobilityZones : [];
+  let zones = MOBILITY_ZONES.filter(z => chosen.includes(z.id));
+  if(!zones.length) zones = MOBILITY_ZONES.slice();
+
+  const totalWeeks = Math.max(4, Math.min(20, duree || 8));
+  const nSessions  = Math.max(2, Math.min(5, seancesParSemaine || 3));
+  const per        = Math.max(2, Math.ceil(zones.length / nSessions));
+
+  const semaines = [];
+  for(let w = 1; w <= totalWeeks; w++) {
+    const prog       = totalWeeks > 1 ? (w - 1) / (totalWeeks - 1) : 0;  // 0..1
+    const allowPNF   = lvl >= 1 && prog >= 0.35;
+    const allowPAILs = lvl >= 2 && !older && prog >= 0.6;
+    const phaseName  = prog < 0.5 ? 'Acquisition' : 'Approfondissement';
+
+    const jours = [];
+    for(let s = 0; s < nSessions; s++) {
+      const start = (s * per) % zones.length;
+      const sessZones = [];
+      for(let k = 0; k < Math.min(per, zones.length); k++) {
+        const z = zones[(start + k) % zones.length];
+        if(!sessZones.includes(z)) sessZones.push(z);
+      }
+
+      const exercices = [];
+      sessZones.forEach(z => {
+        if(z.car) { const c = _mobDrill(z.car); if(c) exercices.push(_mobExFromDrill(c, z)); }
+        const pool = MOBILITY_DRILLS.filter(d =>
+          d.zone === z.id && d.method !== 'car' && d.method !== 'massage' && d.minLevel <= lvl);
+        const methods = ['dynamic', 'static'];
+        if(allowPNF)   methods.push('pnf');
+        if(allowPAILs) methods.push('pails_rails');
+        methods.forEach(m => {
+          const cand = pool.filter(d => d.method === m);
+          if(cand.length) exercices.push(_mobExFromDrill(cand[w % cand.length], z));  // varie par semaine
+        });
+      });
+
+      jours.push({ nom: `Séance ${s + 1}`, split: 'Mobilité', exercices: exercices.filter(Boolean) });
+    }
+
+    semaines.push({
+      num: w, phase: phaseName, isDeload: false, isTaper: false,
+      rpeTarget: 'Gêne légère (étirement)', intensite: 0.5,
+      distribution: `${nSessions} séances · ${zones.length} zones`,
+      jours,
+    });
+  }
+
+  const mid = Math.ceil(totalWeeks / 2);
+  return {
+    id,
+    name:      name || `Mobilité ${totalWeeks} sem.`,
+    subtype:   'mobilite',
+    status:    'active',
+    createdAt: Date.now(),
+    config,
+    zones:     zones.map(z => z.id),
+    zoneLabel: zones.map(z => z.label).join(' · '),
+    phases: [
+      { nom: 'Acquisition',       debut: 1,       fin: mid,        intensite: 0.5, rpeTarget: '—' },
+      { nom: 'Approfondissement', debut: mid + 1, fin: totalWeeks, intensite: 0.5, rpeTarget: '—' },
+    ],
+    semaines,
+    orm: {},
+    totalWeeks,
+  };
 }
 
 function _resolveCardioModalities(chosen) {

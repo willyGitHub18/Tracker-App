@@ -613,6 +613,9 @@ function _renderProgDetailView(prog, container) {
   // Cardio / endurance — vue détail dédiée (séances par semaine, pas de charges)
   if(prog.subtype === 'cardio') { _renderCardioDetailView(prog, container); return; }
 
+  // Mobilité — vue détail dédiée (séances de mobilité, pas de charges)
+  if(prog.subtype === 'mobilite') { _renderMobiliteDetailView(prog, container); return; }
+
   // ── Generated program — rich view (pills par jour comme ATHX) ──────────────
 
   // Phase colors
@@ -901,6 +904,35 @@ function _renderProgDetailView(prog, container) {
 
 // ── Vue détail cardio / endurance ──────────────────────────────────────────────
 // Navigation façon ATHX : pills par JOUR → sous-boutons par SEMAINE → fiche séance riche.
+function _renderMobiliteDetailView(prog, container) {
+  const sems = prog.semaines || [];
+  const ref  = sems[0];
+  const days = ref?.jours || [];
+
+  const drillCard = d => `<div class="mob-drill">
+      <div class="mob-drill-head"><span class="mob-drill-name">${esc(d.nom || '')}</span><span class="mob-drill-scheme">${esc(d.scheme || '')}</span></div>
+      ${d.cue ? `<div class="mob-drill-cue">${esc(d.cue)}</div>` : ''}
+      ${d.caution ? `<div class="mob-caution">⚠️ ${esc(d.caution)}</div>` : ''}
+    </div>`;
+
+  const sessionsHtml = days.map(j => `
+    <div class="p-section">
+      <div class="p-sec-title">${esc(j.nom || '')}</div>
+      <div class="p-card">${(j.exercices || []).map(drillCard).join('')}</div>
+    </div>`).join('');
+
+  container.innerHTML = `
+    <div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);margin-bottom:8px">
+      <div>
+        <div style="font-size:15px;font-weight:700">${esc(prog.name)}</div>
+        <div style="font-size:11px;color:var(--text3)">🧘 Mobilité · ${prog.totalWeeks} sem. · ${prog.config?.seancesParSemaine || '?'}×/sem · ${esc(prog.zoneLabel || 'Toutes zones')}</div>
+      </div>
+      <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
+    </div>
+    <div class="p-note" style="margin:0 12px 8px">Programme <strong>souple</strong> : répartis ces séances dans la semaine (idéalement un peu chaque jour). Progression douce sur ${prog.totalWeeks} semaines — le PNF puis le travail de fin d'amplitude sont introduits progressivement selon ton niveau. Suis-les dans le Tracker. Aucun mouvement ne doit être douloureux.</div>
+    ${sessionsHtml || '<div class="wiz-note" style="margin:12px">Aucune séance générée.</div>'}`;
+}
+
 function _renderCardioDetailView(prog, container) {
   const PHASE_BAR = {
     'Base aérobie':        { bg:'#E1F5EE', col:'#0F6E56' },

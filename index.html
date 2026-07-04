@@ -3929,6 +3929,18 @@ function _renderProgSaisie(prog) {
         return; // skip normal grid
       }
 
+      // Mobilité : pas de grille kg/reps — repère technique + case « réalisé »
+      if(ex.kind === 'mobility') {
+        const mraw = getProgRecord(prog.id, ex.id, week) || {};
+        html += `<div class="cardio-ex-body">`;
+        if(ex.cue)     html += `<div class="cardio-detail"><strong>Repère :</strong> ${esc(ex.cue)}</div>`;
+        if(ex.caution) html += `<div class="mob-caution">⚠️ ${esc(ex.caution)}</div>`;
+        html += `<label class="cardio-check"><input type="checkbox" id="mdone_${ex.id}" ${mraw.done?'checked':''}> Réalisé</label>`;
+        if(mraw.done) html += `<div class="sets-summary">✓ Réalisé</div>`;
+        html += `</div></div>`; // cardio-ex-body + ex-block
+        return; // skip normal grid
+      }
+
       // Cardio : pas de grille kg/reps — carte séance (zone/scheme) + log durée/RPE/distance
       if(ex.kind === 'cardio') {
         const craw = getProgRecord(prog.id, ex.id, week) || {};
@@ -4078,6 +4090,16 @@ function _saveProgSaisie(prog, week, dayName) {
   if(!day) return;
 
   day.exercices.forEach(ex => {
+    // Mobilité : case « réalisé » (pas de séries kg/reps)
+    if(ex.kind === 'mobility') {
+      const doneEl = document.getElementById(`mdone_${ex.id}`);
+      const done   = doneEl?.checked === true;
+      const prev   = getProgRecord(prog.id, ex.id, week)?.done === true;
+      if(!done && !prev) return;
+      setProgRecord(prog.id, ex.id, week, { mobility: true, done, ts: Date.now() });
+      return;
+    }
+
     // Cardio : log durée / RPE / distance / réalisée (pas de séries kg/reps)
     if(ex.kind === 'cardio') {
       const durEl  = document.getElementById(`cdur_${ex.id}`);
@@ -6405,6 +6427,10 @@ function generateProgram(config, newProgramId) {
     return _generateCardioProg(config, newProgramId);
   }
 
+  if(domaine === 'mobilite') {
+    return _generateMobiliteProg(config, newProgramId);
+  }
+
   // 1. Get phase template
   const closestDuration = [8, 12, 16].reduce((prev, curr) =>
     Math.abs(curr - duree) < Math.abs(prev - duree) ? curr : prev
@@ -6976,6 +7002,98 @@ function _isQuality(type) {
   return ['tempo','threshold','vo2max','race','fartlek'].includes(type);
 }
 
+// ── Mobilité — focus cadrable (souple, modèle kind:'mobility') ──────────────────
+// Programme non cadencé au jour près : des séances de mobilité sur les zones cibles,
+// avec progression douce (PNF puis fin d'amplitude introduits selon niveau/avancée).
+const _MOB_LVL = { debutant: 0, intermediaire: 1, avance: 2 };
+
+function _mobDrill(id) { return MOBILITY_DRILLS.find(d => d.id === id); }
+
+function _mobExFromDrill(d, zone) {
+  if(!d) return null;
+  return {
+    id: d.id, nom: d.nom, kind: 'mobility', method: d.method,
+    zone: zone.id, zoneLabel: zone.label,
+    scheme: d.scheme, cue: d.cue, caution: d.caution || null,
+    muscles: d.muscles || zone.muscles,
+  };
+}
+
+function _generateMobiliteProg(config, id) {
+  const { niveau, age, seancesParSemaine, duree, name, mobilityZones = [] } = config;
+  const lvl   = _MOB_LVL[niveau] ?? 1;
+  const older = age === '50-59' || age === '60+';
+
+  // Zones cibles : choix du wizard, sinon toutes.
+  const chosen = Array.isArray(mobilityZones) ? mobilityZones : [];
+  let zones = MOBILITY_ZONES.filter(z => chosen.includes(z.id));
+  if(!zones.length) zones = MOBILITY_ZONES.slice();
+
+  const totalWeeks = Math.max(4, Math.min(20, duree || 8));
+  const nSessions  = Math.max(2, Math.min(5, seancesParSemaine || 3));
+  const per        = Math.max(2, Math.ceil(zones.length / nSessions));
+
+  const semaines = [];
+  for(let w = 1; w <= totalWeeks; w++) {
+    const prog       = totalWeeks > 1 ? (w - 1) / (totalWeeks - 1) : 0;  // 0..1
+    const allowPNF   = lvl >= 1 && prog >= 0.35;
+    const allowPAILs = lvl >= 2 && !older && prog >= 0.6;
+    const phaseName  = prog < 0.5 ? 'Acquisition' : 'Approfondissement';
+
+    const jours = [];
+    for(let s = 0; s < nSessions; s++) {
+      const start = (s * per) % zones.length;
+      const sessZones = [];
+      for(let k = 0; k < Math.min(per, zones.length); k++) {
+        const z = zones[(start + k) % zones.length];
+        if(!sessZones.includes(z)) sessZones.push(z);
+      }
+
+      const exercices = [];
+      sessZones.forEach(z => {
+        if(z.car) { const c = _mobDrill(z.car); if(c) exercices.push(_mobExFromDrill(c, z)); }
+        const pool = MOBILITY_DRILLS.filter(d =>
+          d.zone === z.id && d.method !== 'car' && d.method !== 'massage' && d.minLevel <= lvl);
+        const methods = ['dynamic', 'static'];
+        if(allowPNF)   methods.push('pnf');
+        if(allowPAILs) methods.push('pails_rails');
+        methods.forEach(m => {
+          const cand = pool.filter(d => d.method === m);
+          if(cand.length) exercices.push(_mobExFromDrill(cand[w % cand.length], z));  // varie par semaine
+        });
+      });
+
+      jours.push({ nom: `Séance ${s + 1}`, split: 'Mobilité', exercices: exercices.filter(Boolean) });
+    }
+
+    semaines.push({
+      num: w, phase: phaseName, isDeload: false, isTaper: false,
+      rpeTarget: 'Gêne légère (étirement)', intensite: 0.5,
+      distribution: `${nSessions} séances · ${zones.length} zones`,
+      jours,
+    });
+  }
+
+  const mid = Math.ceil(totalWeeks / 2);
+  return {
+    id,
+    name:      name || `Mobilité ${totalWeeks} sem.`,
+    subtype:   'mobilite',
+    status:    'active',
+    createdAt: Date.now(),
+    config,
+    zones:     zones.map(z => z.id),
+    zoneLabel: zones.map(z => z.label).join(' · '),
+    phases: [
+      { nom: 'Acquisition',       debut: 1,       fin: mid,        intensite: 0.5, rpeTarget: '—' },
+      { nom: 'Approfondissement', debut: mid + 1, fin: totalWeeks, intensite: 0.5, rpeTarget: '—' },
+    ],
+    semaines,
+    orm: {},
+    totalWeeks,
+  };
+}
+
 function _resolveCardioModalities(chosen) {
   const ids = Array.isArray(chosen) ? chosen.map(c => (typeof c === 'object' ? c.id : c)) : [];
   // Choisir une modalité = y avoir accès (pas de dépendance au matériel déclaré).
@@ -7539,6 +7657,7 @@ const _config = {
   dureeSeance:      60,
   materiel:         [],
   cardioModalities: [],  // ids modalités cardio (course, vélo, rameur, skierg…)
+  mobilityZones:    [],  // ids zones mobilité ciblées (épaules, hanches, chevilles…)
   exercicesForces:  [],
   exercicesExclus:  [],
   duree:            12,
@@ -7597,7 +7716,7 @@ async function initWizard() {
     domaine: null, niveau: null, age: null, seancesParSemaine: 3,
     grossesse_type: null, mois_grossesse: 5, postnatal_phase: null,
     nutrition: null,
-    dureeSeance: 60, materiel: [], cardioModalities: [], exercicesForces: [], exercicesExclus: [],
+    dureeSeance: 60, materiel: [], cardioModalities: [], mobilityZones: [], exercicesForces: [], exercicesExclus: [],
     duree: 12, competition: null, name: '', orm: {}, bodyWeight: null,
   });
 
@@ -7830,10 +7949,10 @@ function step3() {
 // ── Step 4 — Matériel ──────────────────────────────────────────────────────
 
 function step4() {
-  const isCardio = _config.domaine === 'cardio';
+  const noMat = _config.domaine === 'cardio' || _config.domaine === 'mobilite';
   return `
     <div class="wiz-title">Quel matériel as-tu disponible ?</div>
-    <div class="wiz-subtitle">${isCardio ? 'Optionnel pour un programme cardio' : 'Sélectionne tout ce dont tu disposes'}</div>
+    <div class="wiz-subtitle">${noMat ? 'Optionnel — ce programme ne requiert pas de matériel' : 'Sélectionne tout ce dont tu disposes'}</div>
     <div class="wiz-materiel-grid">
       ${MATERIELS.map(m => `
         <div class="wiz-materiel-item ${_config.materiel.includes(m.id) ? 'selected' : ''}"
@@ -7842,8 +7961,10 @@ function step4() {
           <span class="wiz-mat-label">${m.label}</span>
         </div>`).join('')}
     </div>
-    <div class="wiz-note">${isCardio
+    <div class="wiz-note">${_config.domaine === 'cardio'
       ? '💡 Aucun matériel requis — tu choisiras tes activités (course, vélo, rameur, ski-erg…) à l\'étape suivante. Tu peux passer directement.'
+      : _config.domaine === 'mobilite'
+      ? '💡 Aucun matériel requis (un tapis, éventuellement une balle/un rouleau pour l\'auto-massage). Tu choisiras tes zones à l\'étape suivante.'
       : '💡 Le programme s\'adapte automatiquement au matériel sélectionné.'}</div>`;
 }
 
@@ -7853,6 +7974,7 @@ function step5() {
   // Cardio : sélection des modalités (course, vélo, rameur, ski-erg…) au lieu de la
   // recherche d'exercices — le programme d'endurance se construit autour des modalités.
   if(_config.domaine === 'cardio') return step5_cardio();
+  if(_config.domaine === 'mobilite') return step5_mobilite();
 
   const forcedHtml = _config.exercicesForces.map((ex, i) =>
     `<div class="wiz-ex-tag">
@@ -7912,6 +8034,26 @@ function step5_cardio() {
       }).join('')}
     </div>
     ${_config.cardioModalities.length === 0 ? '<div class="wiz-note">Aucune sélection = course à pied par défaut (+ marche pour la récupération).</div>' : ''}`;
+}
+
+// ── Step 5 (mobilité) — Zones à travailler ─────────────────────────────────────
+
+function step5_mobilite() {
+  return `
+    <div class="wiz-title">Quelles zones veux-tu travailler ?</div>
+    <div class="wiz-subtitle">Choisis tes zones prioritaires (ou laisse vide = toutes). Le focus alterne ces zones sur la semaine, avec une progression douce. Tu peux aussi t'appuyer sur ton bilan dans la section 🧘 Mobilité.</div>
+    <div class="wiz-materiel-grid">
+      ${MOBILITY_ZONES.map(z => {
+        const sel = _config.mobilityZones.includes(z.id);
+        return `
+        <div class="wiz-materiel-item ${sel ? 'selected' : ''}"
+             data-toggle="mobilityZones" data-value="${z.id}">
+          <span class="wiz-mat-icon">${z.icon}</span>
+          <span class="wiz-mat-label">${z.label}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    ${_config.mobilityZones.length === 0 ? '<div class="wiz-note">Aucune sélection = toutes les zones (mobilité générale).</div>' : ''}`;
 }
 
 // ── Step 6 — Durée & compétition ──────────────────────────────────────────────
@@ -8049,6 +8191,7 @@ function step7() {
       <div class="wiz-recap-row"><span>Durée</span><strong>${_config.duree} semaines</strong></div>
       ${_config.competition ? `<div class="wiz-recap-row"><span>Compétition</span><strong>${_config.competition.type || 'Oui'} · ${_fmtDate(_config.competition.date)}</strong></div>` : ''}
       ${_config.exercicesForces.length ? `<div class="wiz-recap-row"><span>Exercices forcés</span><strong>${_config.exercicesForces.map(e=>e.name).join(', ')}</strong></div>` : ''}
+      ${_config.domaine === 'mobilite' ? `<div class="wiz-recap-row"><span>Zones</span><strong>${_config.mobilityZones.length ? _config.mobilityZones.map(zid => MOBILITY_ZONES.find(z=>z.id===zid)?.label).filter(Boolean).join(', ') : 'Toutes'}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'prenatal' ? `<div class="wiz-recap-row"><span>Mois de grossesse</span><strong>${GROSSESSE_MOIS_CONFIG[_config.mois_grossesse]?.label}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'postnatal' ? `<div class="wiz-recap-row"><span>Phase post-natale</span><strong>${POSTNATAL_PHASES.find(p=>p.id===_config.postnatal_phase)?.label||'—'}</strong></div>` : ''}
     </div>
@@ -8103,13 +8246,6 @@ function wizBack() {
 }
 
 function wizGenerate() {
-  // Mobilité : gérée dans la section dédiée 🧘 (routine quotidienne adaptative),
-  // pas comme un programme cadencé. Le focus cadrable via wizard arrive en C2.
-  if(_config.domaine === 'mobilite') {
-    window._showSaveToast?.('🧘 La mobilité se gère dans la section dédiée');
-    window.showSection?.('mobilite-section');
-    return;
-  }
   if(!_validateStep()) return;
   _collectStep();
 
@@ -8163,8 +8299,8 @@ function _validateStep() {
     if(_config.grossesse_type === 'postnatal' && !_config.postnatal_phase) { _showError('Sélectionne ta phase post-natale.'); return false; }
     return true;
   }
-  // Matériel (step4 @ idx 5) requis — sauf cardio (course/marche sans matériel).
-  if(_step === 5 && _config.materiel.length === 0 && _config.domaine !== 'cardio') {
+  // Matériel (step4 @ idx 5) requis — sauf cardio et mobilité (sans matériel).
+  if(_step === 5 && _config.materiel.length === 0 && _config.domaine !== 'cardio' && _config.domaine !== 'mobilite') {
     _showError('Sélectionne au moins un type de matériel.');
     return false;
   }
@@ -9754,6 +9890,9 @@ function _renderProgDetailView(prog, container) {
   // Cardio / endurance — vue détail dédiée (séances par semaine, pas de charges)
   if(prog.subtype === 'cardio') { _renderCardioDetailView(prog, container); return; }
 
+  // Mobilité — vue détail dédiée (séances de mobilité, pas de charges)
+  if(prog.subtype === 'mobilite') { _renderMobiliteDetailView(prog, container); return; }
+
   // ── Generated program — rich view (pills par jour comme ATHX) ──────────────
 
   // Phase colors
@@ -10042,6 +10181,35 @@ function _renderProgDetailView(prog, container) {
 
 // ── Vue détail cardio / endurance ──────────────────────────────────────────────
 // Navigation façon ATHX : pills par JOUR → sous-boutons par SEMAINE → fiche séance riche.
+function _renderMobiliteDetailView(prog, container) {
+  const sems = prog.semaines || [];
+  const ref  = sems[0];
+  const days = ref?.jours || [];
+
+  const drillCard = d => `<div class="mob-drill">
+      <div class="mob-drill-head"><span class="mob-drill-name">${esc(d.nom || '')}</span><span class="mob-drill-scheme">${esc(d.scheme || '')}</span></div>
+      ${d.cue ? `<div class="mob-drill-cue">${esc(d.cue)}</div>` : ''}
+      ${d.caution ? `<div class="mob-caution">⚠️ ${esc(d.caution)}</div>` : ''}
+    </div>`;
+
+  const sessionsHtml = days.map(j => `
+    <div class="p-section">
+      <div class="p-sec-title">${esc(j.nom || '')}</div>
+      <div class="p-card">${(j.exercices || []).map(drillCard).join('')}</div>
+    </div>`).join('');
+
+  container.innerHTML = `
+    <div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);margin-bottom:8px">
+      <div>
+        <div style="font-size:15px;font-weight:700">${esc(prog.name)}</div>
+        <div style="font-size:11px;color:var(--text3)">🧘 Mobilité · ${prog.totalWeeks} sem. · ${prog.config?.seancesParSemaine || '?'}×/sem · ${esc(prog.zoneLabel || 'Toutes zones')}</div>
+      </div>
+      <button class="wiz-show-list-btn" onclick="showProgramsList()">← Retour</button>
+    </div>
+    <div class="p-note" style="margin:0 12px 8px">Programme <strong>souple</strong> : répartis ces séances dans la semaine (idéalement un peu chaque jour). Progression douce sur ${prog.totalWeeks} semaines — le PNF puis le travail de fin d'amplitude sont introduits progressivement selon ton niveau. Suis-les dans le Tracker. Aucun mouvement ne doit être douloureux.</div>
+    ${sessionsHtml || '<div class="wiz-note" style="margin:12px">Aucune séance générée.</div>'}`;
+}
+
 function _renderCardioDetailView(prog, container) {
   const PHASE_BAR = {
     'Base aérobie':        { bg:'#E1F5EE', col:'#0F6E56' },
