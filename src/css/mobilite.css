@@ -10,7 +10,9 @@
 .mob-dur-lbl{font-size:13px;color:var(--text2)}
 .mob-dur-btn{font-size:13px;font-weight:500;padding:6px 14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:999px;cursor:pointer}
 .mob-dur-btn.active{background:#185FA5;color:#fff;border-color:#185FA5}
+.mob-regen{margin-left:auto;font-size:12px;font-weight:500;padding:6px 12px;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:999px;cursor:pointer}
 .mob-focus-note{font-size:13px;color:var(--text);background:var(--surface2);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px}
+.mob-done{width:100%;margin-top:12px;text-align:center;font-size:14px;font-weight:600;color:var(--green);background:var(--green-bg);border:1px solid var(--green);border-radius:var(--radius);padding:12px}
 .mob-why-tag{font-size:11px;color:var(--text2);background:var(--surface);border-radius:6px;padding:1px 6px;margin-left:2px}
 
 .mob-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;margin-bottom:12px}

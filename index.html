@@ -744,7 +744,9 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
 .mob-dur-lbl{font-size:13px;color:var(--text2)}
 .mob-dur-btn{font-size:13px;font-weight:500;padding:6px 14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:999px;cursor:pointer}
 .mob-dur-btn.active{background:#185FA5;color:#fff;border-color:#185FA5}
+.mob-regen{margin-left:auto;font-size:12px;font-weight:500;padding:6px 12px;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:999px;cursor:pointer}
 .mob-focus-note{font-size:13px;color:var(--text);background:var(--surface2);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px}
+.mob-done{width:100%;margin-top:12px;text-align:center;font-size:14px;font-weight:600;color:var(--green);background:var(--green-bg);border:1px solid var(--green);border-radius:var(--radius);padding:12px}
 .mob-why-tag{font-size:11px;color:var(--text2);background:var(--surface);border-radius:6px;padding:1px 6px;margin-left:2px}
 
 .mob-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;margin-bottom:12px}
@@ -8665,6 +8667,7 @@ function bindNutritionEvents() {
 
 const ASSESS_KEY = 'mobility_assessment';
 const LOGS_KEY   = 'mobility_logs';
+const TODAY_KEY  = 'mobility_today';
 const LEVELS     = { debutant: 0, intermediaire: 1, avance: 2 };
 const SCORE_LBL  = { 0: 'Faible', 1: 'Limité', 2: 'Bon' };
 
@@ -8686,6 +8689,18 @@ function addMobilityLog(entry) {
   // Garde borné (les logs anciens ne servent plus au streak récent)
   dbSet(LOGS_KEY, l.slice(-400));
 }
+
+// ── Routine du jour : cache + détection de changement de jour ───────────────────
+
+// Date LOCALE (pas UTC) au format YYYY-MM-DD → sert de clé de « jour ».
+function _todayStr() {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+// Graine déterministe du jour (pour varier les drills d'un jour à l'autre).
+function _daySeed() { return parseInt(_todayStr().replace(/-/g, ''), 10) || 0; }
 
 // ── Profil (niveau/âge) déduit du programme actif le plus récent ────────────────
 
@@ -8732,47 +8747,90 @@ function _zonePriorities() {
 // ── Génération de la routine du jour ───────────────────────────────────────────
 
 let _currentRoutine = null;
+let _curDur = 10;
 
 function _drillById(id) { return MOBILITY_DRILLS.find(d => d.id === id) || null; }
 
-function _pickFocusDrills(zoneId, lvl, older, maxN) {
+// Sélection variée : par méthode (ordre dynamique→statique→PNF→PAILs), la graine du
+// jour choisit la variante quand plusieurs drills partagent une méthode → deux jours
+// consécutifs proposent des exercices différents.
+function _pickFocusDrills(zoneId, lvl, older, maxN, seed) {
   let pool = MOBILITY_DRILLS.filter(d =>
     d.zone === zoneId && d.method !== 'car' && d.method !== 'massage' && d.minLevel <= lvl);
-  // Personnes âgées : privilégier statique/CARs, écarter le end-range chargé.
-  if(older) pool = pool.filter(d => d.method !== 'pails_rails');
-  // Diversité : un dynamique, un statique, puis la méthode la plus avancée dispo.
-  const order = { dynamic: 0, static: 1, pnf: 2, pails_rails: 3 };
-  pool.sort((a, b) => (order[a.method] ?? 9) - (order[b.method] ?? 9));
+  if(older) pool = pool.filter(d => d.method !== 'pails_rails');  // pas d'end-range chargé
+  const order = ['dynamic', 'static', 'pnf', 'pails_rails'];
+  const byMethod = {};
+  pool.forEach(d => { (byMethod[d.method] = byMethod[d.method] || []).push(d); });
   const out = [];
-  const seenMethod = new Set();
-  pool.forEach(d => {
-    if(out.length >= maxN) return;
-    if(seenMethod.has(d.method)) return;
-    seenMethod.add(d.method);
-    out.push(d);
-  });
-  return out.length ? out : pool.slice(0, maxN);
+  for(const meth of order) {
+    if(out.length >= maxN) break;
+    const variants = byMethod[meth];
+    if(variants && variants.length) out.push(variants[seed % variants.length]);
+  }
+  // Compléter si peu de méthodes disponibles
+  if(out.length < maxN) pool.forEach(d => { if(out.length < maxN && !out.includes(d)) out.push(d); });
+  return out;
 }
 
-function generateDailyRoutine(durMin) {
+// Calcule une routine (objets drill complets) pour une durée + un offset de graine.
+function _computeRoutine(durMin, genOffset) {
   const { lvl, older } = _userProfile();
-  const focusN     = durMin <= 5 ? 2 : durMin <= 10 ? 3 : 4;
-  const perZone    = durMin <= 5 ? 1 : 2;
-  const prio       = _zonePriorities();
-  const focus      = prio.slice(0, focusN);
-
-  // Socle CARs : toutes les zones qui ont un CAR dédié.
-  const cars = MOBILITY_ZONES.filter(z => z.car).map(z => _drillById(z.car)).filter(Boolean);
-
-  const blocks = focus.map(p => ({
+  const seed    = _daySeed() + (genOffset || 0);
+  const focusN  = durMin <= 5 ? 2 : durMin <= 10 ? 3 : 4;
+  const perZone = durMin <= 5 ? 1 : 2;
+  const focus   = _zonePriorities().slice(0, focusN);
+  const cars    = MOBILITY_ZONES.filter(z => z.car).map(z => _drillById(z.car)).filter(Boolean);
+  const blocks  = focus.map(p => ({
     zone:   p.zone,
-    score:  p.score,
+    score:  p.score ?? null,
     charge: Math.round(p.charge),
-    drills: _pickFocusDrills(p.zone.id, lvl, older, perZone),
+    drills: _pickFocusDrills(p.zone.id, lvl, older, perZone, seed),
   }));
+  return { durMin, older, cars, blocks };
+}
 
-  _currentRoutine = { durMin, cars, blocks, older, ts: Date.now() };
-  return _currentRoutine;
+// Snapshot léger (ids) pour persister la routine du jour.
+function _toSnapshot(r) {
+  return {
+    durMin: r.durMin, older: r.older,
+    carIds: r.cars.map(d => d.id),
+    blocks: r.blocks.map(b => ({ zoneId: b.zone.id, score: b.score ?? null, charge: b.charge, drillIds: b.drills.map(d => d.id) })),
+  };
+}
+function _fromSnapshot(s) {
+  return {
+    durMin: s.durMin, older: s.older,
+    cars: (s.carIds || []).map(_drillById).filter(Boolean),
+    blocks: (s.blocks || []).map(b => ({
+      zone:   MOBILITY_ZONES.find(z => z.id === b.zoneId),
+      score:  b.score, charge: b.charge,
+      drills: (b.drillIds || []).map(_drillById).filter(Boolean),
+    })).filter(b => b.zone),
+  };
+}
+
+/**
+ * Routine du JOUR, stable sur la journée :
+ * - même jour (date locale) + même durée → on réaffiche la routine mémorisée (état « fait » conservé) ;
+ * - jour changé → nouvelle routine ;
+ * - durMin=null → réutilise la durée mémorisée ;
+ * - forceNew → régénère une variante (compteur `gen` → graine différente).
+ */
+function _getTodayRoutine(durMin, forceNew) {
+  const stored = dbGet(TODAY_KEY);
+  const today  = _todayStr();
+  const isToday = stored && stored.date === today;
+  const sameDur = stored && stored.snapshot && (durMin == null || stored.snapshot.durMin === durMin);
+
+  if(!forceNew && isToday && stored.snapshot && sameDur) {
+    return { routine: _fromSnapshot(stored.snapshot), done: !!stored.done };
+  }
+  let gen = isToday ? (stored.gen || 0) : 0;
+  if(forceNew) gen += 1;
+  const r = _computeRoutine(durMin || (isToday ? stored.snapshot?.durMin : null) || 10, gen);
+  const rec = { date: today, gen, snapshot: _toSnapshot(r), done: isToday ? !!stored.done : false };
+  dbSet(TODAY_KEY, rec);
+  return { routine: r, done: rec.done };
 }
 
 // ── Rendu : navigation par onglets ─────────────────────────────────────────────
@@ -8791,7 +8849,7 @@ function renderMobiliteSection() {
   const a = getAssessment();
   // Sans bilan → démarrer sur le Bilan ; sinon Routine du jour.
   if(!a.date) { _showMobView('mob-bilan-view'); _renderBilan(); }
-  else        { _showMobView('mob-routine-view'); _renderRoutine(10); }
+  else        { _showMobView('mob-routine-view'); _renderRoutine(null, false); }
 }
 
 // ── Rendu : routine du jour ────────────────────────────────────────────────────
@@ -8809,10 +8867,12 @@ function _drillCard(d) {
     </div>`;
 }
 
-function _renderRoutine(durMin) {
+function _renderRoutine(durMin, forceNew) {
   const el = document.getElementById('mobRoutineContent');
   if(!el) return;
-  const r = generateDailyRoutine(durMin);
+  const { routine: r, done } = _getTodayRoutine(durMin, !!forceNew);
+  _currentRoutine = r;
+  _curDur = r.durMin;
   const a = getAssessment();
   const { older } = r;
 
@@ -8838,9 +8898,14 @@ function _renderRoutine(durMin) {
     ? `<div class="wiz-note" style="margin-bottom:10px">💡 Fais le <button class="mob-inline-link" onclick="showMobiliteTab('bilan')">bilan</button> pour personnaliser la sélection selon tes zones faibles.</div>`
     : '';
 
+  const action = done
+    ? `<div class="mob-done">✓ Fait aujourd'hui</div>`
+    : `<button class="save-btn" style="width:100%;margin-top:12px" onclick="_mobLogDone()">✓ J'ai fait ma routine</button>`;
+
   el.innerHTML = `
     ${noAssess}
-    <div class="mob-dur-row"><span class="mob-dur-lbl">Durée</span>${_durSelector(durMin)}</div>
+    <div class="mob-dur-row"><span class="mob-dur-lbl">Durée</span>${_durSelector(r.durMin)}
+      <button class="mob-regen" onclick="_mobNewRoutine()">🔄 Nouvelle</button></div>
     <div class="mob-focus-note">🎯 Zones du jour : ${whyBits}</div>
     ${holdNote}
     <div class="mob-block mob-block-cars">
@@ -8849,8 +8914,8 @@ function _renderRoutine(durMin) {
       ${carsHtml}
     </div>
     ${blocksHtml}
-    <button class="save-btn" style="width:100%;margin-top:12px" onclick="_mobLogDone()">✓ J'ai fait ma routine</button>
-    <div class="mob-disclaimer">La mobilité est peu fatigante : à faire un peu chaque jour. Aucun mouvement ne doit être douloureux — en cas de douleur, arrête et consulte si besoin.</div>`;
+    ${action}
+    <div class="mob-disclaimer">Routine du jour : elle reste la même toute la journée et se renouvelle demain (bouton « 🔄 Nouvelle » pour en changer). La mobilité est peu fatigante — à faire un peu chaque jour. Aucun mouvement ne doit être douloureux : en cas de douleur, arrête et consulte si besoin.</div>`;
 }
 
 // ── Rendu : bilan ──────────────────────────────────────────────────────────────
@@ -8953,12 +9018,14 @@ function _renderProgres() {
 // ── Handlers exposés (onclick inline) ──────────────────────────────────────────
 
 window.showMobiliteTab = function(tab) {
-  if(tab === 'routine') { _showMobView('mob-routine-view'); _renderRoutine(10); }
+  if(tab === 'routine') { _showMobView('mob-routine-view'); _renderRoutine(null, false); }
   else if(tab === 'bilan') { _showMobView('mob-bilan-view'); _renderBilan(); }
   else if(tab === 'progres') { _showMobView('mob-progres-view'); _renderProgres(); }
 };
 
-window._mobSetDuration = function(d) { _renderRoutine(d); };
+window._mobSetDuration = function(d) { _renderRoutine(d, false); };
+
+window._mobNewRoutine = function() { _renderRoutine(_curDur, true); };
 
 window._mobSetScore = function(zoneId, score) {
   const a = getAssessment();
@@ -8979,10 +9046,15 @@ window._mobSetCm = function(zoneId, val) {
 };
 
 window._mobLogDone = function() {
+  const stored = dbGet(TODAY_KEY);
+  const today  = _todayStr();
+  if(stored && stored.date === today && stored.done) return;  // déjà fait aujourd'hui
   const r = _currentRoutine;
   const zones = r ? r.blocks.map(b => b.zone.id) : [];
   addMobilityLog({ ts: Date.now(), duree: r?.durMin || 10, zones, type: 'daily' });
+  if(stored && stored.date === today) { stored.done = true; dbSet(TODAY_KEY, stored); }
   if(typeof window._showSaveToast === 'function') window._showSaveToast('✓ Routine mobilité enregistrée');
+  _renderRoutine(_curDur, false);
 };
 
 
