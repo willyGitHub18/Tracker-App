@@ -1944,12 +1944,14 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
     </div>
     <div class="mob-tabs">
       <button class="mob-tab active" data-mob-tab="routine" onclick="showMobiliteTab('routine')">🧘 Routine du jour</button>
+      <button class="mob-tab" data-mob-tab="recup" onclick="showMobiliteTab('recup')">💆 Récup</button>
       <button class="mob-tab" data-mob-tab="bilan" onclick="showMobiliteTab('bilan')">📋 Bilan</button>
       <button class="mob-tab" data-mob-tab="progres" onclick="showMobiliteTab('progres')">📈 Progrès</button>
     </div>
   </div>
 
   <div id="mob-routine-view" class="prog-view active-view"><div id="mobRoutineContent"></div></div>
+  <div id="mob-recup-view" class="prog-view"><div id="mobRecupContent"></div></div>
   <div id="mob-bilan-view" class="prog-view"><div id="mobBilanContent"></div></div>
   <div id="mob-progres-view" class="prog-view"><div id="mobProgresContent"></div></div>
 </div>
@@ -2646,6 +2648,14 @@ const MOBILITY_DRILLS = [
   { id:'poignets_car',  zone:'poignets', method:'car',     nom:'CARs de poignet',            scheme:'5 cercles / sens', cue:'Avant-bras fixe, cercle complet lent.',                              muscles:['avantbras'], minLevel:0 },
   { id:'poignets_dyn',  zone:'poignets', method:'dynamic', nom:'Flexions/extensions à genoux',scheme:'2 × 8',           cue:'Paumes puis dos des mains au sol, charge progressive et contrôlée.',  muscles:['avantbras'], minLevel:0 },
   { id:'poignets_stat', zone:'poignets', method:'static',  nom:'Étirement fléchisseurs',     scheme:'2 × 20–30 s',      cue:'Bras tendu, doigts vers le bas, tirer doucement.',                    muscles:['avantbras'], minLevel:0 },
+
+  // Auto-massage (récup post-séance — GOWOD Recover)
+  { id:'cou_mass',         zone:'cou',         method:'massage', nom:'Détente nuque / trapèzes',    scheme:'30–45 s / côté', cue:'Balle contre le mur sur le trapèze, petits mouvements, respiration lente.',            muscles:['trapeze'], minLevel:0 },
+  { id:'epaules_mass',     zone:'epaules',     method:'massage', nom:'Balle pec / deltoïde',        scheme:'30–60 s / côté', cue:'Balle contre un mur sur le pectoral et le deltoïde, rouler lentement, s’attarder sur les points sensibles.', muscles:['pec','deltAnt'], minLevel:0 },
+  { id:'thoracique_mass',  zone:'thoracique',  method:'massage', nom:'Rouleau haut du dos',         scheme:'30–60 s',        cue:'Rouleau sous les omoplates, rouler doucement le long de la colonne thoracique (pas les lombaires).', muscles:['dorsaux'], minLevel:0 },
+  { id:'hanches_mass',     zone:'hanches',     method:'massage', nom:'Rouleau fessiers / quadriceps',scheme:'30–60 s / côté',cue:'Assis sur le rouleau pour le fessier, puis à plat ventre pour le quadriceps. Lent, respiration.', muscles:['fessiers','quad'], minLevel:0 },
+  { id:'cp_mass',          zone:'chaine_post', method:'massage', nom:'Rouleau ischios / mollets',   scheme:'30–60 s / côté', cue:'Rouler l’arrière de la cuisse puis le mollet, du bas vers le haut. Éviter l’arrière du genou.', muscles:['ischio','mollets'], minLevel:0 },
+  { id:'chevilles_mass',   zone:'chevilles',   method:'massage', nom:'Voûte plantaire / mollet',    scheme:'30–45 s / côté', cue:'Balle sous la voûte plantaire, puis rouler le mollet. Pression modérée.',              muscles:['mollets'], minLevel:0 },
 ];
 
 // ── Grossesse program config ──────────────────────────────────────────────────
@@ -5178,6 +5188,29 @@ function calcGlobalMuscleLoad() {
         });
       }
     });
+  }
+
+  // Séances mobilité (charge TRÈS faible — la mobilité est peu coûteuse
+  // systémiquement, elle ne doit pas gonfler la fatigue ; cf. mobilite.js).
+  {
+    const logs = dbGet('mobility_logs');
+    if(Array.isArray(logs)) {
+      logs.forEach(lg => {
+        const ts = lg?.ts || 0;
+        if(!ts) return;
+        const hoursAgo = (now - ts) / 3_600_000;
+        const vol = (lg.duree || 0) * 0.3 * MOBILITY_LOAD_SCALE;  // gêne légère ~0.3
+        if(!vol) return;
+        (lg.zones || []).forEach(zid => {
+          const z = MOBILITY_ZONES.find(zz => zz.id === zid);
+          if(!z) return;
+          z.muscles.forEach(mid => {
+            const hl = RECOVERY_HALFLIFE[mid] || 48;
+            load[mid] = (load[mid] || 0) + vol * 0.5 * Math.pow(2, -hoursAgo / hl);
+          });
+        });
+      });
+    }
   }
   return load;
 }
@@ -9012,12 +9045,74 @@ function _renderProgres() {
     ${staleNote}`;
 }
 
+// ── Rendu : récup post-séance ──────────────────────────────────────────────────
+
+let _currentRecup = null;
+
+// Zones classées par charge musculaire résiduelle (SRA) décroissante.
+function _recupZones() {
+  const load = calcGlobalMuscleLoad();
+  return MOBILITY_ZONES.map(z => {
+    let charge = 0;
+    z.muscles.forEach(m => { charge = Math.max(charge, musclePercent(m, load)); });
+    return { zone: z, charge };
+  }).sort((a, b) => b.charge - a.charge);
+}
+
+// Récup : cible les zones les plus sollicitées → statique doux + auto-massage
+// (down-regulating, façon GOWOD Recover). Recalculée en direct (contextuelle).
+function _computeRecup() {
+  const seed   = _daySeed();
+  const ranked = _recupZones();
+  const loaded = ranked.filter(r => r.charge >= 15);   // seuil « sollicité »
+  const picks  = (loaded.length ? loaded : ranked).slice(0, 3);
+  const blocks = picks.map(p => {
+    const statics = MOBILITY_DRILLS.filter(d => d.zone === p.zone.id && d.method === 'static');
+    const mass    = MOBILITY_DRILLS.filter(d => d.zone === p.zone.id && d.method === 'massage');
+    const drills  = [];
+    if(statics.length) drills.push(statics[seed % statics.length]);
+    if(mass.length)    drills.push(mass[seed % mass.length]);
+    return { zone: p.zone, charge: Math.round(p.charge), drills };
+  }).filter(b => b.drills.length);
+  return { blocks, hasLoad: loaded.length > 0 };
+}
+
+function _renderRecup() {
+  const el = document.getElementById('mobRecupContent');
+  if(!el) return;
+  const r = _computeRecup();
+  _currentRecup = r;
+
+  const intro = r.hasLoad
+    ? `<div class="mob-focus-note">💆 Récup ciblée sur tes muscles les plus sollicités récemment (d'après le suivi muscles).</div>`
+    : `<div class="wiz-note" style="margin-bottom:10px">Aucune séance récente détectée — voici une récup générale douce. Respiration lente tout du long.</div>`;
+
+  const blocksHtml = r.blocks.map(b => `
+    <div class="mob-block">
+      <div class="mob-block-title">${b.zone.icon} ${esc(b.zone.label)}${b.charge >= 15 ? ` <span class="mob-why-tag">chargée</span>` : ''}</div>
+      ${b.drills.map(_drillCard).join('')}
+    </div>`).join('');
+
+  el.innerHTML = `
+    ${intro}
+    ${blocksHtml || '<div class="wiz-note">Rien à afficher.</div>'}
+    <button class="save-btn" style="width:100%;margin-top:12px" onclick="_mobLogRecup()">✓ Récup faite</button>
+    <div class="mob-disclaimer">Objectif : détente et amplitude après l'effort. Le bénéfice sur la récupération est modeste (preuve limitée) — pas de forçage, respiration lente. En cas de douleur, arrête.</div>`;
+}
+
 // ── Handlers exposés (onclick inline) ──────────────────────────────────────────
 
 window.showMobiliteTab = function(tab) {
   if(tab === 'routine') { _showMobView('mob-routine-view'); _renderRoutine(null, false); }
+  else if(tab === 'recup') { _showMobView('mob-recup-view'); _renderRecup(); }
   else if(tab === 'bilan') { _showMobView('mob-bilan-view'); _renderBilan(); }
   else if(tab === 'progres') { _showMobView('mob-progres-view'); _renderProgres(); }
+};
+
+window._mobLogRecup = function() {
+  const zones = _currentRecup ? _currentRecup.blocks.map(b => b.zone.id) : [];
+  addMobilityLog({ ts: Date.now(), duree: 8, zones, type: 'recovery' });
+  if(typeof window._showSaveToast === 'function') window._showSaveToast('✓ Récup enregistrée');
 };
 
 window._mobSetDuration = function(d) { _renderRoutine(d, false); };

@@ -363,12 +363,74 @@ function _renderProgres() {
     ${staleNote}`;
 }
 
+// ── Rendu : récup post-séance ──────────────────────────────────────────────────
+
+let _currentRecup = null;
+
+// Zones classées par charge musculaire résiduelle (SRA) décroissante.
+function _recupZones() {
+  const load = calcGlobalMuscleLoad();
+  return MOBILITY_ZONES.map(z => {
+    let charge = 0;
+    z.muscles.forEach(m => { charge = Math.max(charge, musclePercent(m, load)); });
+    return { zone: z, charge };
+  }).sort((a, b) => b.charge - a.charge);
+}
+
+// Récup : cible les zones les plus sollicitées → statique doux + auto-massage
+// (down-regulating, façon GOWOD Recover). Recalculée en direct (contextuelle).
+function _computeRecup() {
+  const seed   = _daySeed();
+  const ranked = _recupZones();
+  const loaded = ranked.filter(r => r.charge >= 15);   // seuil « sollicité »
+  const picks  = (loaded.length ? loaded : ranked).slice(0, 3);
+  const blocks = picks.map(p => {
+    const statics = MOBILITY_DRILLS.filter(d => d.zone === p.zone.id && d.method === 'static');
+    const mass    = MOBILITY_DRILLS.filter(d => d.zone === p.zone.id && d.method === 'massage');
+    const drills  = [];
+    if(statics.length) drills.push(statics[seed % statics.length]);
+    if(mass.length)    drills.push(mass[seed % mass.length]);
+    return { zone: p.zone, charge: Math.round(p.charge), drills };
+  }).filter(b => b.drills.length);
+  return { blocks, hasLoad: loaded.length > 0 };
+}
+
+function _renderRecup() {
+  const el = document.getElementById('mobRecupContent');
+  if(!el) return;
+  const r = _computeRecup();
+  _currentRecup = r;
+
+  const intro = r.hasLoad
+    ? `<div class="mob-focus-note">💆 Récup ciblée sur tes muscles les plus sollicités récemment (d'après le suivi muscles).</div>`
+    : `<div class="wiz-note" style="margin-bottom:10px">Aucune séance récente détectée — voici une récup générale douce. Respiration lente tout du long.</div>`;
+
+  const blocksHtml = r.blocks.map(b => `
+    <div class="mob-block">
+      <div class="mob-block-title">${b.zone.icon} ${esc(b.zone.label)}${b.charge >= 15 ? ` <span class="mob-why-tag">chargée</span>` : ''}</div>
+      ${b.drills.map(_drillCard).join('')}
+    </div>`).join('');
+
+  el.innerHTML = `
+    ${intro}
+    ${blocksHtml || '<div class="wiz-note">Rien à afficher.</div>'}
+    <button class="save-btn" style="width:100%;margin-top:12px" onclick="_mobLogRecup()">✓ Récup faite</button>
+    <div class="mob-disclaimer">Objectif : détente et amplitude après l'effort. Le bénéfice sur la récupération est modeste (preuve limitée) — pas de forçage, respiration lente. En cas de douleur, arrête.</div>`;
+}
+
 // ── Handlers exposés (onclick inline) ──────────────────────────────────────────
 
 window.showMobiliteTab = function(tab) {
   if(tab === 'routine') { _showMobView('mob-routine-view'); _renderRoutine(null, false); }
+  else if(tab === 'recup') { _showMobView('mob-recup-view'); _renderRecup(); }
   else if(tab === 'bilan') { _showMobView('mob-bilan-view'); _renderBilan(); }
   else if(tab === 'progres') { _showMobView('mob-progres-view'); _renderProgres(); }
+};
+
+window._mobLogRecup = function() {
+  const zones = _currentRecup ? _currentRecup.blocks.map(b => b.zone.id) : [];
+  addMobilityLog({ ts: Date.now(), duree: 8, zones, type: 'recovery' });
+  if(typeof window._showSaveToast === 'function') window._showSaveToast('✓ Récup enregistrée');
 };
 
 window._mobSetDuration = function(d) { _renderRoutine(d, false); };

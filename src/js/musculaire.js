@@ -2,9 +2,10 @@
  * musculaire.js — Muscle fatigue tracking & SVG body painting
  */
 
-import { EXERCISES, MUSCLE_LABELS, RECOVERY_HALFLIFE, MUSCLE_MAP, MUSCLE_THRESH } from './data.js';
+import { EXERCISES, MUSCLE_LABELS, RECOVERY_HALFLIFE, MUSCLE_MAP, MUSCLE_THRESH, MOBILITY_ZONES, MOBILITY_LOAD_SCALE } from './data.js';
 import { getRecord, getExStatus, normRecord } from './store.js';
 import { getAllActivePrograms, getProgRecord } from './programs.js';
+import { dbGet } from './db.js';
 
 let _currentLoad      = {};
 let _selectedMuscleId = null;
@@ -98,6 +99,29 @@ export function calcGlobalMuscleLoad() {
         });
       }
     });
+  }
+
+  // Séances mobilité (charge TRÈS faible — la mobilité est peu coûteuse
+  // systémiquement, elle ne doit pas gonfler la fatigue ; cf. mobilite.js).
+  {
+    const logs = dbGet('mobility_logs');
+    if(Array.isArray(logs)) {
+      logs.forEach(lg => {
+        const ts = lg?.ts || 0;
+        if(!ts) return;
+        const hoursAgo = (now - ts) / 3_600_000;
+        const vol = (lg.duree || 0) * 0.3 * MOBILITY_LOAD_SCALE;  // gêne légère ~0.3
+        if(!vol) return;
+        (lg.zones || []).forEach(zid => {
+          const z = MOBILITY_ZONES.find(zz => zz.id === zid);
+          if(!z) return;
+          z.muscles.forEach(mid => {
+            const hl = RECOVERY_HALFLIFE[mid] || 48;
+            load[mid] = (load[mid] || 0) + vol * 0.5 * Math.pow(2, -hoursAgo / hl);
+          });
+        });
+      });
+    }
   }
   return load;
 }

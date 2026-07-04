@@ -446,6 +446,14 @@ export const MOBILITY_DRILLS = [
   { id:'poignets_car',  zone:'poignets', method:'car',     nom:'CARs de poignet',            scheme:'5 cercles / sens', cue:'Avant-bras fixe, cercle complet lent.',                              muscles:['avantbras'], minLevel:0 },
   { id:'poignets_dyn',  zone:'poignets', method:'dynamic', nom:'Flexions/extensions à genoux',scheme:'2 × 8',           cue:'Paumes puis dos des mains au sol, charge progressive et contrôlée.',  muscles:['avantbras'], minLevel:0 },
   { id:'poignets_stat', zone:'poignets', method:'static',  nom:'Étirement fléchisseurs',     scheme:'2 × 20–30 s',      cue:'Bras tendu, doigts vers le bas, tirer doucement.',                    muscles:['avantbras'], minLevel:0 },
+
+  // Auto-massage (récup post-séance — GOWOD Recover)
+  { id:'cou_mass',         zone:'cou',         method:'massage', nom:'Détente nuque / trapèzes',    scheme:'30–45 s / côté', cue:'Balle contre le mur sur le trapèze, petits mouvements, respiration lente.',            muscles:['trapeze'], minLevel:0 },
+  { id:'epaules_mass',     zone:'epaules',     method:'massage', nom:'Balle pec / deltoïde',        scheme:'30–60 s / côté', cue:'Balle contre un mur sur le pectoral et le deltoïde, rouler lentement, s’attarder sur les points sensibles.', muscles:['pec','deltAnt'], minLevel:0 },
+  { id:'thoracique_mass',  zone:'thoracique',  method:'massage', nom:'Rouleau haut du dos',         scheme:'30–60 s',        cue:'Rouleau sous les omoplates, rouler doucement le long de la colonne thoracique (pas les lombaires).', muscles:['dorsaux'], minLevel:0 },
+  { id:'hanches_mass',     zone:'hanches',     method:'massage', nom:'Rouleau fessiers / quadriceps',scheme:'30–60 s / côté',cue:'Assis sur le rouleau pour le fessier, puis à plat ventre pour le quadriceps. Lent, respiration.', muscles:['fessiers','quad'], minLevel:0 },
+  { id:'cp_mass',          zone:'chaine_post', method:'massage', nom:'Rouleau ischios / mollets',   scheme:'30–60 s / côté', cue:'Rouler l’arrière de la cuisse puis le mollet, du bas vers le haut. Éviter l’arrière du genou.', muscles:['ischio','mollets'], minLevel:0 },
+  { id:'chevilles_mass',   zone:'chevilles',   method:'massage', nom:'Voûte plantaire / mollet',    scheme:'30–45 s / côté', cue:'Balle sous la voûte plantaire, puis rouler le mollet. Pression modérée.',              muscles:['mollets'], minLevel:0 },
 ];
 
 // ── Grossesse program config ──────────────────────────────────────────────────
