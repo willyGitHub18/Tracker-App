@@ -37,7 +37,8 @@ Application de suivi d'entraînement personnalisée — PWA déployable sur iPho
 - Schéma anatomique SVG interactif (face avant + face arrière)
 - Calcul de charge résiduelle avec **modèle SRA** (Stimulus → Récupération → Adaptation)
 - Formule : `charge_résiduelle = Σ (reps × RPE/10 × facteur) × 2^(−Δt / demi-vie)`
-- **Cumul automatique** de tous les programmes actifs simultanément
+- **Cumul automatique** de tous les programmes actifs simultanément, aligné par timestamps réels
+- **Séances cardio incluses** : charge = `durée(min) × RPE/10 × 0.2`, répartie sur les muscles de la modalité (course → quadriceps/mollets, rameur → dos/jambes…)
 - Dégradé de couleur continu : gris (repos) → vert → ambre → orange → rouge
 - Détail par muscle : charge résiduelle %, estimation de récupération, exercices contributeurs
 
@@ -99,6 +100,7 @@ Basé sur les recommandations **CNSF, HAS, SOGC/CSEP**.
 - Statuts : Actif / ✓ Terminé / ✕ Abandonné
 - Programmes archivés exportables individuellement en JSON
 - Migration automatique du programme ATHX legacy au premier lancement
+- **Date de démarrage** demandée à la création (wizard) et à l'activation → la semaine courante est calculée automatiquement ; le programme créé s'affiche immédiatement dans le tracker
 
 ### 📊 Progression & Benchmark
 - Courbe de progression (3 exercices principaux) avec ligne plan vs réalisé

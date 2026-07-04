@@ -4995,30 +4995,91 @@ function _buildFactors(muscles) {
   return factors;
 }
 
+// Contributeurs par muscle : mêmes 3 sources que calcGlobalMuscleLoad (legacy ATHX,
+// programmes générés force/gym/hyrox, séances cardio), agrégés par nom d'exercice/
+// modalité. Le volume affiché est la charge RÉSIDUELLE (même décroissance SRA par
+// muscle que la barre %) → la liste explique le pourcentage montré.
 function calcRawContribsByMuscle() {
+  const now     = Date.now();
   const contrib = {};
   Object.keys(MUSCLE_LABELS).forEach(m => { contrib[m] = []; });
 
+  const add = (factors, name, vol, hoursAgo) => {
+    if(!vol) return;
+    Object.entries(factors).forEach(([mid, factor]) => {
+      if(factor < 0.2 || !contrib[mid]) return;
+      const hl    = RECOVERY_HALFLIFE[mid] || 48;
+      const decay = Math.pow(2, -hoursAgo / hl);
+      let entry = contrib[mid].find(e => e.name === name);
+      if(!entry) { entry = { name, factor, raw: 0 }; contrib[mid].push(entry); }
+      entry.raw += vol * factor * decay;
+    });
+  };
+
+  // 1) Programmes générés actifs (force/gym/hyrox + cardio)
+  const counted = new Set();
+  getAllActivePrograms().forEach(prog => {
+    prog.semaines?.forEach((sem, wi) => {
+      sem.jours?.forEach(day => {
+        day.exercices?.forEach(ex => {
+          const dedupKey = `${prog.id}|${ex.id}|${wi + 1}`;
+          if(counted.has(dedupKey)) return;
+          counted.add(dedupKey);
+          const raw = getProgRecord(prog.id, ex.id, wi + 1);
+          const ts  = raw?.ts || 0;
+          if(!ts) return;
+          const hoursAgo = (now - ts) / 3_600_000;
+          const factors  = MUSCLE_MAP[ex.id] || _buildFactors(ex.muscles || []);
+          const name     = ex.nom || ex.name || ex.id;
+
+          // Cardio : charge = durée × (RPE/10) × échelle (pas de séries kg/reps).
+          if(raw.cardio || ex.kind === 'cardio') {
+            const dur = raw.durationMin || 0;
+            if(!dur) return;
+            const rpe = parseFloat(raw.rpe) || 4;
+            add(factors, name, dur * (rpe / 10) * CARDIO_LOAD_SCALE, hoursAgo);
+            return;
+          }
+
+          const rec = normRecord(raw);
+          if(!rec?.sets) return;
+          let vol = 0;
+          rec.sets.forEach(s => {
+            if(!s?.kg || !s?.reps) return;
+            const rpe = parseFloat(s.rpe) || 7;
+            vol += s.reps * (rpe / 10);
+          });
+          add(factors, name, vol, hoursAgo);
+        });
+      });
+    });
+  });
+
+  // 2) Legacy ATHX (press / squat / deadlift), semaine par semaine
   EXERCISES.filter(e => ['press','squat','deadlift'].includes(e.id)).forEach(ex => {
     const factors = MUSCLE_MAP[ex.id];
     if(!factors) return;
-    let totalRaw = 0;
-
     for(let w = 1; w <= 17; w++) {
       const rec = normRecord(getRecord(ex.id, w));
       if(!rec?.sets) continue;
+      const ts = rec.ts || 0;
+      if(!ts) continue;
+      const hoursAgo = (now - ts) / 3_600_000;
+      let vol = 0;
       rec.sets.forEach(s => {
-        if(s?.kg && s?.reps) {
-          const rpe = parseFloat(s.rpe) || 7;
-          totalRaw += s.reps * (rpe / 10);
-        }
+        if(!s?.kg || !s?.reps) return;
+        const rpe = parseFloat(s.rpe) || 7;
+        vol += s.reps * (rpe / 10);
       });
+      add(factors, ex.name, vol, hoursAgo);
     }
-    if(!totalRaw) return;
+  });
 
-    Object.entries(factors).forEach(([mid, factor]) => {
-      if(factor >= 0.2) contrib[mid].push({ name: ex.name, factor, raw: Math.round(totalRaw * factor * 10) / 10 });
-    });
+  // Arrondi + retrait des contributions négligeables (décroissance quasi complète)
+  Object.keys(contrib).forEach(mid => {
+    contrib[mid] = contrib[mid]
+      .map(e => ({ ...e, raw: Math.round(e.raw * 10) / 10 }))
+      .filter(e => e.raw >= 0.1);
   });
   return contrib;
 }
