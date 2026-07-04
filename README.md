@@ -39,6 +39,7 @@ Application de suivi d'entraînement personnalisée — PWA déployable sur iPho
 - Formule : `charge_résiduelle = Σ (reps × RPE/10 × facteur) × 2^(−Δt / demi-vie)`
 - **Cumul automatique** de tous les programmes actifs simultanément, aligné par timestamps réels
 - **Séances cardio incluses** : charge = `durée(min) × RPE/10 × 0.2`, répartie sur les muscles de la modalité (course → quadriceps/mollets, rameur → dos/jambes…)
+- **Séances mobilité incluses** (charge très faible) : les routines de la section 🧘 apparaissent en charge légère ; à l'inverse, la Récup lit cette carte pour cibler les muscles les plus sollicités
 - Dégradé de couleur continu : gris (repos) → vert → ambre → orange → rouge
 - Détail par muscle : charge résiduelle %, estimation de récupération, exercices contributeurs (legacy ATHX + programmes générés + séances cardio, en charge résiduelle décroissante)
 
@@ -64,6 +65,15 @@ Modèle d'endurance dédié (distinct du modèle force %1RM) — voir `Documenta
 - **Suivi** : durée réelle / RPE / distance (optionnelle) au lieu de la grille kg/reps.
 - **Vue détail façon ATHX** : pills par jour → sous-boutons par semaine → fiche séance (intensité, allure/ressenti, description, repères techniques par modalité, durée estimée).
 - Sources : Seiler, Daniels (allures), Buchheit & Laursen (HIIT), ACSM, Concept2 (rameur), NHS C25K.
+
+#### 🧘 Mobilité
+Section top-level dédiée (barre du bas, 🧘) **+** focus cadrable via le wizard — voir `Documentation/mobilite-program-design.md`.
+- **Section quotidienne souple** (esprit GOWOD) : *Routine du jour* (~5-10 min) stable sur la journée (cache + détection de changement de jour en date locale, variété semée par le jour), *Récup* post-séance, *Bilan* auto-scorable, *Progrès*.
+- **Auto-bilan par 7 zones** (chevilles, hanches, chaîne postérieure, thoracique, épaules/bras, poignets, cou) : tests de terrain (knee-to-wall, deep squat FMS, ASLR/sit-and-reach, rotation thoracique, FMS shoulder mobility, prayer, rotation cervicale), notés Faible/Limité/Bon (+ cm optionnel). Refaisable pour suivre les progrès.
+- **Ciblage adaptatif** : la routine et la récup combinent 3 signaux — zones faibles (bilan), **zones chargées (tracker muscles SRA)**, type de programme actif.
+- **Méthodes sourcées** : CARs (réveil articulaire quotidien), étirements dynamiques/statiques (ACSM/Delphi 2025), PNF, PAILs/RAILs (fin d'amplitude) — débloquées par niveau, volume par âge. FRC/CARs/PAILs-RAILs présentés comme méthodes (preuve émergente), sans allégation prouvée ; pas de forçage, douleur = arrêt.
+- **Récup post-séance** : cible **toutes** les zones chargées (muscles affichés + %), statique doux + auto-massage (façon GOWOD *Recover*), bénéfice affiché comme modeste. Les zones qui se chevauchent (muscles partagés entre plusieurs zones) sont dédupliquées pour qu'une région distincte nouvellement travaillée apparaisse toujours.
+- **Focus généré (wizard)** : programme souple multi-semaines sur les zones choisies, progression douce (PNF puis fin d'amplitude introduits progressivement), suivi dans le Tracker.
 
 #### Type Mixte / Santé globale
 Programme équilibré sur la semaine : Force + Cardio + Hypertrophie + Mobilité/Récupération. Structure adaptée au nombre de séances par semaine. *(La composante cardio du Mixte utilise encore l'ancien modèle — refonte prévue après le module Cardio.)*
@@ -136,7 +146,7 @@ Tracker-App/
     ├── js/
     │   ├── db.js               # IndexedDB + cache in-memory + fallback localStorage
     │   ├── security.js         # esc(), sanitizeRecord(), validateImport()
-    │   ├── data.js             # EXERCISES, MUSCLE_MAP, AGE_MODIFIERS, GROSSESSE_*, NUTRITION_*
+    │   ├── data.js             # EXERCISES, MUSCLE_MAP, AGE_MODIFIERS, GROSSESSE_*, NUTRITION_*, CARDIO_*, MOBILITY_*
     │   ├── store.js            # Accesseurs + gestion vacances multi-périodes
     │   ├── progression.js      # Logique Lafay : weekOutcome, getNextPlan, calcAdj
     │   ├── tracker.js          # Tracker générique (ATHX + programmes wizard)
@@ -144,24 +154,27 @@ Tracker-App/
     │   ├── io.js               # Export JSON/CSV, import avec validation
     │   ├── exercises-db.js     # Base wger.de + cache IndexedDB + fallback 35 exercices
     │   ├── programs.js         # Storage multi-programmes, statuts, clôture, archive
-    │   ├── generator.js        # Algo génération programme (age-aware, mixte, grossesse)
+    │   ├── generator.js        # Algo génération programme (age-aware, mixte, grossesse, cardio, mobilité)
     │   ├── grossesse.js        # Programme prénatal/post-natal complet (CNSF/HAS)
     │   ├── wizard.js           # Wizard de programme (8 étapes)
     │   ├── nutrition-plan.js   # Section Nutrition : plans + calcul Mifflin-St Jeor
+    │   ├── mobilite.js         # Section Mobilité : bilan + routine du jour + récup (SRA-aware)
     │   └── app.js              # Routing, init, migration ATHX, cycle de vie programmes
     ├── css/
     │   ├── base.css
     │   ├── tracker.css
     │   ├── musculaire.css
     │   ├── programme.css
-    │   └── wizard.css
+    │   ├── wizard.css
+    │   └── mobilite.css
     └── views/
         ├── tracker.html
         ├── musculaire.html
         ├── programme.html
         ├── programmes.html     # Wizard + liste programmes
         ├── doc.html
-        └── nutrition.html      # Section Nutrition (liste / détail / wizard)
+        ├── nutrition.html      # Section Nutrition (liste / détail / wizard)
+        └── mobilite.html       # Section Mobilité (routine / récup / bilan / progrès)
 ```
 
 ### Build

@@ -9191,8 +9191,9 @@ let _currentRecup = null;
 const RECUP_THRESH = 10;  // % de charge résiduelle au-delà duquel une zone est « sollicitée »
 
 // Muscles les plus chargés (mêmes valeurs que l'onglet Muscles) — pour la transparence.
-function _topLoadedMuscles(n) {
-  const load = calcGlobalMuscleLoad();
+// Tous ceux ≥ 5 % (cap de sûreté à n) → un muscle nouvellement travaillé apparaît
+// toujours, pas seulement les 3 premiers.
+function _topLoadedMuscles(load, n) {
   return Object.keys(MUSCLE_LABELS)
     .map(m => ({ label: MUSCLE_LABELS[m], pct: musclePercent(m, load) }))
     .filter(e => e.pct >= 5)
@@ -9200,23 +9201,49 @@ function _topLoadedMuscles(n) {
     .slice(0, n);
 }
 
-// Zones classées par charge musculaire résiduelle (SRA) décroissante.
-function _recupZones() {
-  const load = calcGlobalMuscleLoad();
-  return MOBILITY_ZONES.map(z => {
-    let charge = 0;
-    z.muscles.forEach(m => { charge = Math.max(charge, musclePercent(m, load)); });
-    return { zone: z, charge };
-  }).sort((a, b) => b.charge - a.charge);
-}
+const RECUP_MAX_ZONES = 5;  // garde-fou pour que la récup ne devienne pas interminable
 
 // Récup : cible les zones les plus sollicitées → statique doux + auto-massage
 // (down-regulating, façon GOWOD Recover). Recalculée en direct (contextuelle).
+//
+// Toutes les zones réellement chargées (≥ RECUP_THRESH) sont retenues — plus de
+// coupe arbitraire au top-3 qui masquait une région distincte (ex. quadriceps)
+// derrière plusieurs zones du haut du corps. Comme les zones se chevauchent
+// (le trapèze ∈ cou/épaules/thoracique, le dorsaux ∈ thoracique…), on DÉDUPLIQUE :
+// une zone n'est gardée que si elle introduit au moins un muscle chargé pas déjà
+// couvert par une zone mieux classée → une séance d'épaules ne remplit plus à elle
+// seule 3 emplacements (Épaules + Cou + Thoracique).
 function _computeRecup() {
-  const seed   = _daySeed();
-  const ranked = _recupZones();
+  const seed = _daySeed();
+  const load = calcGlobalMuscleLoad();
+
+  const ranked = MOBILITY_ZONES.map(z => {
+    let charge = 0;
+    const hot = [];  // muscles de la zone effectivement chargés (≥ seuil)
+    z.muscles.forEach(m => {
+      const p = musclePercent(m, load);
+      if(p > charge) charge = p;
+      if(p >= RECUP_THRESH) hot.push(m);
+    });
+    return { zone: z, charge, hot };
+  }).sort((a, b) => b.charge - a.charge);
+
   const loaded = ranked.filter(r => r.charge >= RECUP_THRESH);
-  const picks  = (loaded.length ? loaded : ranked).slice(0, 3);
+
+  let picks;
+  if(loaded.length) {
+    const covered = new Set();
+    picks = [];
+    loaded.forEach(r => {
+      if(!r.hot.some(m => !covered.has(m))) return;  // n'apporte aucun muscle neuf
+      r.hot.forEach(m => covered.add(m));
+      picks.push(r);
+    });
+    picks = picks.slice(0, RECUP_MAX_ZONES);
+  } else {
+    picks = ranked.slice(0, 3);  // aucune charge → récup générale douce
+  }
+
   const blocks = picks.map(p => {
     const statics = MOBILITY_DRILLS.filter(d => d.zone === p.zone.id && d.method === 'static');
     const mass    = MOBILITY_DRILLS.filter(d => d.zone === p.zone.id && d.method === 'massage');
@@ -9225,7 +9252,7 @@ function _computeRecup() {
     if(mass.length)    drills.push(mass[seed % mass.length]);
     return { zone: p.zone, charge: Math.round(p.charge), drills };
   }).filter(b => b.drills.length);
-  return { blocks, hasLoad: loaded.length > 0, topMuscles: _topLoadedMuscles(3) };
+  return { blocks, hasLoad: loaded.length > 0, topMuscles: _topLoadedMuscles(load, 6) };
 }
 
 function _renderRecup() {
