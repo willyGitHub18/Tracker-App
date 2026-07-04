@@ -8758,18 +8758,15 @@ function _pickFocusDrills(zoneId, lvl, older, maxN, seed) {
   let pool = MOBILITY_DRILLS.filter(d =>
     d.zone === zoneId && d.method !== 'car' && d.method !== 'massage' && d.minLevel <= lvl);
   if(older) pool = pool.filter(d => d.method !== 'pails_rails');  // pas d'end-range chargé
-  const order = ['dynamic', 'static', 'pnf', 'pails_rails'];
-  const byMethod = {};
-  pool.forEach(d => { (byMethod[d.method] = byMethod[d.method] || []).push(d); });
-  const out = [];
-  for(const meth of order) {
-    if(out.length >= maxN) break;
-    const variants = byMethod[meth];
-    if(variants && variants.length) out.push(variants[seed % variants.length]);
-  }
-  // Compléter si peu de méthodes disponibles
-  if(out.length < maxN) pool.forEach(d => { if(out.length < maxN && !out.includes(d)) out.push(d); });
-  return out;
+  if(!pool.length) return [];
+  // Ordre stable (méthode puis id) → point de départ déterministe…
+  const oi = { dynamic: 0, static: 1, pnf: 2, pails_rails: 3 };
+  pool.sort((a, b) => (oi[a.method] - oi[b.method]) || (a.id < b.id ? -1 : 1));
+  // …puis ROTATION du pool par la graine → les exercices changent réellement d'un
+  // jour à l'autre ET à chaque « 🔄 Nouvelle » (dès que la zone a > maxN drills).
+  const start   = ((seed % pool.length) + pool.length) % pool.length;
+  const rotated = pool.slice(start).concat(pool.slice(0, start));
+  return rotated.slice(0, maxN);
 }
 
 // Calcule une routine (objets drill complets) pour une durée + un offset de graine.
@@ -9025,7 +9022,10 @@ window.showMobiliteTab = function(tab) {
 
 window._mobSetDuration = function(d) { _renderRoutine(d, false); };
 
-window._mobNewRoutine = function() { _renderRoutine(_curDur, true); };
+window._mobNewRoutine = function() {
+  _renderRoutine(_curDur, true);
+  if(typeof window._showSaveToast === 'function') window._showSaveToast('🔄 Nouvelle routine');
+};
 
 window._mobSetScore = function(zoneId, score) {
   const a = getAssessment();
