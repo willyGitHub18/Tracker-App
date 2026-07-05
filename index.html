@@ -5161,6 +5161,19 @@ function calcGlobalMuscleLoad() {
             const hoursAgo = (now - ts) / 3_600_000;
             const factors = MUSCLE_MAP[ex.id] || _buildFactors(ex.muscles || []);
 
+            // Mobilité (focus généré / jours mobilité du Mixte) : contribution TRÈS
+            // faible, alignée sur la section quotidienne (durée × 0.3 × échelle) —
+            // un drill coché ≈ 2 min 30.
+            if(raw.mobility || ex.kind === 'mobility') {
+              if(!raw.done) return;
+              const vol = 2.5 * 0.3 * MOBILITY_LOAD_SCALE;
+              Object.entries(factors).forEach(([mid, factor]) => {
+                const hl = RECOVERY_HALFLIFE[mid] || 48;
+                load[mid] = (load[mid] || 0) + vol * factor * Math.pow(2, -hoursAgo / hl);
+              });
+              return;
+            }
+
             // Cardio : charge = durée × (RPE/10) × échelle (pas de séries kg/reps).
             if(raw.cardio || ex.kind === 'cardio') {
               const dur = raw.durationMin || 0;
@@ -7817,6 +7830,7 @@ async function initWizard() {
   // Pre-fill ORM from existing tracker data
   _prefillOrm();
 
+  _mobZonesPrefilled = false;
   _wizardEventsInit = false;
   renderStep();
   _initWizardEvents();
@@ -8145,8 +8159,28 @@ function _cardioModalityGrid() {
 
 // ── Step 5 (mobilité) — Zones à travailler ─────────────────────────────────────
 
+// Pré-remplissage depuis le bilan de la section 🧘 Mobilité : les zones notées
+// Faible/Limité sont pré-sélectionnées à la première ouverture de l'étape (une
+// seule fois par wizard — si l'utilisateur désélectionne tout, on ne ré-ajoute pas).
+let _mobZonesPrefilled = false;
+let _mobZonesFromBilan = false;
+
+function _prefillMobilityZones() {
+  if(_mobZonesPrefilled) return;
+  _mobZonesPrefilled = true;
+  _mobZonesFromBilan = false;
+  if(_config.mobilityZones.length) return;
+  const a = dbGet('mobility_assessment');
+  MOBILITY_ZONES.forEach(z => {
+    const s = a?.scores?.[z.id];
+    if(s === 0 || s === 1) _config.mobilityZones.push(z.id);
+  });
+  _mobZonesFromBilan = _config.mobilityZones.length > 0;
+}
+
 function step5_mobilite() {
-  return `
+  _prefillMobilityZones();
+  return `${_mobZonesFromBilan && _config.mobilityZones.length ? `<div class="wiz-note" style="margin-bottom:8px">📋 Zones pré-sélectionnées depuis ton bilan mobilité (Faible/Limité) — ajuste librement.</div>` : ''}
     <div class="wiz-title">Quelles zones veux-tu travailler ?</div>
     <div class="wiz-subtitle">Choisis tes zones prioritaires (ou laisse vide = toutes). Le focus alterne ces zones sur la semaine, avec une progression douce. Tu peux aussi t'appuyer sur ton bilan dans la section 🧘 Mobilité.</div>
     <div class="wiz-materiel-grid">
@@ -9011,14 +9045,38 @@ function _zonePriorities() {
     const score  = a.scores?.[z.id];
     // Bilan : score bas → priorité haute. Inconnu → neutre (0.5).
     const bilan  = (score == null) ? 0.5 : (2 - score) / 2;
-    // SRA : charge max des muscles de la zone (0–1).
+    // SRA : charge max des muscles de la zone (0–1) + muscles réellement chargés
+    // (≥ RECUP_THRESH), pour la déduplication des zones qui se chevauchent.
     let charge = 0;
-    z.muscles.forEach(m => { charge = Math.max(charge, musclePercent(m, load)); });
+    const hot = [];
+    z.muscles.forEach(m => {
+      const p = musclePercent(m, load);
+      if(p > charge) charge = p;
+      if(p >= RECUP_THRESH) hot.push(m);
+    });
     const sra    = Math.min(1, charge / 100);
     const typ    = focusSet.has(z.id) ? 1 : 0;
     const priority = 1.0 * bilan + 0.6 * sra + 0.4 * typ;
-    return { zone: z, score, charge, priority };
+    return { zone: z, score, charge, hot, typ, priority };
   }).sort((x, y) => y.priority - x.priority);
+}
+
+// Sélection des zones focus avec DÉDUPLICATION (cf. Récup — les zones partagent des
+// muscles : trapèze ∈ cou/épaules/thoracique…). Une zone dont la seule justification
+// est une charge SRA déjà couverte par une zone mieux classée cède sa place à la
+// suivante — sauf si son bilan (Faible/Limité) ou le type de programme la retient.
+function _pickFocusZones(focusN) {
+  const covered = new Set();
+  const picks   = [];
+  _zonePriorities().forEach(p => {
+    if(picks.length >= focusN) return;
+    const redundant = p.hot.length > 0 && p.hot.every(m => covered.has(m));
+    const ownMerit  = (p.score != null && p.score <= 1) || p.typ > 0;
+    if(redundant && !ownMerit) return;
+    p.hot.forEach(m => covered.add(m));
+    picks.push(p);
+  });
+  return picks;
 }
 
 // ── Génération de la routine du jour ───────────────────────────────────────────
@@ -9052,7 +9110,7 @@ function _computeRoutine(durMin, genOffset) {
   const seed    = _daySeed() + (genOffset || 0);
   const focusN  = durMin <= 5 ? 2 : durMin <= 10 ? 3 : 4;
   const perZone = durMin <= 5 ? 1 : 2;
-  const focus   = _zonePriorities().slice(0, focusN);
+  const focus   = _pickFocusZones(focusN);
   const cars    = MOBILITY_ZONES.filter(z => z.car).map(z => _drillById(z.car)).filter(Boolean);
   const blocks  = focus.map(p => ({
     zone:   p.zone,

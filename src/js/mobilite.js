@@ -85,14 +85,38 @@ function _zonePriorities() {
     const score  = a.scores?.[z.id];
     // Bilan : score bas → priorité haute. Inconnu → neutre (0.5).
     const bilan  = (score == null) ? 0.5 : (2 - score) / 2;
-    // SRA : charge max des muscles de la zone (0–1).
+    // SRA : charge max des muscles de la zone (0–1) + muscles réellement chargés
+    // (≥ RECUP_THRESH), pour la déduplication des zones qui se chevauchent.
     let charge = 0;
-    z.muscles.forEach(m => { charge = Math.max(charge, musclePercent(m, load)); });
+    const hot = [];
+    z.muscles.forEach(m => {
+      const p = musclePercent(m, load);
+      if(p > charge) charge = p;
+      if(p >= RECUP_THRESH) hot.push(m);
+    });
     const sra    = Math.min(1, charge / 100);
     const typ    = focusSet.has(z.id) ? 1 : 0;
     const priority = 1.0 * bilan + 0.6 * sra + 0.4 * typ;
-    return { zone: z, score, charge, priority };
+    return { zone: z, score, charge, hot, typ, priority };
   }).sort((x, y) => y.priority - x.priority);
+}
+
+// Sélection des zones focus avec DÉDUPLICATION (cf. Récup — les zones partagent des
+// muscles : trapèze ∈ cou/épaules/thoracique…). Une zone dont la seule justification
+// est une charge SRA déjà couverte par une zone mieux classée cède sa place à la
+// suivante — sauf si son bilan (Faible/Limité) ou le type de programme la retient.
+function _pickFocusZones(focusN) {
+  const covered = new Set();
+  const picks   = [];
+  _zonePriorities().forEach(p => {
+    if(picks.length >= focusN) return;
+    const redundant = p.hot.length > 0 && p.hot.every(m => covered.has(m));
+    const ownMerit  = (p.score != null && p.score <= 1) || p.typ > 0;
+    if(redundant && !ownMerit) return;
+    p.hot.forEach(m => covered.add(m));
+    picks.push(p);
+  });
+  return picks;
 }
 
 // ── Génération de la routine du jour ───────────────────────────────────────────
@@ -126,7 +150,7 @@ function _computeRoutine(durMin, genOffset) {
   const seed    = _daySeed() + (genOffset || 0);
   const focusN  = durMin <= 5 ? 2 : durMin <= 10 ? 3 : 4;
   const perZone = durMin <= 5 ? 1 : 2;
-  const focus   = _zonePriorities().slice(0, focusN);
+  const focus   = _pickFocusZones(focusN);
   const cars    = MOBILITY_ZONES.filter(z => z.car).map(z => _drillById(z.car)).filter(Boolean);
   const blocks  = focus.map(p => ({
     zone:   p.zone,

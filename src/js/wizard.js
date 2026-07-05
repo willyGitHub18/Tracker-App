@@ -90,6 +90,7 @@ export async function initWizard() {
   // Pre-fill ORM from existing tracker data
   _prefillOrm();
 
+  _mobZonesPrefilled = false;
   _wizardEventsInit = false;
   renderStep();
   _initWizardEvents();
@@ -418,8 +419,28 @@ function _cardioModalityGrid() {
 
 // ── Step 5 (mobilité) — Zones à travailler ─────────────────────────────────────
 
+// Pré-remplissage depuis le bilan de la section 🧘 Mobilité : les zones notées
+// Faible/Limité sont pré-sélectionnées à la première ouverture de l'étape (une
+// seule fois par wizard — si l'utilisateur désélectionne tout, on ne ré-ajoute pas).
+let _mobZonesPrefilled = false;
+let _mobZonesFromBilan = false;
+
+function _prefillMobilityZones() {
+  if(_mobZonesPrefilled) return;
+  _mobZonesPrefilled = true;
+  _mobZonesFromBilan = false;
+  if(_config.mobilityZones.length) return;
+  const a = dbGet('mobility_assessment');
+  MOBILITY_ZONES.forEach(z => {
+    const s = a?.scores?.[z.id];
+    if(s === 0 || s === 1) _config.mobilityZones.push(z.id);
+  });
+  _mobZonesFromBilan = _config.mobilityZones.length > 0;
+}
+
 function step5_mobilite() {
-  return `
+  _prefillMobilityZones();
+  return `${_mobZonesFromBilan && _config.mobilityZones.length ? `<div class="wiz-note" style="margin-bottom:8px">📋 Zones pré-sélectionnées depuis ton bilan mobilité (Faible/Limité) — ajuste librement.</div>` : ''}
     <div class="wiz-title">Quelles zones veux-tu travailler ?</div>
     <div class="wiz-subtitle">Choisis tes zones prioritaires (ou laisse vide = toutes). Le focus alterne ces zones sur la semaine, avec une progression douce. Tu peux aussi t'appuyer sur ton bilan dans la section 🧘 Mobilité.</div>
     <div class="wiz-materiel-grid">

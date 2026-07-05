@@ -47,6 +47,19 @@ export function calcGlobalMuscleLoad() {
             const hoursAgo = (now - ts) / 3_600_000;
             const factors = MUSCLE_MAP[ex.id] || _buildFactors(ex.muscles || []);
 
+            // Mobilité (focus généré / jours mobilité du Mixte) : contribution TRÈS
+            // faible, alignée sur la section quotidienne (durée × 0.3 × échelle) —
+            // un drill coché ≈ 2 min 30.
+            if(raw.mobility || ex.kind === 'mobility') {
+              if(!raw.done) return;
+              const vol = 2.5 * 0.3 * MOBILITY_LOAD_SCALE;
+              Object.entries(factors).forEach(([mid, factor]) => {
+                const hl = RECOVERY_HALFLIFE[mid] || 48;
+                load[mid] = (load[mid] || 0) + vol * factor * Math.pow(2, -hoursAgo / hl);
+              });
+              return;
+            }
+
             // Cardio : charge = durée × (RPE/10) × échelle (pas de séries kg/reps).
             if(raw.cardio || ex.kind === 'cardio') {
               const dur = raw.durationMin || 0;
