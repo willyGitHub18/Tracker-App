@@ -3,7 +3,8 @@
  */
 
 import { getAllRecords, importRecords, getVacancesList, addVacances, setVacances } from './store.js';
-import { validateImport }               from './security.js';
+import { validateImport, safeId, sanitizeDeep, sanitizeImportedProgram,
+         sanitizeImportedPlan, sanitizeImportedAssessment, sanitizeImportedLogs } from './security.js';
 import { EXERCISES }                    from './data.js';
 import { normRecord }                   from './store.js';
 import { repaintMuscles }               from './musculaire.js';
@@ -44,7 +45,12 @@ export function exportCSV() {
     }
   });
 
-  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const csv = rows.map(r => r.map(v => {
+    let s = String(v);
+    // Neutralise l'injection de formule CSV (Excel/Sheets exécutent =, +, -, @, tab/CR).
+    if(/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return `"${s.replace(/"/g,'""')}"`;
+  }).join(',')).join('\n');
   _download('\uFEFF' + csv, `athx_${_dateStr()}.csv`, 'text/csv;charset=utf-8');
 }
 
@@ -88,11 +94,11 @@ export function importJSON(event) {
         const existing = typeof getPrograms === 'function' ? getPrograms() : [];
         // Déduplication par nom + date de création (les IDs wizard sont timestampés → diffèrent à chaque génération)
         const existingKeys = new Set(existing.map(p => `${p.name}|${p.createdAt||''}`));
-        parsed.programs.forEach(p => {
-          if(!p || typeof p !== 'object' || Array.isArray(p) || !p.id || typeof saveProgram !== 'function') return;
-          // Sanitisation légère des champs affichés (validation numérique gérée à l'affichage via esc()/sanitizeRecord)
-          p.name = String(p.name || 'Programme').slice(0, 120);
-          p.id   = String(p.id).slice(0, 80);
+        parsed.programs.forEach(raw => {
+          if(typeof saveProgram !== 'function') return;
+          // Sanitisation complète : id strict, texte sans HTML, structure bornée.
+          const p = sanitizeImportedProgram(raw);
+          if(!p) { console.log('[import] programme rejeté (id/format invalide)'); return; }
           const key = `${p.name}|${p.createdAt||''}`;
           // Si un programme avec le même nom ET la même date existe déjà → skip
           if(existingKeys.has(key)) {
@@ -103,23 +109,26 @@ export function importJSON(event) {
           saveProgram(p);
         });
       }
-      if(parsed.programs_tracking && typeof dbSet === 'function') {
-        dbSet('programs_tracking', parsed.programs_tracking);
+      if(parsed.programs_tracking && typeof parsed.programs_tracking === 'object'
+         && !Array.isArray(parsed.programs_tracking) && typeof dbSet === 'function') {
+        dbSet('programs_tracking', sanitizeDeep(parsed.programs_tracking));
       }
       if(Array.isArray(parsed.nutrition_plans) && typeof dbSet === 'function') {
-        dbSet('nutrition_plans', parsed.nutrition_plans);
+        dbSet('nutrition_plans', parsed.nutrition_plans.map(sanitizeImportedPlan).filter(Boolean));
       }
       if(parsed.mobility_assessment && typeof dbSet === 'function') {
-        dbSet('mobility_assessment', parsed.mobility_assessment);
+        const a = sanitizeImportedAssessment(parsed.mobility_assessment);
+        if(a) dbSet('mobility_assessment', a);
       }
       if(Array.isArray(parsed.mobility_logs) && typeof dbSet === 'function') {
-        dbSet('mobility_logs', parsed.mobility_logs);
+        dbSet('mobility_logs', sanitizeImportedLogs(parsed.mobility_logs));
       }
       if(Array.isArray(parsed.active_programs) && parsed.active_programs.length > 0 && typeof dbSet === 'function') {
-        dbSet('programs_active', parsed.active_programs);
+        dbSet('programs_active', parsed.active_programs.map(id => safeId(id)).filter(Boolean));
       }
       if(parsed.active_program && typeof dbSet === 'function') {
-        dbSet('program_active', parsed.active_program);
+        const ap = safeId(parsed.active_program);
+        if(ap) dbSet('program_active', ap);
       }
 
       // Restore vacances periods if present (including repriseWeek + firstSkippedWeek)

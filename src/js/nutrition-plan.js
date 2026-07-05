@@ -117,11 +117,12 @@ function _renderNutriList() {
 
   html += plans.map(p => {
     const obj = NUTRITION_OBJECTIFS.find(n => n.id === p.objectif);
+    const c = p.calc || {};
     return `
     <div class="p-card nutri-plan-card">
       <div class="nutri-plan-info">
         <div class="nutri-plan-name">${obj?.icon || '🥗'} ${esc(p.name)}</div>
-        <div class="nutri-plan-sub">${obj?.label || ''} · ${p.calc.kcalTraining} kcal · ${p.calc.prot_g} g P</div>
+        <div class="nutri-plan-sub">${obj?.label || ''} · ${esc(c.kcalTraining ?? '?')} kcal · ${esc(c.prot_g ?? '?')} g P</div>
       </div>
       <div style="display:flex;gap:6px">
         <button class="save-btn" style="padding:6px 14px;font-size:12px" onclick="_viewNutriPlan('${esc(p.id)}')">Voir</button>
@@ -155,7 +156,7 @@ function _renderNutriDetail(id) {
 
   const plan = getNutritionPlans().find(p => p.id === id);
   if(!plan) { showNutriList(); return; }
-  const c   = plan.calc;
+  const c   = plan.calc || {};
   const inp = plan.inputs || {};
   const obj = NUTRITION_OBJECTIFS.find(n => n.id === plan.objectif);
   const advice = NUTRITION_PLANS[plan.objectif];

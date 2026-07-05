@@ -1,10 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Just2Train"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1a1a18"><link rel="canonical" href="https://willygithub18.github.io/Tracker-App/"><title>Just2Train</title><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icons/icon-180.png"><style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
-
-
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://wger.de; manifest-src 'self'; worker-src 'self'; base-uri 'self'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"><meta name="referrer" content="strict-origin-when-cross-origin"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Just2Train"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1a1a18"><link rel="canonical" href="https://willygithub18.github.io/Tracker-App/"><title>Just2Train</title><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icons/icon-180.png"><style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -1965,7 +1962,7 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
   <button class="bottom-nav-btn" data-section="mobilite-section" onclick="showSection('mobilite-section')"><span class="tab-icon">🧘</span><span>Mobilité</span></button>
   <button class="bottom-nav-btn" data-section="doc" onclick="showSection('doc')"><span class="tab-icon">📖</span><span>Docs</span></button>
 </nav>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script><script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" integrity="sha512-ZwR1/gSZM3ai6vCdI+LVF1zSq/5HznD3ZSTk7kajkaj4D292NLuduDCO1c/NT8Id+jE58KYLKT7hXnbtryGmMg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><script>
 /* -- db.js -- */
 /**
  * db.js — IndexedDB storage layer
@@ -2196,6 +2193,122 @@ function validateImport(obj) {
 /** Validate a muscle ID (used in SVG click delegation) */
 function isValidMuscleId(id) {
   return typeof id === 'string' && /^[a-zA-Z]+$/.test(id);
+}
+
+// ── Import sanitisation (defense-in-depth) ────────────────────────────────────
+// Les fichiers d'import JSON sont un vecteur d'attaque (un backup partagé forgé).
+// Seuls les records tracker passaient par validateImport ; ces helpers assainissent
+// les autres blocs (programmes, plans nutrition, mobilité) AVANT écriture en base.
+
+/**
+ * ID sûr pour usage en attribut ET en chaîne JS de handler `onclick` inline.
+ * esc() ne suffit PAS dans ce contexte (`&#39;` est redécodé en `'` par le parseur
+ * → réévasion possible). On restreint donc à un alphabet strict. Renvoie null si vide.
+ */
+function safeId(id, max = 80) {
+  const s = String(id == null ? '' : id).replace(/[^A-Za-z0-9_-]/g, '').slice(0, max);
+  return s || null;
+}
+
+/**
+ * Nettoie une étiquette texte réutilisée en attribut ou re-matchée par chaîne
+ * (ex. `day.nom` sert de clé de recherche ET d'attribut `data-prog-day`). On RETIRE
+ * les caractères dangereux (`< > " ' \``) au lieu de les encoder → la valeur reste
+ * du texte brut cohérent des deux côtés. Conserve `&` (noms « Back & Bi »). Borne la taille.
+ */
+function safeLabel(str, max = 120) {
+  return String(str == null ? '' : str)
+    .replace(/[<>"'` -]/g, '')
+    .slice(0, max);
+}
+
+// Nettoyage récursif générique : nombres/booléens préservés, chaînes passées à
+// safeLabel, tableaux et objets bornés en profondeur. Les clés non alphanumériques
+// (`__proto__`, `constructor`…) sont écartées → pas de prototype pollution.
+function sanitizeDeep(v, depth = 0) {
+  if(v == null) return v;
+  if(typeof v === 'number') return isFinite(v) ? v : null;
+  if(typeof v === 'boolean') return v;
+  if(typeof v === 'string') return safeLabel(v, 400);
+  if(Array.isArray(v)) return depth < 5 ? v.slice(0, 500).map(x => sanitizeDeep(x, depth + 1)) : [];
+  if(typeof v === 'object') {
+    if(depth >= 7) return {};
+    const out = {};
+    for(const k of Object.keys(v)) {
+      if(/^[A-Za-z0-9_]+$/.test(k)) out[k] = sanitizeDeep(v[k], depth + 1);
+    }
+    return out;
+  }
+  return null;
+}
+
+/** Programme importé → objet nettoyé (texte sans HTML, id strict) ou null si à rejeter. */
+function sanitizeImportedProgram(p) {
+  if(!p || typeof p !== 'object' || Array.isArray(p)) return null;
+  const id = safeId(p.id);
+  if(!id) return null;
+  const clean = sanitizeDeep(p, 0);
+  clean.id   = id;                                   // forme canonique garantie
+  clean.name = safeLabel(p.name || 'Programme', 120);
+  return clean;
+}
+
+/** Plan nutrition importé → champs numériques coercés (neutralise XSS + crash au rendu). */
+function sanitizeImportedPlan(p) {
+  if(!p || typeof p !== 'object' || Array.isArray(p)) return null;
+  const id = safeId(p.id);
+  if(!id) return null;
+  const num = v => { const n = Number(v); return isFinite(n) ? n : 0; };
+  const c = (p.calc && typeof p.calc === 'object') ? p.calc : {};
+  const i = (p.inputs && typeof p.inputs === 'object') ? p.inputs : {};
+  return {
+    id,
+    name:      safeLabel(p.name || 'Plan', 80),
+    objectif:  safeLabel(p.objectif || '', 40),
+    createdAt: num(p.createdAt),
+    calc: {
+      kcalTraining: num(c.kcalTraining), kcalRest: num(c.kcalRest), tdee: num(c.tdee),
+      bmr: num(c.bmr), imc: num(c.imc),
+      prot_g: num(c.prot_g), lip_g: num(c.lip_g), gluc_g: num(c.gluc_g),
+      prot_pct: num(c.prot_pct), lip_pct: num(c.lip_pct), gluc_pct: num(c.gluc_pct),
+    },
+    inputs: {
+      poids: num(i.poids), taille: num(i.taille), age: num(i.age),
+      sexe: i.sexe === 'F' ? 'F' : 'H', activite: safeLabel(i.activite || '', 30),
+    },
+  };
+}
+
+/** Bilan mobilité importé → scores 0/1/2, cm numériques, ids validés. */
+function sanitizeImportedAssessment(a) {
+  if(!a || typeof a !== 'object' || Array.isArray(a)) return null;
+  const clean = { date: safeLabel(a.date || '', 12), scores: {}, cm: {}, history: [] };
+  if(a.scores && typeof a.scores === 'object') {
+    for(const k of Object.keys(a.scores)) {
+      const zid = safeId(k), s = Number(a.scores[k]);
+      if(zid && (s === 0 || s === 1 || s === 2)) clean.scores[zid] = s;
+    }
+  }
+  if(a.cm && typeof a.cm === 'object') {
+    for(const k of Object.keys(a.cm)) {
+      const zid = safeId(k), n = Number(a.cm[k]);
+      if(zid && isFinite(n)) clean.cm[zid] = n;
+    }
+  }
+  return clean;
+}
+
+/** Logs mobilité importés → entrées bornées (400 max), ts/durée numériques, zones validées. */
+function sanitizeImportedLogs(arr) {
+  if(!Array.isArray(arr)) return [];
+  return arr.filter(l => l && typeof l === 'object').slice(-400).map(l => ({
+    ts:    Number(l.ts) || 0,
+    duree: Number(l.duree) || 0,
+    zones: Array.isArray(l.zones)
+      ? l.zones.filter(z => typeof z === 'string').map(z => safeId(z)).filter(Boolean).slice(0, 20)
+      : [],
+    type:  safeLabel(l.type || '', 20),
+  })).filter(l => l.ts);
 }
 
 
@@ -4034,8 +4147,8 @@ function _renderProgSaisie(prog) {
 
     html += `</div></div>
       <div class="save-row">
-        <button class="save-btn" data-prog-day="${day.nom}" data-prog-week="${week}">Enregistrer ${day.nom}</button>
-        <span class="save-ok" id="pok_${day.nom}">&#x2713; Enregistré</span>
+        <button class="save-btn" data-prog-day="${esc(day.nom)}" data-prog-week="${week}">Enregistrer ${esc(day.nom)}</button>
+        <span class="save-ok" id="pok_${esc(day.nom)}">&#x2713; Enregistré</span>
       </div>`;
   });
 
@@ -5492,7 +5605,7 @@ function renderMuscleDetail(mid, load) {
 
   const exRows = contribs.map(c =>
     `<div class="musc-ex-row">
-      <span class="musc-ex-name">${c.name}</span>
+      <span class="musc-ex-name">${esc(c.name)}</span>
       <span class="musc-ex-role" style="background:${roleBg(c.factor)};color:${roleClr(c.factor)}">${roleLabel[c.factor] || 'Secondaire'}</span>
       <span class="musc-ex-vol">${c.raw} vol.</span>
     </div>`
@@ -5600,7 +5713,12 @@ function exportCSV() {
     }
   });
 
-  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const csv = rows.map(r => r.map(v => {
+    let s = String(v);
+    // Neutralise l'injection de formule CSV (Excel/Sheets exécutent =, +, -, @, tab/CR).
+    if(/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return `"${s.replace(/"/g,'""')}"`;
+  }).join(',')).join('\n');
   _download('\uFEFF' + csv, `athx_${_dateStr()}.csv`, 'text/csv;charset=utf-8');
 }
 
@@ -5644,11 +5762,11 @@ function importJSON(event) {
         const existing = typeof getPrograms === 'function' ? getPrograms() : [];
         // Déduplication par nom + date de création (les IDs wizard sont timestampés → diffèrent à chaque génération)
         const existingKeys = new Set(existing.map(p => `${p.name}|${p.createdAt||''}`));
-        parsed.programs.forEach(p => {
-          if(!p || typeof p !== 'object' || Array.isArray(p) || !p.id || typeof saveProgram !== 'function') return;
-          // Sanitisation légère des champs affichés (validation numérique gérée à l'affichage via esc()/sanitizeRecord)
-          p.name = String(p.name || 'Programme').slice(0, 120);
-          p.id   = String(p.id).slice(0, 80);
+        parsed.programs.forEach(raw => {
+          if(typeof saveProgram !== 'function') return;
+          // Sanitisation complète : id strict, texte sans HTML, structure bornée.
+          const p = sanitizeImportedProgram(raw);
+          if(!p) { console.log('[import] programme rejeté (id/format invalide)'); return; }
           const key = `${p.name}|${p.createdAt||''}`;
           // Si un programme avec le même nom ET la même date existe déjà → skip
           if(existingKeys.has(key)) {
@@ -5659,23 +5777,26 @@ function importJSON(event) {
           saveProgram(p);
         });
       }
-      if(parsed.programs_tracking && typeof dbSet === 'function') {
-        dbSet('programs_tracking', parsed.programs_tracking);
+      if(parsed.programs_tracking && typeof parsed.programs_tracking === 'object'
+         && !Array.isArray(parsed.programs_tracking) && typeof dbSet === 'function') {
+        dbSet('programs_tracking', sanitizeDeep(parsed.programs_tracking));
       }
       if(Array.isArray(parsed.nutrition_plans) && typeof dbSet === 'function') {
-        dbSet('nutrition_plans', parsed.nutrition_plans);
+        dbSet('nutrition_plans', parsed.nutrition_plans.map(sanitizeImportedPlan).filter(Boolean));
       }
       if(parsed.mobility_assessment && typeof dbSet === 'function') {
-        dbSet('mobility_assessment', parsed.mobility_assessment);
+        const a = sanitizeImportedAssessment(parsed.mobility_assessment);
+        if(a) dbSet('mobility_assessment', a);
       }
       if(Array.isArray(parsed.mobility_logs) && typeof dbSet === 'function') {
-        dbSet('mobility_logs', parsed.mobility_logs);
+        dbSet('mobility_logs', sanitizeImportedLogs(parsed.mobility_logs));
       }
       if(Array.isArray(parsed.active_programs) && parsed.active_programs.length > 0 && typeof dbSet === 'function') {
-        dbSet('programs_active', parsed.active_programs);
+        dbSet('programs_active', parsed.active_programs.map(id => safeId(id)).filter(Boolean));
       }
       if(parsed.active_program && typeof dbSet === 'function') {
-        dbSet('program_active', parsed.active_program);
+        const ap = safeId(parsed.active_program);
+        if(ap) dbSet('program_active', ap);
       }
 
       // Restore vacances periods if present (including repriseWeek + firstSkippedWeek)
@@ -8239,7 +8360,7 @@ function step6() {
       <div class="wiz-field">
         <label class="wiz-label">Type de compétition</label>
         <input type="text" id="competType" class="wiz-text-input"
-               value="${_config.competition?.type || ''}"
+               value="${esc(_config.competition?.type || '')}"
                placeholder="Ex: Hyrox Paris, 10km, CrossFit Open…">
       </div>
     </div>` : ''}`;
@@ -8331,7 +8452,7 @@ function step7() {
       <div class="wiz-recap-row"><span>Matériel</span><strong>${mats || 'Poids du corps'}</strong></div>
       <div class="wiz-recap-row"><span>Durée</span><strong>${_config.duree} semaines</strong></div>
       ${_config.competition ? `<div class="wiz-recap-row"><span>Compétition</span><strong>${_config.competition.type || 'Oui'} · ${_fmtDate(_config.competition.date)}</strong></div>` : ''}
-      ${_config.exercicesForces.length ? `<div class="wiz-recap-row"><span>Exercices forcés</span><strong>${_config.exercicesForces.map(e=>e.name).join(', ')}</strong></div>` : ''}
+      ${_config.exercicesForces.length ? `<div class="wiz-recap-row"><span>Exercices forcés</span><strong>${_config.exercicesForces.map(e=>esc(e.name)).join(', ')}</strong></div>` : ''}
       ${_config.domaine === 'cardio' || _config.domaine === 'mixte' ? `<div class="wiz-recap-row"><span>Activités cardio</span><strong>${_config.cardioModalities.length ? _config.cardioModalities.map(cid => CARDIO_MODALITIES.find(m=>m.id===cid)?.name).filter(Boolean).join(', ') : 'Course à pied (défaut)'}</strong></div>` : ''}
       ${_config.domaine === 'mobilite' ? `<div class="wiz-recap-row"><span>Zones</span><strong>${_config.mobilityZones.length ? _config.mobilityZones.map(zid => MOBILITY_ZONES.find(z=>z.id===zid)?.label).filter(Boolean).join(', ') : 'Toutes'}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'prenatal' ? `<div class="wiz-recap-row"><span>Mois de grossesse</span><strong>${GROSSESSE_MOIS_CONFIG[_config.mois_grossesse]?.label}</strong></div>` : ''}
@@ -8341,7 +8462,7 @@ function step7() {
     <div class="wiz-field">
       <label class="wiz-label">Nom du programme (optionnel)</label>
       <input type="text" id="progName" class="wiz-text-input"
-             value="${_config.name || `${dom?.label || ''} ${_config.duree} sem.`}"
+             value="${esc(_config.name || `${dom?.label || ''} ${_config.duree} sem.`)}"
              placeholder="Mon programme Hyrox 2027">
     </div>
 
@@ -8694,11 +8815,12 @@ function _renderNutriList() {
 
   html += plans.map(p => {
     const obj = NUTRITION_OBJECTIFS.find(n => n.id === p.objectif);
+    const c = p.calc || {};
     return `
     <div class="p-card nutri-plan-card">
       <div class="nutri-plan-info">
         <div class="nutri-plan-name">${obj?.icon || '🥗'} ${esc(p.name)}</div>
-        <div class="nutri-plan-sub">${obj?.label || ''} · ${p.calc.kcalTraining} kcal · ${p.calc.prot_g} g P</div>
+        <div class="nutri-plan-sub">${obj?.label || ''} · ${esc(c.kcalTraining ?? '?')} kcal · ${esc(c.prot_g ?? '?')} g P</div>
       </div>
       <div style="display:flex;gap:6px">
         <button class="save-btn" style="padding:6px 14px;font-size:12px" onclick="_viewNutriPlan('${esc(p.id)}')">Voir</button>
@@ -8732,7 +8854,7 @@ function _renderNutriDetail(id) {
 
   const plan = getNutritionPlans().find(p => p.id === id);
   if(!plan) { showNutriList(); return; }
-  const c   = plan.calc;
+  const c   = plan.calc || {};
   const inp = plan.inputs || {};
   const obj = NUTRITION_OBJECTIFS.find(n => n.id === plan.objectif);
   const advice = NUTRITION_PLANS[plan.objectif];
@@ -10618,15 +10740,15 @@ function _renderProgramsList(showArchived = false) {
       const closedAt = p.closedAt ? new Date(p.closedAt).toLocaleDateString('fr-FR') : null;
       const statusLabel = STATUS_LABELS[p.status] || p.status;
       const statusColor = STATUS_COLORS[p.status] || 'var(--text3)';
-      const compet = p.config?.competition?.type ? ` · 🏆 ${p.config.competition.type}` : '';
+      const compet = p.config?.competition?.type ? ` · 🏆 ${esc(p.config.competition.type)}` : '';
 
       return `<div class="program-card ${isActive?'active-program':''}">
         <div class="prog-card-top">
           <div class="prog-card-name">${esc(p.name||'Programme')}</div>
-          <span style="font-size:11px;font-weight:600;color:${statusColor}">${statusLabel}</span>
+          <span style="font-size:11px;font-weight:600;color:${statusColor}">${esc(statusLabel)}</span>
         </div>
         <div class="prog-card-meta">
-          <span class="prog-meta-tag">${dom}</span>
+          <span class="prog-meta-tag">${esc(dom)}</span>
           <span class="prog-meta-tag">${niv}</span>
           <span class="prog-meta-tag">${weeks} sem.</span>
           <span class="prog-meta-tag">${p.config?.seancesParSemaine||'?'}×/sem.</span>
@@ -10703,16 +10825,16 @@ function renderActiveProgramDetail(weekNum) {
     <div class="prog-day-card">
       <div class="prog-day-header">
         <span class="prog-day-name">${esc(day.nom)}</span>
-        <span class="prog-day-split">${day.split&&day.split!==day.nom?day.split:''}</span>
+        <span class="prog-day-split">${day.split&&day.split!==day.nom?esc(day.split):''}</span>
       </div>
       <div class="prog-ex-list">
         ${day.exercices.map(ex => `
           <div class="prog-ex-item">
             <span class="prog-ex-item-name">${esc(ex.nom)}</span>
-            <span class="prog-ex-item-scheme">${ex.series||'?'}×${ex.reps||'?'}</span>
+            <span class="prog-ex-item-scheme">${esc(ex.series||'?')}×${esc(ex.reps||'?')}</span>
             ${ex.kgPlan
-              ? `<span class="prog-ex-item-kg">${ex.kgPlan} kg</span>`
-              : `<span class="prog-ex-item-kg">${ex.pct1rm||'?'}% 1RM</span>`}
+              ? `<span class="prog-ex-item-kg">${esc(ex.kgPlan)} kg</span>`
+              : `<span class="prog-ex-item-kg">${esc(ex.pct1rm||'?')}% 1RM</span>`}
           </div>`).join('')}
       </div>
     </div>`).join('');

@@ -499,7 +499,7 @@ function step6() {
       <div class="wiz-field">
         <label class="wiz-label">Type de compétition</label>
         <input type="text" id="competType" class="wiz-text-input"
-               value="${_config.competition?.type || ''}"
+               value="${esc(_config.competition?.type || '')}"
                placeholder="Ex: Hyrox Paris, 10km, CrossFit Open…">
       </div>
     </div>` : ''}`;
@@ -591,7 +591,7 @@ function step7() {
       <div class="wiz-recap-row"><span>Matériel</span><strong>${mats || 'Poids du corps'}</strong></div>
       <div class="wiz-recap-row"><span>Durée</span><strong>${_config.duree} semaines</strong></div>
       ${_config.competition ? `<div class="wiz-recap-row"><span>Compétition</span><strong>${_config.competition.type || 'Oui'} · ${_fmtDate(_config.competition.date)}</strong></div>` : ''}
-      ${_config.exercicesForces.length ? `<div class="wiz-recap-row"><span>Exercices forcés</span><strong>${_config.exercicesForces.map(e=>e.name).join(', ')}</strong></div>` : ''}
+      ${_config.exercicesForces.length ? `<div class="wiz-recap-row"><span>Exercices forcés</span><strong>${_config.exercicesForces.map(e=>esc(e.name)).join(', ')}</strong></div>` : ''}
       ${_config.domaine === 'cardio' || _config.domaine === 'mixte' ? `<div class="wiz-recap-row"><span>Activités cardio</span><strong>${_config.cardioModalities.length ? _config.cardioModalities.map(cid => CARDIO_MODALITIES.find(m=>m.id===cid)?.name).filter(Boolean).join(', ') : 'Course à pied (défaut)'}</strong></div>` : ''}
       ${_config.domaine === 'mobilite' ? `<div class="wiz-recap-row"><span>Zones</span><strong>${_config.mobilityZones.length ? _config.mobilityZones.map(zid => MOBILITY_ZONES.find(z=>z.id===zid)?.label).filter(Boolean).join(', ') : 'Toutes'}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'prenatal' ? `<div class="wiz-recap-row"><span>Mois de grossesse</span><strong>${GROSSESSE_MOIS_CONFIG[_config.mois_grossesse]?.label}</strong></div>` : ''}
@@ -601,7 +601,7 @@ function step7() {
     <div class="wiz-field">
       <label class="wiz-label">Nom du programme (optionnel)</label>
       <input type="text" id="progName" class="wiz-text-input"
-             value="${_config.name || `${dom?.label || ''} ${_config.duree} sem.`}"
+             value="${esc(_config.name || `${dom?.label || ''} ${_config.duree} sem.`)}"
              placeholder="Mon programme Hyrox 2027">
     </div>
 

@@ -379,8 +379,8 @@ function _renderProgSaisie(prog) {
 
     html += `</div></div>
       <div class="save-row">
-        <button class="save-btn" data-prog-day="${day.nom}" data-prog-week="${week}">Enregistrer ${day.nom}</button>
-        <span class="save-ok" id="pok_${day.nom}">&#x2713; Enregistré</span>
+        <button class="save-btn" data-prog-day="${esc(day.nom)}" data-prog-week="${week}">Enregistrer ${esc(day.nom)}</button>
+        <span class="save-ok" id="pok_${esc(day.nom)}">&#x2713; Enregistré</span>
       </div>`;
   });
 

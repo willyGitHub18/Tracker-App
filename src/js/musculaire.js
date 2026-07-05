@@ -6,6 +6,7 @@ import { EXERCISES, MUSCLE_LABELS, RECOVERY_HALFLIFE, MUSCLE_MAP, MUSCLE_THRESH,
 import { getRecord, getExStatus, normRecord } from './store.js';
 import { getAllActivePrograms, getProgRecord } from './programs.js';
 import { dbGet } from './db.js';
+import { esc } from './security.js';
 
 let _currentLoad      = {};
 let _selectedMuscleId = null;
@@ -378,7 +379,7 @@ export function renderMuscleDetail(mid, load) {
 
   const exRows = contribs.map(c =>
     `<div class="musc-ex-row">
-      <span class="musc-ex-name">${c.name}</span>
+      <span class="musc-ex-name">${esc(c.name)}</span>
       <span class="musc-ex-role" style="background:${roleBg(c.factor)};color:${roleClr(c.factor)}">${roleLabel[c.factor] || 'Secondaire'}</span>
       <span class="musc-ex-vol">${c.raw} vol.</span>
     </div>`

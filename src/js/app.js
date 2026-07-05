@@ -1136,15 +1136,15 @@ function _renderProgramsList(showArchived = false) {
       const closedAt = p.closedAt ? new Date(p.closedAt).toLocaleDateString('fr-FR') : null;
       const statusLabel = STATUS_LABELS[p.status] || p.status;
       const statusColor = STATUS_COLORS[p.status] || 'var(--text3)';
-      const compet = p.config?.competition?.type ? ` · 🏆 ${p.config.competition.type}` : '';
+      const compet = p.config?.competition?.type ? ` · 🏆 ${esc(p.config.competition.type)}` : '';
 
       return `<div class="program-card ${isActive?'active-program':''}">
         <div class="prog-card-top">
           <div class="prog-card-name">${esc(p.name||'Programme')}</div>
-          <span style="font-size:11px;font-weight:600;color:${statusColor}">${statusLabel}</span>
+          <span style="font-size:11px;font-weight:600;color:${statusColor}">${esc(statusLabel)}</span>
         </div>
         <div class="prog-card-meta">
-          <span class="prog-meta-tag">${dom}</span>
+          <span class="prog-meta-tag">${esc(dom)}</span>
           <span class="prog-meta-tag">${niv}</span>
           <span class="prog-meta-tag">${weeks} sem.</span>
           <span class="prog-meta-tag">${p.config?.seancesParSemaine||'?'}×/sem.</span>
@@ -1221,16 +1221,16 @@ function renderActiveProgramDetail(weekNum) {
     <div class="prog-day-card">
       <div class="prog-day-header">
         <span class="prog-day-name">${esc(day.nom)}</span>
-        <span class="prog-day-split">${day.split&&day.split!==day.nom?day.split:''}</span>
+        <span class="prog-day-split">${day.split&&day.split!==day.nom?esc(day.split):''}</span>
       </div>
       <div class="prog-ex-list">
         ${day.exercices.map(ex => `
           <div class="prog-ex-item">
             <span class="prog-ex-item-name">${esc(ex.nom)}</span>
-            <span class="prog-ex-item-scheme">${ex.series||'?'}×${ex.reps||'?'}</span>
+            <span class="prog-ex-item-scheme">${esc(ex.series||'?')}×${esc(ex.reps||'?')}</span>
             ${ex.kgPlan
-              ? `<span class="prog-ex-item-kg">${ex.kgPlan} kg</span>`
-              : `<span class="prog-ex-item-kg">${ex.pct1rm||'?'}% 1RM</span>`}
+              ? `<span class="prog-ex-item-kg">${esc(ex.kgPlan)} kg</span>`
+              : `<span class="prog-ex-item-kg">${esc(ex.pct1rm||'?')}% 1RM</span>`}
           </div>`).join('')}
       </div>
     </div>`).join('');

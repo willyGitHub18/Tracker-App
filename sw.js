@@ -6,7 +6,7 @@
  *   pour invalider le cache sur tous les appareils.
  */
 
-const APP_VERSION = '3.14.0';  // ← incrémenter à chaque déploiement
+const APP_VERSION = '3.15.0';  // ← incrémenter à chaque déploiement
 const CACHE_NAME  = `just2train-${APP_VERSION}`;
 const BASE        = self.registration.scope;
 
@@ -74,12 +74,15 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Autres assets → cache-first
+  // Autres assets → cache-first. On ne met en cache que les réponses SAME-ORIGIN :
+  // les ressources tierces (CDN, polices) ne doivent pas être stockées par le SW
+  // (évite tout cache poisoning cross-origin ; elles ont leur propre cache HTTP).
+  const sameOrigin = new URL(request.url).origin === self.location.origin;
   event.respondWith(
     caches.match(request).then(cached => {
       if(cached) return cached;
       return fetch(request).then(response => {
-        if(!response || response.status !== 200 || response.type === 'opaque') return response;
+        if(!sameOrigin || !response || response.status !== 200 || response.type !== 'basic') return response;
         const clone = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
         return response;
@@ -89,6 +92,8 @@ self.addEventListener('fetch', event => {
 });
 
 // ── Message: skipWaiting à la demande (bouton "Mettre à jour") ────────────────
+// On n'accepte que les messages émis par un client de MÊME origine (durcissement).
 self.addEventListener('message', event => {
+  if(event.origin && event.origin !== self.location.origin) return;
   if(event.data === 'skipWaiting') self.skipWaiting();
 });
