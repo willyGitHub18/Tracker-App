@@ -76,7 +76,7 @@ Section top-level dédiée (barre du bas, 🧘) **+** focus cadrable via le wiza
 - **Focus généré (wizard)** : programme souple multi-semaines sur les zones choisies, progression douce (PNF puis fin d'amplitude introduits progressivement), suivi dans le Tracker.
 
 #### Type Mixte / Santé globale
-Programme équilibré sur la semaine : Force + Cardio + Hypertrophie + Mobilité/Récupération. Structure adaptée au nombre de séances par semaine. *(La composante cardio du Mixte utilise encore l'ancien modèle — refonte prévue après le module Cardio.)*
+Programme équilibré sur la semaine : Force + Cardio + Hypertrophie + Mobilité/Récupération. Structure adaptée au nombre de séances par semaine. Les **jours cardio et mobilité génèrent de vraies séances dédiées** (plus de repli force %1RM) : périodisation cardio simplifiée calée sur la phase force (Base → endurance Z2, Construction → tempo Z3, Intensité/Pic → seuil Z4), sélecteur de modalités dans le wizard, drills de mobilité en rotation. Suivi et carte musculaire hérités automatiquement via `ex.kind`.
 
 #### Adaptations selon l'âge
 | Paramètre | 18–29 | 40–49 | 60+ |
@@ -145,7 +145,7 @@ Tracker-App/
     ├── shell.html          # Squelette HTML (head, header, nav bottom, <script>) + placeholders {{CSS}}/{{VIEWS}}/{{JS}}
     ├── js/
     │   ├── db.js               # IndexedDB + cache in-memory + fallback localStorage
-    │   ├── security.js         # esc(), sanitizeRecord(), validateImport()
+    │   ├── security.js         # esc(), sanitizeRecord(), validateImport(), safeId/safeLabel/sanitizeDeep + sanitizers d'import
     │   ├── data.js             # EXERCISES, MUSCLE_MAP, AGE_MODIFIERS, GROSSESSE_*, NUTRITION_*, CARDIO_*, MOBILITY_*
     │   ├── store.js            # Accesseurs + gestion vacances multi-périodes
     │   ├── progression.js      # Logique Lafay : weekOutcome, getNextPlan, calcAdj
@@ -246,13 +246,17 @@ GitHub Desktop : Commit → Push
 
 ## Sécurité
 
+Politique complète, modèle de menace et résultat de l'audit : **`Documentation/security.md`**.
+
 | Mesure | Description |
 |---|---|
-| Échappement HTML | `esc()` sur toutes les valeurs dynamiques avant `innerHTML` |
-| Validation import | Schéma, types, plages vérifiés avant stockage |
-| Sanitisation | `sanitizeRecord()` : kg < 1000, reps < 100, RPE ≤ 10 |
-| Event delegation SVG | Regex sur les IDs muscle |
-| Données locales | Zéro communication réseau, zéro tracking |
+| Échappement HTML | `esc()` sur toutes les valeurs dynamiques (saisie / API / import) avant `innerHTML` |
+| Assainissement import | **Tous** les blocs importés (programmes, plans nutrition, mobilité, tracking) passent par un sanitizer avant écriture — `safeId` (ids), `safeLabel`/`sanitizeDeep` (texte + anti prototype-pollution), coercition numérique des plans |
+| Sanitisation records | `sanitizeRecord()` : kg < 1000, reps < 100, RPE ≤ 10 ; fichier plafonné à 512 Ko |
+| Export CSV | Cellules `= + - @` préfixées `'` (anti-injection de formule) |
+| CSP + SRI | `Content-Security-Policy` en `<meta>` (`connect-src` limité à self + wger → anti-exfiltration) ; Chart.js chargé avec `integrity` (SRI) |
+| Service Worker | Cache **same-origin only** (anti cache-poisoning), `message` filtré par origine |
+| Données locales | Zéro communication réseau (hors API wger publique), zéro tracking, zéro télémétrie |
 | Zéro dépendance npm | Aucun risque supply chain |
 
 ---
@@ -262,7 +266,7 @@ GitHub Desktop : Commit → Push
 - **Vanilla JS** — ES Modules, aucune dépendance
 - **IndexedDB** — stockage persistant, stable sur iOS Safari
 - **SVG** — schéma anatomique interactif
-- **Chart.js** — graphiques progression et benchmark (CDN Cloudflare)
+- **Chart.js** — graphiques progression et benchmark (CDN Cloudflare, chargé avec SRI)
 - **wger.de API** — base d'exercices open source (cache offline)
 - **Service Worker** — cache-first, offline complet
 - **PWA** — manifest, standalone, apple-touch-icon
