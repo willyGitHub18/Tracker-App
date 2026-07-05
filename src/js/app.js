@@ -691,6 +691,9 @@ function _renderProgDetailView(prog, container) {
   function _estimateMinutes(exercises) {
     let total = 0;
     exercises.forEach(ex => {
+      // Séances cardio / drills mobilité (jours Mixte) : durée propre, pas de séries.
+      if(ex.kind === 'cardio')   { total += (ex.totalMin || ex.duration || 30) * 60; return; }
+      if(ex.kind === 'mobility') { total += 150; return; } // ~2 min 30 par drill
       const sets = ex.series || 4;
       const reps = ex.reps || 6;
       const secPerSet = Math.max(20, reps * 3); // ~3 sec per rep
@@ -727,7 +730,10 @@ function _renderProgDetailView(prog, container) {
   dayNames.forEach((day, di) => {
     const refDay = refWeek.jours[di];
     const split = refDay?.split || '';
-    const exNames = refDay?.exercices?.slice(0,2).map(e => e.nom || e.id).join(' + ') || '';
+    // Jours cardio/mobilité (Mixte) : n'afficher que la séance cardio en en-tête.
+    const exNames = (refDay?.exercices?.some(e => e.kind)
+      ? refDay.exercices.filter(e => e.kind === 'cardio')
+      : refDay?.exercices || []).slice(0,2).map(e => e.nom || e.id).join(' + ') || '';
     const estMin = _estimateMinutes(refDay?.exercices || []);
 
     // Sous-pills par bloc (format ATHX: Bloc X (S1-5), S6 Deload)
@@ -762,10 +768,49 @@ function _renderProgDetailView(prog, container) {
       if(bloc.isDeload || bloc.isTaper) {
         // Deload/Taper: simple card
         const sem = bloc.weeks[0];
-        const exList = (sem.jours?.[di]?.exercices || []).map(ex =>
-          `${ex.scheme} ${ex.nom} @ ${ex.kgPlan ? ex.kgPlan+'kg' : ex.pct1rm+'%'}`
+        const deloadExs = sem.jours?.[di]?.exercices || [];
+        const exList = deloadExs.map(ex =>
+          ex.kind ? `${ex.nom} — ${ex.scheme || '—'}`
+                  : `${ex.scheme} ${ex.nom} @ ${ex.kgPlan ? ex.kgPlan+'kg' : ex.pct1rm+'%'}`
         ).join('. ');
-        html += `<div class="p-card"><div class="p-card-body">${esc(exList)}. Durée estimée : ~${Math.max(15, Math.round(estMin*0.6))} min.</div></div>`;
+        const dMin = deloadExs.some(e => e.kind)
+          ? _estimateMinutes(deloadExs)
+          : Math.max(15, Math.round(estMin*0.6));
+        html += `<div class="p-card"><div class="p-card-body">${esc(exList)}. Durée estimée : ~${dMin} min.</div></div>`;
+      } else if((refWeek.jours?.[di]?.exercices || []).some(e => e.kind === 'cardio' || e.kind === 'mobility')) {
+        // Jour cardio / mobilité (programme Mixte) : fiche séance + drills
+        const firstWeek = bloc.weeks[0];
+        const dayExercises = firstWeek.jours?.[di]?.exercices || [];
+
+        dayExercises.filter(e => e.kind === 'cardio').forEach(ex => {
+          const prog_ = bloc.weeks.map(sem => {
+            const e = sem.jours?.[di]?.exercices?.find(x => x.kind === 'cardio');
+            return e ? `S${sem.num}: ${e.scheme}` : null;
+          }).filter(Boolean).join(' · ');
+          html += `<div class="p-card">
+            <div class="p-card-title">${esc(ex.nom)} — ${esc(ex.scheme || '—')}</div>
+            <span class="p-ex-tag" style="background:${ex.zoneBg||'var(--surface2)'};color:${ex.zoneCol||'var(--text2)'};display:inline-block;margin-bottom:6px">${esc(ex.zoneLabel||'')}</span>
+            <div class="p-card-body"><strong>Intensité :</strong> RPE ${esc(ex.rpeTarget||'—')}${ex.hrPct?` · ${esc(ex.hrPct)}`:''}${ex.feel?`<br><strong>Allure / ressenti :</strong> ${esc(ex.feel)}`:''}${ex.detail?`<br>${esc(ex.detail)}`:''}${ex.cue?`<br><strong>Technique :</strong> ${esc(ex.cue)}`:''}${prog_?`<br><strong>Progression du bloc :</strong> ${esc(prog_)}`:''}</div>
+          </div>`;
+        });
+
+        const drills = dayExercises.filter(e => e.kind === 'mobility');
+        if(drills.length) {
+          const withCardio = dayExercises.some(e => e.kind === 'cardio');
+          html += `<div class="p-card"><div class="p-card-title">🧘 Mobilité${withCardio ? ' — fin de séance' : ''}</div>`;
+          drills.forEach((ex, gi) => {
+            html += `<div class="p-ex-row">
+              <div class="p-ex-num">${gi + 1}</div>
+              <div class="p-ex-name">${esc(ex.nom)}</div>
+              <div class="p-ex-detail">${esc(ex.scheme || '')}${ex.cue ? `<br><span style="color:var(--text3)">${esc(ex.cue)}</span>` : ''}</div>
+            </div>`;
+          });
+          html += `</div>`;
+          if(withCardio) html += `<div class="p-note">Durée estimée : ~${_estimateMinutes(dayExercises)} min. Mobilité en fin de séance, au calme.</div>`;
+          else html += `<div class="p-note">Durée estimée : ~${_estimateMinutes(dayExercises)} min. Aucun drill ne doit être douloureux.</div>`;
+        } else {
+          html += `<div class="p-note">Durée estimée : ~${_estimateMinutes(dayExercises)} min.</div>`;
+        }
       } else {
         // Training bloc: rich exercise cards grouped by compound
         const firstWeek = bloc.weeks[0];
@@ -817,7 +862,7 @@ function _renderProgDetailView(prog, container) {
 
     daysContentHtml += `<div id="gday-${di}" class="prog-tab ${di===0?'active':''}">
       <div class="p-section">
-        <div class="p-sec-title">${esc(day)} — ${esc(split)} (${esc(exNames)})</div>
+        <div class="p-sec-title">${esc(day)} — ${esc(split)}${exNames ? ` (${esc(exNames)})` : ''}</div>
         <span class="p-time-badge">~${estMin} min total · Échauffement + séance + retour au calme</span>
         <div class="p-week-sel">${subPills}</div>
         ${blocsHtml}

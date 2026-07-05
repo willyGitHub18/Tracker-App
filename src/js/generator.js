@@ -153,6 +153,8 @@ export function generateProgram(config, newProgramId) {
   const isMixte = domaine === 'mixte';
   const mixteSplits = isMixte ? (MIXTE_SPLITS[Math.min(seancesParSemaine, 5)] || MIXTE_SPLITS[3]) : null;
   const splits  = isMixte ? mixteSplits.map(s=>s.nom) : (DOMAIN_SPLITS[domaine] || DOMAIN_SPLITS.gym)[Math.min(seancesParSemaine, 5)] || [];
+  // Mixte : contexte cardio (modalités, caps zone) pour les jours cardio/mobilité.
+  const mixteCardioCtx = isMixte ? _mixteCardioCtx(config) : null;
 
   const semaines = [];
   let weekNum = 1;
@@ -173,6 +175,13 @@ export function generateProgram(config, newProgramId) {
         const dayRpeMax = isMixte && mixteSplits?.[di]?.rpeMax
           ? Math.min(mixteSplits[di].rpeMax, vol.rpeMax)
           : vol.rpeMax;
+
+        // Jour cardio / mobilité du Mixte : vraie séance d'endurance (kind:'cardio')
+        // et/ou drills de mobilité (kind:'mobility') — plus de repli force %1RM.
+        if(isMixte && dayFocus && !dayFocus.includes('force') && !dayFocus.includes('gym')) {
+          return { nom: dayName, split: splitName,
+            exercices: _mixteSpecialDay(mixteCardioCtx, mixteSplits[di], phase, pw, weekNum, di, false) };
+        }
 
         const exForDay = isMixte && dayFocus
           ? _selectExercisesForMixte(pool, forcedExercises, dayFocus, vol.exPerSession, di)
@@ -220,6 +229,13 @@ export function generateProgram(config, newProgramId) {
       const deloadJours = days.map((dayName, di) => {
         const splitName = splits[di] || dayName;
         const dayFocus = isMixte && mixteSplits?.[di]?.focus;
+
+        // Jour cardio / mobilité du Mixte en décharge : endurance courte Z1–Z2.
+        if(isMixte && dayFocus && !dayFocus.includes('force') && !dayFocus.includes('gym')) {
+          return { nom: dayName, split: splitName,
+            exercices: _mixteSpecialDay(mixteCardioCtx, mixteSplits[di], phase, 0, weekNum, di, true) };
+        }
+
         const exForDay = isMixte && dayFocus
           ? _selectExercisesForMixte(pool, forcedExercises, dayFocus, vol.exPerSession, di)
           : _selectExercisesForDay(pool, forcedExercises, splitName, domaine, vol.exPerSession, di);
@@ -688,6 +704,81 @@ function _generateCardioProg(config, id) {
 
 function _isQuality(type) {
   return ['tempo','threshold','vo2max','race','fartlek'].includes(type);
+}
+
+// ── Mixte : jours cardio / mobilité (périodisation cardio simplifiée) ───────────
+// Pas de plan polarisé dédié (un seul jour cardio par semaine) : le type de séance
+// suit la phase force du programme — Base aérobie → endurance Z2, Construction →
+// tempo Z3, Intensité/Pic → seuil Z4 — plafonné par le rpeMax du jour (MIXTE_SPLITS),
+// le niveau et l'âge. Décharge / affûtage → endurance courte Z1–Z2.
+const MIXTE_PHASE_SESSION = {
+  'Base aérobie': 'endurance', 'Construction': 'tempo',
+  'Intensité': 'threshold', 'Pic intensité': 'threshold', 'Pic': 'threshold',
+};
+
+function _mixteCardioCtx(config) {
+  const { niveau, age, cardioModalities = [] } = config;
+  const ageMod = AGE_MODIFIERS[age || '30-39'] || AGE_MODIFIERS['30-39'];
+  const ageZoneCap = ageMod.rpeMax < 7 ? 3 : ageMod.rpeMax < 8 ? 4 : 5;
+  const level = CARDIO_LEVEL[niveau] || CARDIO_LEVEL.intermediaire;
+  const modalities = _resolveCardioModalities(cardioModalities);
+  // Rotation des semaines faciles : sur les modalités choisies. En repli (aucune
+  // sélection = course + marche), on reste sur la course — une seule séance cardio
+  // par semaine en Mixte, la marche n'y suffit pas si elle n'a pas été demandée.
+  const easyModalities = cardioModalities.length
+    ? modalities
+    : modalities.filter(m => m.id !== 'walk');
+  return {
+    level,
+    zoneCap: Math.min(level.zoneCap, ageZoneCap),
+    modalities,
+    easyModalities: easyModalities.length ? easyModalities : modalities,
+    isBeginner: niveau === 'debutant',
+    lvl: _MOB_LVL[niveau] ?? 1,
+  };
+}
+
+function _mixteSpecialDay(ctx, splitDef, phase, pw, weekNum, di, isDeload) {
+  const focus = splitDef?.focus || [];
+  const exercices = [];
+
+  if(focus.includes('cardio')) {
+    const combo   = focus.includes('mobilite');  // jour « Cardio + Mobilité »
+    const dayCap  = (splitDef?.rpeMax || 8) >= 7.5 ? 4 : 3;
+    const zoneCap = Math.min(ctx.zoneCap, isDeload ? 2 : dayCap);
+    const type    = (isDeload || phase.isTaper) ? 'endurance'
+      : (MIXTE_PHASE_SESSION[phase.nom] || 'endurance');
+    // Volume : rampe douce intra-phase ; réduit si la séance partage le jour avec la mobilité.
+    const volFactor = ((isDeload || phase.isTaper) ? 0.6 : 1 + 0.05 * pw) * (combo ? 0.75 : 1);
+    const easy     = ctx.easyModalities;
+    const modality = _isQuality(type) ? ctx.modalities[0] : easy[(weekNum - 1) % easy.length];
+    const session  = _buildCardioSession(type, modality, ctx.level, volFactor, zoneCap, weekNum, ctx.isBeginner);
+    session.id = `c${di + 1}_${modality.id}`;
+    session.modalityId = modality.id;
+    exercices.push(session);
+    if(combo) exercices.push(..._mixteMobilityDrills(ctx, weekNum, di, 3));
+  } else {
+    // Jour 100 % mobilité (splits 4–5 jours) : drills doux, zones en rotation.
+    exercices.push(..._mixteMobilityDrills(ctx, weekNum, di, 5));
+  }
+  return exercices;
+}
+
+// Drills de mobilité (dynamique + statique uniquement — pas de PNF/PAILs sur un
+// programme mixte) : zones en rotation semaine par semaine, ids préfixés par jour.
+function _mixteMobilityDrills(ctx, weekNum, di, count) {
+  const out = [];
+  const nz = MOBILITY_ZONES.length;
+  for(let k = 0; k < Math.min(count, nz); k++) {
+    const zone = MOBILITY_ZONES[(weekNum - 1 + di + k) % nz];
+    const pool = MOBILITY_DRILLS.filter(d => d.zone === zone.id &&
+      (d.method === 'dynamic' || d.method === 'static') && d.minLevel <= ctx.lvl);
+    if(!pool.length) continue;
+    const ex = _mobExFromDrill(pool[weekNum % pool.length], zone);
+    ex.id = `m${di + 1}_${ex.id}`;
+    out.push(ex);
+  }
+  return out;
 }
 
 // ── Mobilité — focus cadrable (souple, modèle kind:'mobility') ──────────────────

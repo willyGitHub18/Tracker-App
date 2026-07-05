@@ -379,7 +379,14 @@ function step5() {
                placeholder="Rechercher un exercice à exclure…" oninput="wizSearchEx('exclu')">
       </div>
       <div id="exResultsExclu" class="wiz-ex-results"></div>
-    </div>`;
+    </div>
+
+    ${_config.domaine === 'mixte' ? `
+    <div class="wiz-field">
+      <label class="wiz-label">Activités d'endurance (jour cardio)</label>
+      <div class="wiz-subtitle" style="margin-bottom:8px">Le jour cardio du programme utilise ta 1ère activité pour les séances soutenues (tempo, seuil), avec rotation des autres sur les semaines faciles.</div>
+      ${_cardioModalityGrid()}
+    </div>` : ''}`;
 }
 
 // ── Step 5 (cardio) — Modalités d'endurance ────────────────────────────────────
@@ -388,6 +395,12 @@ function step5_cardio() {
   return `
     <div class="wiz-title">Quelles activités d'endurance ?</div>
     <div class="wiz-subtitle">Sélectionne ce que tu pratiques (pas besoin de matériel déclaré). Les séances qualité (seuil, VO₂max) porteront sur ta 1ère activité ; les autres serviront aux sorties faciles et à la récupération.</div>
+    ${_cardioModalityGrid()}`;
+}
+
+// Grille de sélection des modalités cardio — partagée entre cardio et mixte.
+function _cardioModalityGrid() {
+  return `
     <div class="wiz-materiel-grid">
       ${CARDIO_MODALITIES.map(m => {
         const sel = _config.cardioModalities.includes(m.id);
@@ -558,6 +571,7 @@ function step7() {
       <div class="wiz-recap-row"><span>Durée</span><strong>${_config.duree} semaines</strong></div>
       ${_config.competition ? `<div class="wiz-recap-row"><span>Compétition</span><strong>${_config.competition.type || 'Oui'} · ${_fmtDate(_config.competition.date)}</strong></div>` : ''}
       ${_config.exercicesForces.length ? `<div class="wiz-recap-row"><span>Exercices forcés</span><strong>${_config.exercicesForces.map(e=>e.name).join(', ')}</strong></div>` : ''}
+      ${_config.domaine === 'cardio' || _config.domaine === 'mixte' ? `<div class="wiz-recap-row"><span>Activités cardio</span><strong>${_config.cardioModalities.length ? _config.cardioModalities.map(cid => CARDIO_MODALITIES.find(m=>m.id===cid)?.name).filter(Boolean).join(', ') : 'Course à pied (défaut)'}</strong></div>` : ''}
       ${_config.domaine === 'mobilite' ? `<div class="wiz-recap-row"><span>Zones</span><strong>${_config.mobilityZones.length ? _config.mobilityZones.map(zid => MOBILITY_ZONES.find(z=>z.id===zid)?.label).filter(Boolean).join(', ') : 'Toutes'}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'prenatal' ? `<div class="wiz-recap-row"><span>Mois de grossesse</span><strong>${GROSSESSE_MOIS_CONFIG[_config.mois_grossesse]?.label}</strong></div>` : ''}
       ${_config.domaine === 'grossesse' && _config.grossesse_type === 'postnatal' ? `<div class="wiz-recap-row"><span>Phase post-natale</span><strong>${POSTNATAL_PHASES.find(p=>p.id===_config.postnatal_phase)?.label||'—'}</strong></div>` : ''}
