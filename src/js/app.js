@@ -18,6 +18,7 @@ import { buildAthxProgram, EXERCISE_CUES } from './data.js';
 import { getRecord, getVacances, setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
 import { renderNutritionSection, bindNutritionEvents } from './nutrition-plan.js';
 import { renderMobiliteSection } from './mobilite.js';
+import { renderResources } from './resources.js';
 
 // ── Custom confirm modal (iOS PWA-safe) ─────────────────────────────────────
 
@@ -81,7 +82,6 @@ function _confirmModal(message, actionLabel, onConfirm) {
 const SECTIONS   = ['tracker','musculaire','programme','programmes','doc'];
 const TRACK_TABS = ['saisie','progression','historique'];
 const PROG_TABS  = ['warmup','mardi','mercredi','jeudi','vendredi','vacances'];
-const DOC_TABS   = ['doc-intro','doc-tracker','doc-progression','doc-statut','doc-musculaire','doc-rpe','doc-export','doc-grossesse'];
 
 export function showSection(id) {
   document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
@@ -98,6 +98,7 @@ export function showSection(id) {
   if(id === 'musculaire')  renderMusculaire();
   if(id === 'nutrition-section') renderNutritionSection();
   if(id === 'mobilite-section') renderMobiliteSection();
+  if(id === 'doc')         renderResources();
   if(id === 'programmes')  renderPrograms();
   if(id === 'programme') {
     // Redirect to Programmes tab — Programme tab is hidden
@@ -183,8 +184,7 @@ export function showDoc(id) {
   document.querySelectorAll('.doc-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.doc-nav-item').forEach(b => b.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
-  const idx = DOC_TABS.indexOf(id);
-  if(idx >= 0) document.querySelectorAll('.doc-nav-item')[idx]?.classList.add('active');
+  document.querySelector(`.doc-nav-item[data-doc="${id}"]`)?.classList.add('active');
 }
 
 // ── Window exposures ──────────────────────────────────────────────────────────

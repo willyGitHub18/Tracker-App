@@ -92,6 +92,11 @@
   .doc-nav-item{border-radius:var(--radius);border:none;background:transparent;text-align:left;padding:6px 10px}
   .doc-nav-item.active{background:var(--text);color:#fff}
 }
+/* Étiquette de catégorie dans le sommaire (Guide data-driven) */
+.doc-nav-cat{width:100%;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:10px 10px 4px}
+.doc-nav-cat:first-child{padding-top:0}
+/* Callout d'alerte "danger" (contre-indications) — variante rouge du doc-warn */
+.doc-warn.danger{background:#fdeaea;border-color:rgba(156,34,34,.35);color:#9c2222}
 
 /* ── Doc simple list (replaces multi-column tables) ── */
 .doc-list-simple{background:var(--surface2);border-radius:var(--radius-lg);overflow:hidden;margin:10px 0}

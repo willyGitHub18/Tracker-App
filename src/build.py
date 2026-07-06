@@ -21,7 +21,7 @@ CSS_ORDER  = ["base", "tracker", "musculaire", "programme", "wizard", "mobilite"
 VIEW_ORDER = ["tracker", "musculaire", "programme", "programmes", "doc", "nutrition", "mobilite"]
 JS_ORDER   = ["db", "security", "data", "store", "progression", "tracker",
               "musculaire", "io", "exercises-db", "programs", "generator",
-              "grossesse", "wizard", "nutrition-plan", "mobilite", "app"]
+              "grossesse", "wizard", "nutrition-plan", "mobilite", "resources", "app"]
 
 # Règle d'override injectée en fin de <style> par l'ancien bundler (top-nav masquée).
 TAIL_CSS = "\n.top-nav-btn:nth-child(3){display:none}\n"
