@@ -19,6 +19,7 @@ import { getRecord, getVacances, setVacances, clearAllVacances, addVacances, rem
 import { renderNutritionSection, bindNutritionEvents } from './nutrition-plan.js';
 import { renderMobiliteSection } from './mobilite.js';
 import { renderResources } from './resources.js';
+import { showHelp, openGuideArticle } from './help.js';
 
 // ── Custom confirm modal (iOS PWA-safe) ─────────────────────────────────────
 
@@ -197,6 +198,8 @@ window.showTracker   = showTracker;
 window.showProg      = showProg;
 window.showWeek      = showWeek;
 window.showDoc       = showDoc;
+window.showHelp         = showHelp;
+window.openGuideArticle = openGuideArticle;
 window.exportJSON    = exportJSON;
 window.exportCSV     = exportCSV;
 window.importJSON    = importJSON;

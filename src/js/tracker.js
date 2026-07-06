@@ -5,6 +5,7 @@
  */
 
 import { esc }            from './security.js';
+import { helpBtn }        from './help.js';
 import { EXERCISES, PHASES, PHASE_LABELS, PHASE_STYLE, MUSCLE_MAP, EXERCISE_CUES } from './data.js';
 import { getRecord, setRecord, getExStatus, setExStatus,
          normRecord, bestKg, getLatestWeek,
@@ -207,6 +208,7 @@ function _renderProgSaisie(prog) {
             <button class="session-status-btn${btnH}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-compét</button>
             <button class="session-status-btn${btnD}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
             <button class="session-status-btn${btnS}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+            ${helpBtn('session-status')}
           </span>
         </div>`;
 
@@ -253,6 +255,7 @@ function _renderProgSaisie(prog) {
           html += `<div class="next-rec-block ${outcomeClass}">
             <div class="rec-line">S${week+1} recommandé : <strong>${nxt.kg} ${ex.unit||'kg'}</strong>
               ${delta != null ? `<span style="color:${deltaCls};font-size:11px;margin-left:6px">(${deltaStr})</span>` : ''}
+              ${helpBtn('reco-s1')}
             </div>
             <div class="reason">${esc(nxt.rule)}</div>
           </div>`;
@@ -305,7 +308,7 @@ function _renderProgSaisie(prog) {
           <label class="cardio-log-field">Durée réelle
             <span><input type="number" id="cdur_${ex.id}" min="0" max="600" step="1" value="${durVal}" placeholder="${ex.totalMin||ex.duration||''}"> min</span>
           </label>
-          <label class="cardio-log-field">RPE ressenti
+          <label class="cardio-log-field">RPE ressenti ${helpBtn('rpe')}
             <select id="crpe_${ex.id}"><option value="">—</option>${_rpeOptions(craw.rpe)}</select>
           </label>
           ${ex.dist ? `<label class="cardio-log-field">Distance
@@ -338,7 +341,7 @@ function _renderProgSaisie(prog) {
       if(showGrid) {
         const placeholder = exStatus === 'deload' && deloadKg ? deloadKg : (plan || '');
         html += `<table class="sets-table">
-          <thead><tr><th>Série</th><th>Charge (${ex.unit||'kg'})</th><th>Reps</th><th>RPE</th><th></th><th>Sautée</th></tr></thead>
+          <thead><tr><th>Série</th><th>Charge (${ex.unit||'kg'})</th><th>Reps</th><th>RPE ${helpBtn('rpe')}</th><th></th><th>Sautée</th></tr></thead>
           <tbody>`;
         for(let s = 0; s < Math.max(nSets, 4); s++) {
           const sr  = rec?.sets?.[s] || {};
@@ -731,6 +734,7 @@ function _renderLegacySaisie() {
             <button class="session-status-btn${btnH}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-Hyrox</button>
             <button class="session-status-btn${btnD}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
             <button class="session-status-btn${btnS}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+            ${helpBtn('session-status')}
           </span>
         </div>`;
 
@@ -769,6 +773,7 @@ function _renderLegacySaisie() {
               html += `<div class="next-rec-block ${outcomeClass}">
                 <div class="rec-line">S${week+1} recommandé : <strong>${nxt.kg} ${ex.unit}</strong> × <strong>${planRepsNext} reps</strong>
                   ${planNext?`<span style="color:${deltaCls};font-size:11px;margin-left:6px">(${deltaStr})</span>`:''}
+                  ${helpBtn('reco-s1')}
                 </div>
                 <div class="reason">${esc(nxt.rule)}</div>
                 <div class="reason" style="margin-top:2px">RPE cible : <strong>${rpeTarget}</strong>${nxt.plateauCount>0?` · Plateau : ${nxt.plateauCount}/3 sem.`:''}</div>
@@ -784,7 +789,7 @@ function _renderLegacySaisie() {
       if(exStatus !== 'skipped') {
         const deloadKg = exStatus==='deload'&&plan ? Math.round(plan*0.60/1.25)*1.25 : null;
         html += `<table class="sets-table">
-          <thead><tr><th>Série</th><th>Charge (${ex.unit})</th><th>Reps</th><th>RPE</th><th></th><th>Sautée</th></tr></thead><tbody>`;
+          <thead><tr><th>Série</th><th>Charge (${ex.unit})</th><th>Reps</th><th>RPE ${helpBtn('rpe')}</th><th></th><th>Sautée</th></tr></thead><tbody>`;
         for(let s = 0; s < nSets; s++) {
           const sr  = rec?.sets?.[s] || {};
           const isSkipped = sr.skipped === true;

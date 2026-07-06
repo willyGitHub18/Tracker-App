@@ -97,3 +97,13 @@ header {
 }
 header h1 { font-size: 17px; font-weight: 700; margin: 0; letter-spacing: -.02em; color: #fff; }
 header .sub { font-size: 11px; color: rgba(255,255,255,.45); display: block; }
+
+/* ── Aide contextuelle (help.js) ── */
+.help-btn{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:none;background:var(--surface2);color:var(--text3);font-size:10px;font-weight:700;line-height:1;padding:0;margin-left:3px;cursor:pointer;vertical-align:middle;flex-shrink:0;touch-action:manipulation}
+.help-btn:hover{background:var(--text);color:#fff}
+.help-backdrop{position:fixed;inset:0;z-index:9998;background:transparent}
+.help-pop{position:fixed;z-index:9999;max-width:320px;width:calc(100vw - 32px);background:var(--surface);border:1px solid var(--border-md);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:14px 16px}
+.help-pop-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+.help-pop-body{font-size:12px;line-height:1.6;color:var(--text2)}
+.help-pop-body strong{color:var(--text)}
+.help-guide-link{margin-top:10px;display:inline-block;background:none;border:none;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;padding:0;touch-action:manipulation}
