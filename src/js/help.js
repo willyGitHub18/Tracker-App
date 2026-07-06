@@ -30,6 +30,15 @@ const HELP = {
     title: 'Recommandation S+1',
     body: "Charge suggérée pour la semaine suivante, façon Lafay :\n**+1 palier** — séries complètes, reps ≥ 95 % du plan et RPE ≤ 8.5.\n**Même charge** — RPE 8.5–9.5, ou reps 80–95 % du plan.\n**Recul** — RPE > 9.5 (−1), reps < 80 % (−2), ou plateau de 3 semaines consécutives (−1).",
   },
+  'muscle-load': {
+    title: 'Charge musculaire (modèle SRA)',
+    body: "Chaque muscle affiche sa **charge résiduelle** actuelle : l'effort d'une séance décroît avec le temps selon un modèle **SRA** (demi-vie de 36–72 h propre à chaque muscle).\n**Repos** (gris) — récupéré.\n**Récup** (vert) — en cours, fenêtre favorable.\n**Modéré** (ambre) — à surveiller.\n**Fatigue** (rouge) — charge élevée, priorité à la récupération.",
+    guide: 'recuperation',
+  },
+  'export': {
+    title: 'Données & sauvegarde',
+    body: "Tes données restent **en local** sur l'appareil (rien n'est envoyé) et l'app fonctionne hors ligne.\n**Export JSON** — sauvegarde complète réimportable ; à faire régulièrement.\n**Export CSV** — historique tabulaire (Excel, Google Sheets).\n**Importer** — fusionne les données (les clés existantes sont écrasées) ; le fichier est validé avant import (schéma, plages, taille ≤ 512 Ko).",
+  },
 };
 
 /** esc() + mini-markdown : **gras**, puis retours ligne → <br>. */

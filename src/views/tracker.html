@@ -6,7 +6,7 @@
   </div>
 
   <div class="data-toolbar">
-    <span class="data-toolbar-label">Données</span>
+    <span class="data-toolbar-label">Données <button class="help-btn" type="button" aria-label="Aide" onclick="event.stopPropagation();showHelp(this,'export')">?</button></span>
     <button class="tool-btn export-json" onclick="exportJSON()">&#x2B07; Export JSON</button>
     <button class="tool-btn export-csv" onclick="exportCSV()">&#x2B07; Export CSV</button>
     <button class="tool-btn import-btn" onclick="document.getElementById('importFileInput').click()">&#x2B06; Importer</button>
