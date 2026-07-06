@@ -2218,7 +2218,7 @@ function safeId(id, max = 80) {
  */
 function safeLabel(str, max = 120) {
   return String(str == null ? '' : str)
-    .replace(/[<>"'` -]/g, '')
+    .replace(/[<>"'`\x00-\x1f\x7f]/g, '')
     .slice(0, max);
 }
 
