@@ -314,6 +314,13 @@ window.showNutriList = function() {
 };
 
 window.showNutriWizard = function() {
+  // Pré-remplir sexe + poids depuis le profil global (⚙ Réglages), source unique.
+  // Le sexe du profil ('H'/'F') est mappé sur le format nutrition ('M'/'F').
+  if(typeof getProfile === 'function') {
+    const prof = getProfile();
+    _nutriForm.sexe = prof.sexe === 'F' ? 'F' : 'M';
+    if(prof.bodyWeight != null) _nutriForm.poids = prof.bodyWeight;
+  }
   _showNutriView('nutri-wizard-view');
   _renderNutriWizardForm();
 };
@@ -345,6 +352,9 @@ window._nutriGenerate = function() {
   if(!(taille >= 100 && taille <= 250)) { _nutriErr('Taille invalide (100–250 cm).'); return; }
   if(!(age >= 14 && age <= 100)) { _nutriErr('Âge invalide (14–100 ans).'); return; }
   if(!_nutriForm.objectif) { _nutriErr('Choisis un objectif.'); return; }
+
+  // Remonter poids + sexe vers le profil global (source unique) — cohérent avec le wizard programme.
+  if(typeof setProfile === 'function') setProfile({ sexe: _nutriForm.sexe === 'F' ? 'F' : 'H', bodyWeight: poids });
 
   const inputs = { poids, taille, age, sexe: _nutriForm.sexe, activite: _nutriForm.activite, objectif: _nutriForm.objectif };
   const calc = computeNutritionPlan(inputs);

@@ -526,10 +526,20 @@ const ORM_RATIOS = {
   thruster:  { debutant: 0.40, intermediaire: 0.60, avance: 0.80 },
 };
 
-function _estimateORM(exId, bodyWeight, niveau) {
+// Ratios force/poids féminins ≈ barème masculin × ~0.72 (bas du corps) / ~0.62 (haut du corps).
+// Réf. : écarts F/H observés (Strength Level). Sans cet ajustement, une femme se voyait
+// attribuer les mêmes charges de départ qu'un homme de même poids → estimation trop lourde.
+const ORM_FEMALE_FACTOR = {
+  squat: 0.72, deadlift: 0.72, squat_fs: 0.72, rdl: 0.72,   // bas du corps
+  press: 0.62, bench: 0.62, ohp: 0.62, row_barre: 0.62,     // haut du corps
+  thruster: 0.65,                                            // corps entier
+};
+
+function _estimateORM(exId, bodyWeight, niveau, sexe) {
   const ratios = ORM_RATIOS[exId];
   if(!ratios || !bodyWeight) return null;
-  const ratio = ratios[niveau] || ratios.intermediaire;
+  let ratio = ratios[niveau] || ratios.intermediaire;
+  if(sexe === 'F') ratio *= (ORM_FEMALE_FACTOR[exId] ?? 0.68);
   return Math.round(bodyWeight * ratio / 2.5) * 2.5; // arrondi au 2.5 kg
 }
 
@@ -615,7 +625,8 @@ function step7() {
       <div class="wiz-orm-grid">
         ${_ormExercises().map(ex => {
           const manual = _config.orm[ex.id];
-          const estimated = _config.bodyWeight ? _estimateORM(ex.id, _config.bodyWeight, _config.niveau) : null;
+          const _sexe = (typeof getProfile === 'function') ? getProfile().sexe : 'H';
+          const estimated = _config.bodyWeight ? _estimateORM(ex.id, _config.bodyWeight, _config.niveau, _sexe) : null;
           const val = manual || estimated || '';
           const isEstimated = !manual && estimated;
           return `
