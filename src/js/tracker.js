@@ -154,7 +154,7 @@ function _renderProgSaisie(prog) {
   badge.style.background = pStyle.bg;
   badge.style.color      = pStyle.color;
 
-  let html = _progSelectorUI() + _vacancesUI();
+  let html = _progSelectorUI() + _vacancesBannersUI();
 
   // Deload / taper info banner
   if(semaine.isDeload) {
@@ -387,6 +387,7 @@ function _renderProgSaisie(prog) {
       </div>`;
   });
 
+  html += _vacancesSetupUI();
   document.getElementById('saisieContent').innerHTML = html;
   _bindProgSaisieEvents(prog, week);
 }
@@ -689,7 +690,7 @@ function _renderLegacySaisie() {
   badge.style.color      = PHASE_STYLE[ph].color;
 
   const days = ['Mercredi', 'Jeudi'];
-  let html = _progSelectorUI() + _vacancesUI();
+  let html = _progSelectorUI() + _vacancesBannersUI();
 
   days.forEach(day => {
     const exs = EXERCISES.filter(e => e.day === day);
@@ -846,6 +847,7 @@ function _renderLegacySaisie() {
       </div>`;
   });
 
+  html += _vacancesSetupUI();
   document.getElementById('saisieContent').innerHTML = html;
   _bindLegacyEvents(week);
 }
@@ -1011,14 +1013,14 @@ function _getVacBannerForWeek(list, week) {
   return null;
 }
 
-function _vacancesUI() {
-  const _rc   = repriseCoeff();
+function _vacancesUI() { return _vacancesBannersUI() + _vacancesSetupUI(); }
+
+// Bannières contextuelles (reprise / vacances en cours / à venir) — restent visibles
+// en haut de la saisie car elles informent sur la semaine courante (P0-2).
+function _vacancesBannersUI() {
   const _stat = vacancesStatus();
   const _list = getVacancesList();
-  const _prog = getCurrentProgram ? getCurrentProgram() : null;
-  const _totalWeeks = _prog ? (_prog.totalWeeks || _prog.semaines?.length || 17) : 17;
   const _fmt  = d => d ? new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
-  const _dur  = (d1,d2) => Math.max(0,Math.round((new Date(d2)-new Date(d1))/86400000));
 
   let html = '';
   // Week-based banner logic (not calendar-based)
@@ -1061,8 +1063,20 @@ function _vacancesUI() {
     </div>`;
   }
 
-  html += `<div class="vacances-setup">
-    <div class="vacances-setup-title">🏖 Vacances / Congés</div>
+  return html;
+}
+
+// Panneau de gestion des vacances — repliable (P0-2), placé en bas de la saisie.
+function _vacancesSetupUI() {
+  const _list = getVacancesList();
+  const _prog = getCurrentProgram ? getCurrentProgram() : null;
+  const _totalWeeks = _prog ? (_prog.totalWeeks || _prog.semaines?.length || 17) : 17;
+  const _fmt  = d => d ? new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
+  const _dur  = (d1,d2) => Math.max(0,Math.round((new Date(d2)-new Date(d1))/86400000));
+
+  return `<details class="vac-collapsible">
+    <summary class="vac-summary">🏖 Vacances / Congés${_list.length?` <span class="vac-count">${_list.length}</span>`:''}</summary>
+    <div class="vacances-setup">
     ${_list.length?`<div class="vac-list">${_list.map((v,i)=>`
       <div class="vac-list-item">
         <span class="vac-list-dates">${_fmt(v.debut)} → ${_fmt(v.fin)}</span>
@@ -1090,8 +1104,8 @@ function _vacancesUI() {
       <button class="save-btn" style="padding:5px 14px;font-size:12px" onclick="window._saveVacances()">+ Ajouter</button>
       ${_list.length?`<button class="vac-clear-btn" onclick="window._clearVacances()">Tout effacer</button>`:''}
     </div>
-  </div>`;
-  return html;
+    </div>
+  </details>`;
 }
 
 function _bindVacancesEvents() {

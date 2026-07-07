@@ -132,6 +132,33 @@ header .sub { font-size: 11px; color: rgba(255,255,255,.45); display: block; }
 .empty-onboard-btn{min-height:48px;padding:12px 24px;background:var(--text);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600}
 .empty-onboard-btn:hover{background:var(--text);opacity:.9}
 
+/* ── ⚙ Réglages : bouton d'en-tête + feuille Données (P0-2) ── */
+header{position:relative}
+.settings-gear{position:absolute;top:50%;right:10px;transform:translateY(-50%);width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;line-height:1;cursor:pointer;border-radius:10px;touch-action:manipulation}
+.settings-gear:hover{color:#fff;background:rgba(255,255,255,.1)}
+.sheet-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center}
+.sheet-card{width:100%;max-width:460px;background:var(--surface);border-radius:18px 18px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -8px 32px rgba(0,0,0,.2);animation:sheet-up .2s ease}
+@media(min-width:520px){.sheet-overlay{align-items:center}.sheet-card{border-radius:18px}}
+@media(prefers-reduced-motion:reduce){.sheet-card{animation:none}}
+@keyframes sheet-up{from{transform:translateY(24px);opacity:.6}to{transform:translateY(0);opacity:1}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sheet-title{font-size:18px;font-weight:700;color:var(--text)}
+.sheet-close{width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer;border-radius:10px;touch-action:manipulation}
+.sheet-close:hover{background:var(--surface2);color:var(--text)}
+.sheet-note{font-size:13px;line-height:1.5;color:var(--text2);margin:0 0 16px}
+.sheet-actions{display:flex;flex-direction:column;gap:10px}
+.sheet-btn{min-height:48px;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;font-family:var(--sans);font-size:15px;font-weight:500;color:var(--text);cursor:pointer;touch-action:manipulation}
+.sheet-btn:hover{background:var(--border)}
+
+/* ── Vacances : panneau repliable (P0-2) ── */
+.vac-collapsible{margin-top:16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.vac-summary{list-style:none;cursor:pointer;min-height:48px;display:flex;align-items:center;gap:8px;padding:0 14px;font-size:14px;font-weight:600;color:var(--text);user-select:none;touch-action:manipulation}
+.vac-summary::-webkit-details-marker{display:none}
+.vac-summary::after{content:"›";margin-left:auto;font-size:20px;color:var(--text3);transform:rotate(90deg);transition:transform .15s}
+.vac-collapsible[open] .vac-summary::after{transform:rotate(-90deg)}
+.vac-count{background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
+.vac-collapsible .vacances-setup{padding:0 14px 14px;border:none}
+
 /* ── TRACKER STYLES ── */
 .tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px}
 .tab-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:7px 10px;border:none;border-radius:7px;background:transparent;color:var(--text2);cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
@@ -837,7 +864,7 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
 
 .top-nav-btn:nth-child(3){display:none}
 </style></head><body>
-<header><h1>Just2Train</h1><span class="sub">Ton entraînement, ton programme</span></header>
+<header><h1>Just2Train</h1><span class="sub">Ton entraînement, ton programme</span><button id="settingsGear" class="settings-gear" type="button" aria-label="Réglages et données" onclick="window._openSettings()">&#x2699;</button></header>
 <div class="top-nav" style="display:none"></div>
 <div class="main">
 <div id="tracker" class="section-panel active">
@@ -845,15 +872,6 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
     <button class="tab-btn active" onclick="showTracker('saisie')">Saisie semaine</button>
     <button class="tab-btn" onclick="showTracker('progression')">Progression</button>
     <button class="tab-btn" onclick="showTracker('historique')">Historique</button>
-  </div>
-
-  <div class="data-toolbar">
-    <span class="data-toolbar-label">Données <button class="help-btn" type="button" aria-label="Aide" onclick="event.stopPropagation();showHelp(this,'export')">?</button></span>
-    <button class="tool-btn export-json" onclick="exportJSON()">&#x2B07; Export JSON</button>
-    <button class="tool-btn export-csv" onclick="exportCSV()">&#x2B07; Export CSV</button>
-    <button class="tool-btn import-btn" onclick="document.getElementById('importFileInput').click()">&#x2B06; Importer</button>
-    <input type="file" id="importFileInput" accept=".json" onchange="importJSON(event)">
-    <span class="import-feedback" id="importFeedback">&#x2713; Import réussi</span>
   </div>
 
   <div id="t-saisie" class="tracker-panel active">
@@ -3599,7 +3617,7 @@ function _renderProgSaisie(prog) {
   badge.style.background = pStyle.bg;
   badge.style.color      = pStyle.color;
 
-  let html = _progSelectorUI() + _vacancesUI();
+  let html = _progSelectorUI() + _vacancesBannersUI();
 
   // Deload / taper info banner
   if(semaine.isDeload) {
@@ -3832,6 +3850,7 @@ function _renderProgSaisie(prog) {
       </div>`;
   });
 
+  html += _vacancesSetupUI();
   document.getElementById('saisieContent').innerHTML = html;
   _bindProgSaisieEvents(prog, week);
 }
@@ -4134,7 +4153,7 @@ function _renderLegacySaisie() {
   badge.style.color      = PHASE_STYLE[ph].color;
 
   const days = ['Mercredi', 'Jeudi'];
-  let html = _progSelectorUI() + _vacancesUI();
+  let html = _progSelectorUI() + _vacancesBannersUI();
 
   days.forEach(day => {
     const exs = EXERCISES.filter(e => e.day === day);
@@ -4291,6 +4310,7 @@ function _renderLegacySaisie() {
       </div>`;
   });
 
+  html += _vacancesSetupUI();
   document.getElementById('saisieContent').innerHTML = html;
   _bindLegacyEvents(week);
 }
@@ -4456,14 +4476,14 @@ function _getVacBannerForWeek(list, week) {
   return null;
 }
 
-function _vacancesUI() {
-  const _rc   = repriseCoeff();
+function _vacancesUI() { return _vacancesBannersUI() + _vacancesSetupUI(); }
+
+// Bannières contextuelles (reprise / vacances en cours / à venir) — restent visibles
+// en haut de la saisie car elles informent sur la semaine courante (P0-2).
+function _vacancesBannersUI() {
   const _stat = vacancesStatus();
   const _list = getVacancesList();
-  const _prog = getCurrentProgram ? getCurrentProgram() : null;
-  const _totalWeeks = _prog ? (_prog.totalWeeks || _prog.semaines?.length || 17) : 17;
   const _fmt  = d => d ? new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
-  const _dur  = (d1,d2) => Math.max(0,Math.round((new Date(d2)-new Date(d1))/86400000));
 
   let html = '';
   // Week-based banner logic (not calendar-based)
@@ -4506,8 +4526,20 @@ function _vacancesUI() {
     </div>`;
   }
 
-  html += `<div class="vacances-setup">
-    <div class="vacances-setup-title">🏖 Vacances / Congés</div>
+  return html;
+}
+
+// Panneau de gestion des vacances — repliable (P0-2), placé en bas de la saisie.
+function _vacancesSetupUI() {
+  const _list = getVacancesList();
+  const _prog = getCurrentProgram ? getCurrentProgram() : null;
+  const _totalWeeks = _prog ? (_prog.totalWeeks || _prog.semaines?.length || 17) : 17;
+  const _fmt  = d => d ? new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
+  const _dur  = (d1,d2) => Math.max(0,Math.round((new Date(d2)-new Date(d1))/86400000));
+
+  return `<details class="vac-collapsible">
+    <summary class="vac-summary">🏖 Vacances / Congés${_list.length?` <span class="vac-count">${_list.length}</span>`:''}</summary>
+    <div class="vacances-setup">
     ${_list.length?`<div class="vac-list">${_list.map((v,i)=>`
       <div class="vac-list-item">
         <span class="vac-list-dates">${_fmt(v.debut)} → ${_fmt(v.fin)}</span>
@@ -4535,8 +4567,8 @@ function _vacancesUI() {
       <button class="save-btn" style="padding:5px 14px;font-size:12px" onclick="window._saveVacances()">+ Ajouter</button>
       ${_list.length?`<button class="vac-clear-btn" onclick="window._clearVacances()">Tout effacer</button>`:''}
     </div>
-  </div>`;
-  return html;
+    </div>
+  </details>`;
 }
 
 function _bindVacancesEvents() {
@@ -10165,6 +10197,41 @@ function _createAthxTemplate() {
     initWeekSel();
   }
 }
+
+// ── Réglages / Données : feuille ouverte depuis le ⚙ de l'en-tête (P0-2) ────────
+// Sort l'export/import du corps du Tracker. Amorce du futur hub Réglages (P1).
+let _settingsEsc = null;
+
+window._openSettings = function() {
+  if(document.getElementById('settings-sheet')) return;
+  const ov = document.createElement('div');
+  ov.id = 'settings-sheet';
+  ov.className = 'sheet-overlay';
+  ov.innerHTML = `
+    <div class="sheet-card" role="dialog" aria-label="Données" aria-modal="true">
+      <div class="sheet-head">
+        <span class="sheet-title">Données</span>
+        <button class="sheet-close" type="button" aria-label="Fermer" onclick="window._closeSettings()">&#x2715;</button>
+      </div>
+      <p class="sheet-note">Sauvegarde et restauration de tes données. Tout est stocké uniquement sur cet appareil.</p>
+      <div class="sheet-actions">
+        <button class="sheet-btn" type="button" onclick="exportJSON()">&#x2B07; Export JSON</button>
+        <button class="sheet-btn" type="button" onclick="exportCSV()">&#x2B07; Export CSV</button>
+        <button class="sheet-btn" type="button" onclick="document.getElementById('importFileInput').click()">&#x2B06; Importer un fichier</button>
+      </div>
+      <input type="file" id="importFileInput" accept=".json" onchange="importJSON(event)" style="display:none">
+      <span class="import-feedback" id="importFeedback">&#x2713; Import réussi</span>
+    </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener('click', e => { if(e.target === ov) window._closeSettings(); });
+  _settingsEsc = e => { if(e.key === 'Escape') window._closeSettings(); };
+  document.addEventListener('keydown', _settingsEsc);
+};
+
+window._closeSettings = function() {
+  document.getElementById('settings-sheet')?.remove();
+  if(_settingsEsc) { document.removeEventListener('keydown', _settingsEsc); _settingsEsc = null; }
+};
 
 
 // ── Program card click handlers ──────────────────────────────────────────────

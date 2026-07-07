@@ -127,3 +127,30 @@ header .sub { font-size: 11px; color: rgba(255,255,255,.45); display: block; }
 .empty-onboard-sub{font-size:14px;line-height:1.5;color:var(--text2);max-width:300px;margin:0 auto 20px}
 .empty-onboard-btn{min-height:48px;padding:12px 24px;background:var(--text);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600}
 .empty-onboard-btn:hover{background:var(--text);opacity:.9}
+
+/* ── ⚙ Réglages : bouton d'en-tête + feuille Données (P0-2) ── */
+header{position:relative}
+.settings-gear{position:absolute;top:50%;right:10px;transform:translateY(-50%);width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;line-height:1;cursor:pointer;border-radius:10px;touch-action:manipulation}
+.settings-gear:hover{color:#fff;background:rgba(255,255,255,.1)}
+.sheet-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center}
+.sheet-card{width:100%;max-width:460px;background:var(--surface);border-radius:18px 18px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -8px 32px rgba(0,0,0,.2);animation:sheet-up .2s ease}
+@media(min-width:520px){.sheet-overlay{align-items:center}.sheet-card{border-radius:18px}}
+@media(prefers-reduced-motion:reduce){.sheet-card{animation:none}}
+@keyframes sheet-up{from{transform:translateY(24px);opacity:.6}to{transform:translateY(0);opacity:1}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sheet-title{font-size:18px;font-weight:700;color:var(--text)}
+.sheet-close{width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer;border-radius:10px;touch-action:manipulation}
+.sheet-close:hover{background:var(--surface2);color:var(--text)}
+.sheet-note{font-size:13px;line-height:1.5;color:var(--text2);margin:0 0 16px}
+.sheet-actions{display:flex;flex-direction:column;gap:10px}
+.sheet-btn{min-height:48px;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;font-family:var(--sans);font-size:15px;font-weight:500;color:var(--text);cursor:pointer;touch-action:manipulation}
+.sheet-btn:hover{background:var(--border)}
+
+/* ── Vacances : panneau repliable (P0-2) ── */
+.vac-collapsible{margin-top:16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.vac-summary{list-style:none;cursor:pointer;min-height:48px;display:flex;align-items:center;gap:8px;padding:0 14px;font-size:14px;font-weight:600;color:var(--text);user-select:none;touch-action:manipulation}
+.vac-summary::-webkit-details-marker{display:none}
+.vac-summary::after{content:"›";margin-left:auto;font-size:20px;color:var(--text3);transform:rotate(90deg);transition:transform .15s}
+.vac-collapsible[open] .vac-summary::after{transform:rotate(-90deg)}
+.vac-count{background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
+.vac-collapsible .vacances-setup{padding:0 14px 14px;border:none}

@@ -5,15 +5,6 @@
     <button class="tab-btn" onclick="showTracker('historique')">Historique</button>
   </div>
 
-  <div class="data-toolbar">
-    <span class="data-toolbar-label">Données <button class="help-btn" type="button" aria-label="Aide" onclick="event.stopPropagation();showHelp(this,'export')">?</button></span>
-    <button class="tool-btn export-json" onclick="exportJSON()">&#x2B07; Export JSON</button>
-    <button class="tool-btn export-csv" onclick="exportCSV()">&#x2B07; Export CSV</button>
-    <button class="tool-btn import-btn" onclick="document.getElementById('importFileInput').click()">&#x2B06; Importer</button>
-    <input type="file" id="importFileInput" accept=".json" onchange="importJSON(event)">
-    <span class="import-feedback" id="importFeedback">&#x2713; Import réussi</span>
-  </div>
-
   <div id="t-saisie" class="tracker-panel active">
     <div class="week-bar">
       <label>Semaine</label>

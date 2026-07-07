@@ -263,6 +263,41 @@ function _createAthxTemplate() {
   }
 }
 
+// ── Réglages / Données : feuille ouverte depuis le ⚙ de l'en-tête (P0-2) ────────
+// Sort l'export/import du corps du Tracker. Amorce du futur hub Réglages (P1).
+let _settingsEsc = null;
+
+window._openSettings = function() {
+  if(document.getElementById('settings-sheet')) return;
+  const ov = document.createElement('div');
+  ov.id = 'settings-sheet';
+  ov.className = 'sheet-overlay';
+  ov.innerHTML = `
+    <div class="sheet-card" role="dialog" aria-label="Données" aria-modal="true">
+      <div class="sheet-head">
+        <span class="sheet-title">Données</span>
+        <button class="sheet-close" type="button" aria-label="Fermer" onclick="window._closeSettings()">&#x2715;</button>
+      </div>
+      <p class="sheet-note">Sauvegarde et restauration de tes données. Tout est stocké uniquement sur cet appareil.</p>
+      <div class="sheet-actions">
+        <button class="sheet-btn" type="button" onclick="exportJSON()">&#x2B07; Export JSON</button>
+        <button class="sheet-btn" type="button" onclick="exportCSV()">&#x2B07; Export CSV</button>
+        <button class="sheet-btn" type="button" onclick="document.getElementById('importFileInput').click()">&#x2B06; Importer un fichier</button>
+      </div>
+      <input type="file" id="importFileInput" accept=".json" onchange="importJSON(event)" style="display:none">
+      <span class="import-feedback" id="importFeedback">&#x2713; Import réussi</span>
+    </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener('click', e => { if(e.target === ov) window._closeSettings(); });
+  _settingsEsc = e => { if(e.key === 'Escape') window._closeSettings(); };
+  document.addEventListener('keydown', _settingsEsc);
+};
+
+window._closeSettings = function() {
+  document.getElementById('settings-sheet')?.remove();
+  if(_settingsEsc) { document.removeEventListener('keydown', _settingsEsc); _settingsEsc = null; }
+};
+
 
 // ── Program card click handlers ──────────────────────────────────────────────
 window._viewProg = function(id) {
