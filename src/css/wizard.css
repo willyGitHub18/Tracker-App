@@ -64,7 +64,9 @@
 .wiz-ex-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .wiz-ex-tag{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:3px 10px;background:var(--blue-bg);color:var(--blue);border-radius:20px}
 .wiz-ex-tag.excluded{background:var(--red-bg);color:var(--red)}
-.wiz-ex-remove{background:none;border:none;cursor:pointer;font-size:11px;color:inherit;padding:0;line-height:1}
+.wiz-ex-remove{position:relative;background:none;border:none;cursor:pointer;font-size:11px;color:inherit;padding:0;line-height:1}
+/* Zone tactile étendue (P0-3) — modérée car pastilles serrées en écran de setup */
+.wiz-ex-remove::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:32px;height:36px}
 
 /* ── Durée recommandée ── */
 .wiz-recommend{font-size:12px;color:var(--text2);background:var(--amber-bg);border-radius:var(--radius);padding:8px 12px;margin-top:8px;line-height:1.5}
