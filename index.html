@@ -176,6 +176,42 @@ header{position:relative}
 .vac-collapsible .vacances-setup{padding:0 14px 14px;border:none}
 
 /* ── TRACKER STYLES ── */
+/* ── Récap « Séance du jour » (Phase 1) ── */
+.today-card{background:var(--surface);border:1px solid var(--border-md);border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.04);margin-bottom:18px}
+.today-top{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.today-eyebrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.today-kicker{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)}
+.today-phase{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;flex-shrink:0}
+.today-title{font-size:20px;font-weight:600;letter-spacing:-.01em;margin-bottom:2px}
+.today-prog{font-size:13px;color:var(--text2)}
+.today-meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--text2)}
+.today-meta b{color:var(--text);font-weight:500}
+.today-why{margin-top:10px;font-size:12.5px;line-height:1.5;color:var(--text2)}
+.today-exos{padding:6px 16px 4px}
+.today-exo{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.today-exo:last-child{border-bottom:none}
+.today-exo-num{flex:0 0 24px;height:24px;border-radius:50%;background:var(--surface2);color:var(--text2);font-family:var(--mono);font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.today-exo-main{flex:1;min-width:0}
+.today-exo-row1{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.today-exo-name{font-size:15px;font-weight:500}
+.today-exo-target{font-family:var(--mono);font-size:12px;color:var(--text);white-space:nowrap}
+.today-exo-target .kg{color:var(--green);font-weight:500}
+.today-exo-tags{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap}
+.today-tag{font-size:10px;font-weight:500;padding:1px 7px;border-radius:8px}
+.today-tag.prim{background:var(--blue-bg);color:var(--blue)}
+.today-tag.acc{background:var(--surface2);color:var(--text2)}
+.today-exo-cue{margin-top:6px;font-size:12px;line-height:1.45;color:var(--text2);background:var(--amber-bg);border-radius:8px;padding:6px 9px}
+.today-cta-wrap{padding:14px 16px 16px}
+.today-cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;background:var(--text);color:#fff;border:none;border-radius:12px;font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;touch-action:manipulation}
+.today-cta:active{opacity:.85}
+/* état repos */
+.today-rest{text-align:center;padding:24px 18px}
+.today-rest-emoji{font-size:40px;line-height:1;margin-bottom:10px}
+.today-rest-title{font-size:18px;font-weight:600;margin-bottom:6px}
+.today-rest-sub{font-size:13px;color:var(--text2);max-width:34ch;margin:0 auto 16px}
+.today-rest-next{font-size:12px;font-family:var(--mono);color:var(--text3);background:var(--surface2);border-radius:8px;padding:8px 12px;display:inline-block}
+.today-rest-cta{margin-top:16px;min-height:48px;padding:0 18px;background:transparent;color:var(--text);border:1px solid var(--border-md);border-radius:12px;font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;touch-action:manipulation}
+
 .tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px}
 .tab-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:7px 10px;border:none;border-radius:7px;background:transparent;color:var(--text2);cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
 .tab-btn.active{background:var(--text);color:#fff}
@@ -3640,6 +3676,114 @@ function renderSaisie() {
 
 // ── Generic program tracker ───────────────────────────────────────────────────
 
+// ── « Séance du jour » : récap en tête d'accueil pour le programme actif (Phase 1) ──
+const _WEEKDAYS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const _PHASE_WHY = {
+  'Base':          'Programme linéaire — les charges montent progressivement chaque semaine.',
+  'Construction':  'Intensité croissante — charges modérées à lourdes, volume maintenu.',
+  'Intensité':     'Travail lourd — séries courtes, récupération longue entre les séries.',
+  'Pic':           'Performance maximale — focus technique sous charge proche du max.',
+  'Taper':         'Affûtage — volume minimal, charges légères avant la compétition.',
+  'Deload':        'Semaine allégée (~60 %) — récupération, sans progression.',
+};
+const _COMPOUND_IDS_TRK = new Set(['bench','press','ohp','dips','deadlift','row_barre','pullup',
+  'rdl','squat','squat_fs','lunges','leg_press','thruster','burpee','box_jump','wall_ball']);
+const _PHASE_BADGE_COL = {
+  'Base':{bg:'#e8f0fc',c:'#1a5fb4'},'Construction':{bg:'#fdf0d8',c:'#7c4a00'},
+  'Intensité':{bg:'#fdeaea',c:'#9c2222'},'Pic':{bg:'#e0f4eb',c:'#1b6b45'},
+  'Taper':{bg:'#f1efe8',c:'#444441'},'Deload':{bg:'#e8e6e0',c:'#444441'},
+};
+
+/** Durée estimée d'une séance (min) à partir du schéma + %1RM. */
+function _estimSessionMin(exs) {
+  let sec = 0;
+  (exs || []).forEach(ex => {
+    if(ex.kind === 'cardio')   { sec += (ex.totalMin || ex.duration || 30) * 60; return; }
+    if(ex.kind === 'mobility') { sec += 150; return; }
+    const sets = _parseSetsGeneric(ex.scheme) || 4;
+    const reps = parseReps(ex.scheme) || 6;
+    const secPerSet = Math.max(20, reps * 3);
+    const rest = ex.pct1rm >= 85 ? 210 : ex.pct1rm >= 75 ? 150 : 90;
+    sec += sets * (secPerSet + rest);
+  });
+  return Math.round(sec / 60);
+}
+
+/** Carte récap de la séance du jour (ou état repos) pour le programme actif. */
+function _seanceDuJourCard(prog, semaine, week) {
+  const todayIdx  = new Date().getDay();
+  const todayName = _WEEKDAYS_FR[todayIdx];
+  const jours     = semaine.jours || [];
+  const idxOf     = n => _WEEKDAYS_FR.indexOf(n);
+  const today     = jours.find(j => j.nom === todayName);
+
+  // ── Jour de repos ──
+  if(!today) {
+    const next = jours.filter(j => idxOf(j.nom) > todayIdx).sort((a,b) => idxOf(a.nom) - idxOf(b.nom))[0] || jours[0];
+    return `<div class="today-card today-rest">
+      <div class="today-rest-emoji">😴</div>
+      <div class="today-rest-title">Repos aujourd'hui</div>
+      <div class="today-rest-sub">Aucune séance prévue le ${esc(todayName.toLowerCase())} sur ${esc(prog.name || 'ton programme')}. La récupération fait partie du plan.</div>
+      ${next ? `<div class="today-rest-next">Prochaine séance : <strong>${esc(next.nom)}</strong>${next.split && next.split !== next.nom ? ` · ${esc(next.split)}` : ''}</div>` : ''}
+      <button class="today-rest-cta" type="button" onclick="showSection('mobilite-section')">Voir une routine mobilité 🧘</button>
+    </div>`;
+  }
+
+  // ── Jour d'entraînement ──
+  const exs    = today.exercices || [];
+  const estMin = _estimSessionMin(exs);
+  const why    = _PHASE_WHY[semaine.phase] || '';
+  const badge  = _PHASE_BADGE_COL[semaine.phase] || { bg:'var(--surface2)', c:'var(--text2)' };
+  const total  = prog.totalWeeks || prog.semaines?.length || '';
+  const phaseLabel = `${esc(semaine.phase || '')}${total ? ` · S${week}/${total}` : ''}`;
+
+  const exosHtml = exs.map((ex, i) => {
+    const cue = EXERCISE_CUES[ex.id];
+    // cardio / mobilité (jours Mixte) : ligne allégée sans schéma kg
+    if(ex.kind === 'cardio' || ex.kind === 'mobility') {
+      const detail = ex.kind === 'cardio' ? (ex.totalMin ? `~${ex.totalMin} min` : 'Cardio') : 'Mobilité';
+      return `<div class="today-exo"><div class="today-exo-num">${i+1}</div><div class="today-exo-main">
+        <div class="today-exo-row1"><span class="today-exo-name">${esc(ex.nom || ex.id)}</span><span class="today-exo-target">${esc(detail)}</span></div>
+        ${ex.cue ? `<div class="today-exo-cue">${esc(ex.cue)}</div>` : ''}
+      </div></div>`;
+    }
+    const kg     = ex.kgPlan ? `· <span class="kg">${ex.kgPlan} ${esc(ex.unit || 'kg')}</span>` : '';
+    const isPrim = _COMPOUND_IDS_TRK.has(ex.id) || i < 3;
+    return `<div class="today-exo">
+      <div class="today-exo-num">${i+1}</div>
+      <div class="today-exo-main">
+        <div class="today-exo-row1">
+          <span class="today-exo-name">${esc(ex.nom || ex.id)}</span>
+          <span class="today-exo-target">${esc(ex.scheme || '')} ${kg}</span>
+        </div>
+        <div class="today-exo-tags"><span class="today-tag ${isPrim ? 'prim' : 'acc'}">${isPrim ? 'Primaire' : 'Accessoire'}</span></div>
+        ${cue ? `<div class="today-exo-cue">${esc(cue)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="today-card">
+    <div class="today-top">
+      <div class="today-eyebrow">
+        <span class="today-kicker">Séance du jour · ${esc(today.nom)}</span>
+        <span class="today-phase" style="background:${badge.bg};color:${badge.c}">${phaseLabel}</span>
+      </div>
+      <div class="today-title">${esc(today.split && today.split !== today.nom ? today.split : (prog.name || 'Séance'))}</div>
+      <div class="today-prog">🎯 ${esc(prog.name || '')}</div>
+      <div class="today-meta">
+        <span>⏱ <b>~${estMin} min</b></span>
+        <span>🏋 <b>${exs.length} exercice${exs.length > 1 ? 's' : ''}</b></span>
+        ${semaine.rpeTarget ? `<span>🎚 RPE <b>${esc(String(semaine.rpeTarget))}</b></span>` : ''}
+      </div>
+      ${why ? `<div class="today-why">${esc(why)}</div>` : ''}
+    </div>
+    <div class="today-exos">${exosHtml}</div>
+    <div class="today-cta-wrap">
+      <button class="today-cta" type="button" onclick="document.getElementById('day-${esc(today.nom)}')?.scrollIntoView({behavior:'smooth',block:'start'})">Commencer la saisie ↓</button>
+    </div>
+  </div>`;
+}
+
 function _renderProgSaisie(prog) {
   // Grossesse programs have their own complete renderer
   if(prog.subtype === 'grossesse') {
@@ -3678,6 +3822,9 @@ function _renderProgSaisie(prog) {
 
   let html = _progSelectorUI() + _vacancesBannersUI();
 
+  // Récap « Séance du jour » en tête (Phase 1)
+  html += _seanceDuJourCard(prog, semaine, week);
+
   // Deload / taper info banner
   if(semaine.isDeload) {
     html += `<div class="day-status-banner day-status-hyrox">
@@ -3691,7 +3838,7 @@ function _renderProgSaisie(prog) {
   }
 
   semaine.jours.forEach(day => {
-    html += `<div class="day-card">
+    html += `<div class="day-card" id="day-${esc(day.nom)}">
       <div class="day-header">
         <span class="day-name">${esc(day.nom)}</span>
         ${day.split && day.split !== day.nom ? `<span style="font-size:11px;color:var(--text3)">${esc(day.split)}</span>` : ''}
