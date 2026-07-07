@@ -231,8 +231,23 @@ header{position:relative}
 /* Zone tactile verticale étendue à 44px, visuel inchangé (P0-3) */
 .session-status-btn::after{content:"";position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:44px}
 .session-status-btn.active-normal {background:#e0f4eb;border-color:#1b6b45;color:#1b6b45}
-.session-status-btn.active-skipped{background:#fdeaea;border-color:#c0392b;color:#c0392b}
-.session-status-btn.active-hyrox {background:#fdf0d8;border-color:#d4860a;color:#7c4a00}
+/* Puce résumé « Normale » = neutre (état par défaut) ; seules les exceptions se colorent → moins de bruit (P1-B) */
+.session-status-btn.active-skipped,.ex-status-current.active-skipped{background:#fdeaea;border-color:#c0392b;color:#c0392b}
+.session-status-btn.active-hyrox, .ex-status-current.active-hyrox {background:#fdf0d8;border-color:#d4860a;color:#7c4a00}
+
+/* ── P1-B : statut replié derrière un tap (puce résumé + popover d'options) ── */
+.ex-status{position:relative;display:inline-block}
+.ex-status-summary{list-style:none;display:inline-flex;align-items:center;gap:4px;cursor:pointer;position:relative;padding:2px 0;touch-action:manipulation}
+.ex-status-summary::-webkit-details-marker{display:none}
+/* zone tactile 44px (P0-3) sans grossir la puce */
+.ex-status-summary::after{content:"";position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:44px}
+.ex-status-current{font-family:var(--sans);font-size:11px;font-weight:500;padding:3px 10px;border:1px solid var(--border-md);border-radius:20px;background:transparent;color:var(--text2)}
+.ex-status-caret{font-size:9px;color:var(--text3);transition:transform .15s}
+.ex-status[open] .ex-status-caret{transform:rotate(180deg)}
+.ex-status-options{position:absolute;top:100%;right:0;z-index:20;margin-top:4px;display:flex;flex-direction:column;gap:4px;min-width:160px;background:var(--surface);border:1px solid var(--border-md);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:6px}
+/* dans le popover : vrais items de menu 44px (l'overlay ::after est inutile ici et se chevaucherait) */
+.ex-status-options .session-status-btn{display:flex;align-items:center;width:100%;min-height:44px;justify-content:flex-start;text-align:left}
+.ex-status-options .session-status-btn::after{content:none}
 .day-status-banner{font-size:12px;padding:7px 14px;border-radius:var(--radius);margin:0 0 10px;line-height:1.4}
 .day-status-skipped{background:#fdeaea;color:#9c2222;border:1px solid rgba(192,57,43,.2)}
 .day-status-hyrox{background:#fdf0d8;color:#7c4a00;border:1px solid rgba(212,134,10,.2)}
@@ -281,7 +296,7 @@ tr:last-child td{border-bottom:none}
 
 
 /* ── Deload + Vacances ── */
-.session-status-btn.active-deload{background:#e8f0fc;border-color:#1a5fb4;color:#1a5fb4}
+.session-status-btn.active-deload,.ex-status-current.active-deload{background:#e8f0fc;border-color:#1a5fb4;color:#1a5fb4}
 .vacances-setup{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:14px}
 .vacances-setup-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px}
 .vacances-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -3709,10 +3724,18 @@ function _renderProgSaisie(prog) {
           <span class="ex-name-t">${esc(ex.nom)}</span>
           <span class="ex-scheme">${esc(scheme || '—')}</span>
           <span class="ex-status-btns">
-            <button class="session-status-btn${btnN}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
-            <button class="session-status-btn${btnH}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-compét</button>
-            <button class="session-status-btn${btnD}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
-            <button class="session-status-btn${btnS}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+            <details class="ex-status">
+              <summary class="ex-status-summary" aria-label="Changer le statut de l'exercice">
+                <span class="ex-status-current active-${exStatus}">${({normal:'Normale',hyrox:'⚡ Post-compét',deload:'🔵 Deload',skipped:'Sautée'})[exStatus] || 'Normale'}</span>
+                <span class="ex-status-caret" aria-hidden="true">▾</span>
+              </summary>
+              <div class="ex-status-options">
+                <button class="session-status-btn${btnN}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
+                <button class="session-status-btn${btnH}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-compét</button>
+                <button class="session-status-btn${btnD}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
+                <button class="session-status-btn${btnS}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+              </div>
+            </details>
             ${helpBtn('session-status')}
           </span>
         </div>`;
@@ -3897,6 +3920,15 @@ function _renderProgSaisie(prog) {
   _bindProgSaisieEvents(prog, week);
 }
 
+// P1-B — met à jour la puce résumé de statut (libellé + couleur) et referme le popover après un choix.
+function _syncStatusSummary(btn, status) {
+  const det = btn.closest('.ex-status');
+  if(!det) return;
+  const cur = det.querySelector('.ex-status-current');
+  if(cur) { cur.className = 'ex-status-current active-' + status; cur.textContent = btn.textContent.trim(); }
+  det.open = false;
+}
+
 function _bindProgSaisieEvents(prog, week) {
   // État courant relu par les handlers délégués (liés une seule fois).
   _curSaisieProg = prog;
@@ -3906,6 +3938,9 @@ function _bindProgSaisieEvents(prog, week) {
 
   // Status buttons
   content.addEventListener('click', e => {
+    // Referme les popovers de statut ouverts si on clique en dehors (P1-B)
+    if(!e.target.closest('.ex-status')) content.querySelectorAll('.ex-status[open]').forEach(d => d.open = false);
+
     const btn = e.target.closest('[data-status][data-progex]');
     if(!btn) return;
     const { progex, ex, status } = btn.dataset;
@@ -3914,6 +3949,7 @@ function _bindProgSaisieEvents(prog, week) {
     btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
       b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
     });
+    _syncStatusSummary(btn, status);  // maj de la puce résumé + repli du popover (P1-B)
   });
 
   // Auto-fill
@@ -4249,10 +4285,18 @@ function _renderLegacySaisie() {
           <span class="ex-name-t">${ex.name}</span>
           <span class="ex-scheme">${scheme}</span>
           <span class="ex-status-btns">
-            <button class="session-status-btn${btnN}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
-            <button class="session-status-btn${btnH}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-Hyrox</button>
-            <button class="session-status-btn${btnD}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
-            <button class="session-status-btn${btnS}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+            <details class="ex-status">
+              <summary class="ex-status-summary" aria-label="Changer le statut de l'exercice">
+                <span class="ex-status-current active-${exStatus}">${({normal:'Normale',hyrox:'⚡ Post-Hyrox',deload:'🔵 Deload',skipped:'Sautée'})[exStatus] || 'Normale'}</span>
+                <span class="ex-status-caret" aria-hidden="true">▾</span>
+              </summary>
+              <div class="ex-status-options">
+                <button class="session-status-btn${btnN}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
+                <button class="session-status-btn${btnH}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-Hyrox</button>
+                <button class="session-status-btn${btnD}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
+                <button class="session-status-btn${btnS}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+              </div>
+            </details>
             ${helpBtn('session-status')}
           </span>
         </div>`;
@@ -4365,6 +4409,8 @@ function _bindLegacyEvents(week) {
   const content = document.getElementById('saisieContent');
 
   content.addEventListener('click', e => {
+    if(!e.target.closest('.ex-status')) content.querySelectorAll('.ex-status[open]').forEach(d => d.open = false);
+
     const btn = e.target.closest('[data-status]:not([data-progex])');
     if(!btn) return;
     const { ex, status } = btn.dataset;
@@ -4373,6 +4419,7 @@ function _bindLegacyEvents(week) {
     btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
       b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
     });
+    _syncStatusSummary(btn, status);  // maj de la puce résumé + repli du popover (P1-B)
   });
 
   content.addEventListener('input', e => {

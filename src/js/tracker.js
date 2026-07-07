@@ -204,10 +204,18 @@ function _renderProgSaisie(prog) {
           <span class="ex-name-t">${esc(ex.nom)}</span>
           <span class="ex-scheme">${esc(scheme || '—')}</span>
           <span class="ex-status-btns">
-            <button class="session-status-btn${btnN}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
-            <button class="session-status-btn${btnH}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-compét</button>
-            <button class="session-status-btn${btnD}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
-            <button class="session-status-btn${btnS}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+            <details class="ex-status">
+              <summary class="ex-status-summary" aria-label="Changer le statut de l'exercice">
+                <span class="ex-status-current active-${exStatus}">${({normal:'Normale',hyrox:'⚡ Post-compét',deload:'🔵 Deload',skipped:'Sautée'})[exStatus] || 'Normale'}</span>
+                <span class="ex-status-caret" aria-hidden="true">▾</span>
+              </summary>
+              <div class="ex-status-options">
+                <button class="session-status-btn${btnN}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
+                <button class="session-status-btn${btnH}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-compét</button>
+                <button class="session-status-btn${btnD}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
+                <button class="session-status-btn${btnS}" data-progex="${prog.id}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+              </div>
+            </details>
             ${helpBtn('session-status')}
           </span>
         </div>`;
@@ -392,6 +400,15 @@ function _renderProgSaisie(prog) {
   _bindProgSaisieEvents(prog, week);
 }
 
+// P1-B — met à jour la puce résumé de statut (libellé + couleur) et referme le popover après un choix.
+function _syncStatusSummary(btn, status) {
+  const det = btn.closest('.ex-status');
+  if(!det) return;
+  const cur = det.querySelector('.ex-status-current');
+  if(cur) { cur.className = 'ex-status-current active-' + status; cur.textContent = btn.textContent.trim(); }
+  det.open = false;
+}
+
 function _bindProgSaisieEvents(prog, week) {
   // État courant relu par les handlers délégués (liés une seule fois).
   _curSaisieProg = prog;
@@ -401,6 +418,9 @@ function _bindProgSaisieEvents(prog, week) {
 
   // Status buttons
   content.addEventListener('click', e => {
+    // Referme les popovers de statut ouverts si on clique en dehors (P1-B)
+    if(!e.target.closest('.ex-status')) content.querySelectorAll('.ex-status[open]').forEach(d => d.open = false);
+
     const btn = e.target.closest('[data-status][data-progex]');
     if(!btn) return;
     const { progex, ex, status } = btn.dataset;
@@ -409,6 +429,7 @@ function _bindProgSaisieEvents(prog, week) {
     btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
       b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
     });
+    _syncStatusSummary(btn, status);  // maj de la puce résumé + repli du popover (P1-B)
   });
 
   // Auto-fill
@@ -744,10 +765,18 @@ function _renderLegacySaisie() {
           <span class="ex-name-t">${ex.name}</span>
           <span class="ex-scheme">${scheme}</span>
           <span class="ex-status-btns">
-            <button class="session-status-btn${btnN}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
-            <button class="session-status-btn${btnH}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-Hyrox</button>
-            <button class="session-status-btn${btnD}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
-            <button class="session-status-btn${btnS}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+            <details class="ex-status">
+              <summary class="ex-status-summary" aria-label="Changer le statut de l'exercice">
+                <span class="ex-status-current active-${exStatus}">${({normal:'Normale',hyrox:'⚡ Post-Hyrox',deload:'🔵 Deload',skipped:'Sautée'})[exStatus] || 'Normale'}</span>
+                <span class="ex-status-caret" aria-hidden="true">▾</span>
+              </summary>
+              <div class="ex-status-options">
+                <button class="session-status-btn${btnN}" data-ex="${ex.id}" data-week="${week}" data-status="normal">Normale</button>
+                <button class="session-status-btn${btnH}" data-ex="${ex.id}" data-week="${week}" data-status="hyrox">⚡ Post-Hyrox</button>
+                <button class="session-status-btn${btnD}" data-ex="${ex.id}" data-week="${week}" data-status="deload">🔵 Deload</button>
+                <button class="session-status-btn${btnS}" data-ex="${ex.id}" data-week="${week}" data-status="skipped">Sautée</button>
+              </div>
+            </details>
             ${helpBtn('session-status')}
           </span>
         </div>`;
@@ -860,6 +889,8 @@ function _bindLegacyEvents(week) {
   const content = document.getElementById('saisieContent');
 
   content.addEventListener('click', e => {
+    if(!e.target.closest('.ex-status')) content.querySelectorAll('.ex-status[open]').forEach(d => d.open = false);
+
     const btn = e.target.closest('[data-status]:not([data-progex])');
     if(!btn) return;
     const { ex, status } = btn.dataset;
@@ -868,6 +899,7 @@ function _bindLegacyEvents(week) {
     btn.closest('.ex-status-btns')?.querySelectorAll('.session-status-btn').forEach(b => {
       b.className = 'session-status-btn' + (b.dataset.status === status ? ' active-' + status : '');
     });
+    _syncStatusSummary(btn, status);  // maj de la puce résumé + repli du popover (P1-B)
   });
 
   content.addEventListener('input', e => {
