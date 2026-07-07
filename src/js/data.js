@@ -459,6 +459,55 @@ export const MOBILITY_DRILLS = [
   { id:'chevilles_mass',   zone:'chevilles',   method:'massage', nom:'Voûte plantaire / mollet',    scheme:'30–45 s / côté', cue:'Balle sous la voûte plantaire, puis rouler le mollet. Pression modérée.',              muscles:['mollets'], minLevel:0 },
 ];
 
+// Renfort tendineux (bloc opt-in « Tendons »). La CHARGE PROGRESSIVE (lourde et lente / HSR,
+// excentrique) est le pilier ; l’isométrie est une option antalgique à tester (effet individuel,
+// non garanti, prudence au coude). Le tendon s’adapte plus lentement que le muscle → espacer les
+// séances lourdes. Auto-gestion, pas un traitement. Cf. article Guide « tendons » (resources.js)
+// et journal §20 ; littérature : Cook & Purdam, Beyer/Kongsgaard (HSR), Challoumas, Rio vs
+// van der Vlist/Clifford (isométrie contestée).
+export const TENDON_SITES = [
+  {
+    id:'genou', label:'Genou (rotulien)', icon:'🦵',
+    isometric:{ nom:'Extension isométrique / Spanish squat', scheme:'5 × 30–45 s · repos 1–2 min · 1×/jour',
+      cue:'Genou vers 60°, effort net mais tolérable (~7/10). C’est au genou que l’effet antalgique est le mieux décrit — mais il reste individuel.' },
+    loading:{ nom:'Squat lent chargé (HSR)', scheme:'3–4 × 6–8 · tempo 3 s descente / 3 s montée · 3×/sem (48 h d’écart)',
+      cue:'Charge lourde et progressive (squat, presse, décline squat). Le pilier du renforcement tendineux.' },
+    caution:null,
+  },
+  {
+    id:'achille', label:'Achille', icon:'🦶',
+    isometric:{ nom:'Élévation de talon tenue', scheme:'5 × 30–45 s · 1×/jour',
+      cue:'Sur une marche, monte sur la pointe et tiens. NB : au tendon d’Achille, l’effet antalgique immédiat de l’isométrie n’est pas démontré.' },
+    loading:{ nom:'Mollet lourd et lent (HSR)', scheme:'3–4 × 6–8 · tempo 3–3 · 3×/sem',
+      cue:'Debout (gastrocnémiens) puis assis genou fléchi (soléaire), charge progressive. La référence pour l’Achille.' },
+    caution:null,
+  },
+  {
+    id:'hanche', label:'Hanche latérale (fessier)', icon:'🕺',
+    isometric:{ nom:'Abduction isométrique', scheme:'5 × 30–45 s / côté · 1×/jour',
+      cue:'Debout ou couché sur le côté, pousse en abduction contre une résistance fixe (mur, sangle).' },
+    loading:{ nom:'Abduction chargée progressive', scheme:'3 × 8–12 / côté · 3×/sem',
+      cue:'Élastique ou charge, amplitude contrôlée. Ici c’est surtout la gestion de charge qui prime.' },
+    caution:'Éviter la compression du tendon : ne pas croiser les jambes, éviter l’appui prolongé sur une hanche et les étirements en adduction.',
+  },
+  {
+    id:'epaule', label:'Épaule (coiffe)', icon:'💪',
+    isometric:{ nom:'Rotation externe isométrique', scheme:'5 × 30–45 s · 1×/jour',
+      cue:'Coude au corps, pousse l’avant-bras vers l’extérieur contre un montant fixe.' },
+    loading:{ nom:'Rotation externe élastique progressive', scheme:'3 × 10–12 · 3×/sem',
+      cue:'Charge progressive à l’élastique, tempo contrôlé. NB : ici l’isométrie n’est pas supérieure à la charge dynamique.' },
+    caution:null,
+  },
+  {
+    id:'coude', label:'Coude (épicondyle)', icon:'🦾',
+    isometric:{ nom:'Tenue de poignet (extension ou flexion)', scheme:'5 × 30–45 s · sous le seuil de douleur',
+      cue:'Tiens une charge légère, poignet fixe.' },
+    loading:{ nom:'Renforcement de poignet lent (HSR / Tyler twist)', scheme:'3 × 10–15 · tempo lent · 3×/sem',
+      cue:'Charge progressive, tempo lent (barre flexible ou haltère léger).' },
+    caution:'Au coude, l’isométrie peut AUGMENTER la douleur : reste nettement sous le seuil douloureux, ou passe directement à la charge lente et progressive.',
+  },
+];
+
 // ── Grossesse program config ──────────────────────────────────────────────────
 
 export const GROSSESSE_MOIS_CONFIG = {

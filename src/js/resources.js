@@ -194,6 +194,38 @@ export const RESOURCES = [
     ]
   },
 
+  {
+    id: 'tendons', category: 'Comprendre', icon: '🩹', title: 'Tendons & charge',
+    summary: "Comment un tendon se renforce, la place réelle de l'isométrie (utile mais pas magique) et les repères de charge — avec les garde-fous.",
+    blocks: [
+      { type: 'p', text: "Un tendon transmet la force du muscle à l'os. Il **s'adapte à la charge** — mais **lentement** : le remodelage du collagène et la rigidité de la matrice mettent plus de temps que l'adaptation musculaire, d'où un besoin de **récupération plus longue** (c'est pourquoi le suivi musculaire de l'app donne aux tendons une demi-vie plus longue). Une tendinopathie survient quand la charge dépasse durablement la capacité du tendon." },
+      { type: 'h2', text: "Comment un tendon se renforce" },
+      { type: 'p', text: "Le **pilier**, c'est la **charge mécanique progressive**. La *résistance lourde et lente* (**HSR**) et le travail *excentrique* donnent les meilleurs résultats et surpassent le repos, les infiltrations ou les ondes de choc à moyen terme. À l'inverse, le travail **concentrique seul est le moins efficace**. On progresse par paliers, en respectant une douleur tolérable." },
+      { type: 'h2', text: "L'isométrie : utile, mais pas magique" },
+      { type: 'p', text: "L'idée que tenir une contraction **isométrique** calme la douleur vient d'une étude de 2015 (Rio) — **spectaculaire mais sur 6 sujets seulement**. Les travaux **postérieurs la nuancent fortement** : aucun soulagement immédiat démontré au tendon d'Achille, douleur parfois **augmentée** au coude, et globalement l'isométrie **n'est pas supérieure** à la charge dynamique. C'est donc une **option à tester** — surtout pour le genou (rotulien) en phase douloureuse — dont l'effet est **individuel et non garanti**, jamais une baguette magique." },
+      { type: 'h2', text: "Repères de charge" },
+      { type: 'table', head: ['Type', 'Dosage indicatif', 'Rôle'], rows: [
+        ['Isométrique', '~5 × 30–45 s, effort ~7/10, 1–2×/jour', "Antalgie possible (à tester), charger tôt en phase irritable"],
+        ['Lourd & lent (HSR)', '3–4 × 6–8, tempo 3 s / 3 s, 3×/sem (48 h d’écart)', 'Le pilier — construit la capacité du tendon'],
+        ['Excentrique', '~3 × 15, charge progressive, ~12 sem.', 'Efficace aussi ; volume plus lourd, observance parfois moindre'] ] },
+      { type: 'h2', text: "Selon le tendon" },
+      { type: 'list', variant: 'plain', items: [
+        "**Rotulien (genou)** — site où l'isométrie est la mieux décrite ; puis squat lourd et lent.",
+        "**Achille** — charge lourde et lente (référence) ; isométrie sans effet antalgique immédiat démontré.",
+        "**Hanche latérale (fessier)** — surtout **gestion de charge** : éviter la compression (croiser les jambes, appui prolongé) ; renforcement en abduction.",
+        "**Coiffe des rotateurs** — charge progressive ; l'isométrie n'y est pas supérieure.",
+        "**Coude (épicondyle)** — l'isométrie peut **augmenter** la douleur : rester sous le seuil, privilégier la charge lente." ] },
+      { type: 'warn', text: "Une tendinopathie se **gère** sur plusieurs semaines/mois, elle ne se « répare » pas en un geste. Doser à la douleur (tolérable pendant, pas de flambée le lendemain). Douleur invalidante ou nocturne, gonflement, perte de force, ou aucune amélioration après 6–12 semaines de charge bien conduite → **consulter un kiné ou un médecin**. Ceci n'est pas un avis médical." },
+      { type: 'sources', items: [
+        { name: 'Cook & Purdam (2009), BJSM', url: 'https://pubmed.ncbi.nlm.nih.gov/18812414/', desc: "Modèle du continuum de la tendinopathie — base de la charge progressive." },
+        { name: 'Beyer/Kongsgaard et coll. (2015)', url: 'https://pubmed.ncbi.nlm.nih.gov/26018970/', desc: 'HSR (lourd & lent) ≈ excentrique, meilleure observance ; paramètres de charge.' },
+        { name: 'Challoumas et coll. (2021)', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC8634001/', desc: 'Méta-analyse rotulien : charge en 1re intention ; concentrique = le moins efficace.' },
+        { name: 'Clifford, Challoumas, Millar (2020)', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC7406028/', desc: "Méta-analyse : l'isométrie n'est pas supérieure à l'isotonique ; réponse variable." },
+        { name: 'van der Vlist et coll. (2020)', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC7496962/', desc: "Achille (n=91) : aucun soulagement immédiat par l'isométrie." },
+        { name: 'Article de référence (Training-Thérapie)', url: 'https://pros.training-therapie.fr/lisometrie-est-elle-la-baguette-magique-contre-les-tendinopathies/', desc: "« Ni solution unique ni méthode magique » — cadrage, HIMA/PIMA, facteurs de vie." } ] }
+    ]
+  },
+
   // ═══ Grossesse & post-natal ═══════════════════════════════════════════════
   {
     id: 'grossesse', category: 'Grossesse & post-natal', icon: '🤰', title: 'Grossesse & post-natal',

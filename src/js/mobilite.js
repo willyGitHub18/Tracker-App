@@ -12,7 +12,7 @@
 
 import { esc } from './security.js';
 import { dbGet, dbSet } from './db.js';
-import { MOBILITY_ZONES, MOBILITY_DRILLS, MOBILITY_TESTS, MOBILITY_PROGRAM_FOCUS, MUSCLE_LABELS } from './data.js';
+import { MOBILITY_ZONES, MOBILITY_DRILLS, MOBILITY_TESTS, MOBILITY_PROGRAM_FOCUS, MUSCLE_LABELS, TENDON_SITES } from './data.js';
 import { calcGlobalMuscleLoad, musclePercent } from './musculaire.js';
 import { getAllActivePrograms } from './programs.js';
 
@@ -481,14 +481,49 @@ function _renderRecup() {
     <div class="mob-disclaimer">Objectif : détente et amplitude après l'effort. Le bénéfice sur la récupération est modeste (preuve limitée) — pas de forçage, respiration lente. En cas de douleur, arrête.</div>`;
 }
 
+// ── Rendu : renfort tendineux (bloc opt-in) ────────────────────────────────────
+
+let _tendonSite = null;
+
+function _tendonDrillCard(kind, d) {
+  return `<div class="mob-drill">
+      <div class="mob-drill-head"><span class="mob-drill-name">${esc(d.nom)}</span><span class="mob-drill-scheme">${esc(d.scheme)}</span></div>
+      <div class="mob-drill-cue"><strong>${esc(kind)} —</strong> ${esc(d.cue)}</div>
+    </div>`;
+}
+
+function _renderTendons() {
+  const el = document.getElementById('mobTendonsContent');
+  if(!el) return;
+  const picker = TENDON_SITES.map(s =>
+    `<button class="mob-dur-btn ${s.id === _tendonSite ? 'active' : ''}" onclick="_mobShowTendonSite('${s.id}')">${s.icon} ${esc(s.label)}</button>`
+  ).join('');
+  let html = `<div class="wiz-note" style="margin-bottom:10px">Renfort et auto-gestion des gênes tendineuses. La <strong>charge progressive</strong> (lourde et lente) est le pilier ; l’isométrie est une option antalgique à tester — utile chez certains, pas garantie. <button class="mob-inline-link" onclick="openGuideArticle('tendons')">En savoir plus dans le Guide →</button></div>`;
+  html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">${picker}</div>`;
+  const site = TENDON_SITES.find(s => s.id === _tendonSite);
+  if(site) {
+    html += `<div class="mob-block-title" style="margin-top:12px">${site.icon} ${esc(site.label)}</div>`;
+    if(site.caution) html += `<div class="mob-caution">⚠️ ${esc(site.caution)}</div>`;
+    html += _tendonDrillCard('Charge progressive (le pilier)', site.loading);
+    html += _tendonDrillCard('Isométrie (antalgie — à tester)', site.isometric);
+  } else {
+    html += `<div class="empty" style="margin-top:16px">Choisis une zone pour voir le protocole.</div>`;
+  }
+  html += `<div class="mob-disclaimer">Option d’auto-gestion, pas un traitement. Doser à la douleur (tolérable pendant, pas de flambée le lendemain) ; le tendon récupère plus lentement que le muscle → espacer les séances lourdes (~48 h). Douleur invalidante ou nocturne, gonflement, ou aucune amélioration après 6–12 semaines → consulter un kiné ou un médecin. Ceci n’est pas un avis médical.</div>`;
+  el.innerHTML = html;
+}
+
 // ── Handlers exposés (onclick inline) ──────────────────────────────────────────
 
 window.showMobiliteTab = function(tab) {
   if(tab === 'routine') { _showMobView('mob-routine-view'); _renderRoutine(null, false); }
   else if(tab === 'recup') { _showMobView('mob-recup-view'); _renderRecup(); }
+  else if(tab === 'tendons') { _showMobView('mob-tendons-view'); _renderTendons(); }
   else if(tab === 'bilan') { _showMobView('mob-bilan-view'); _renderBilan(); }
   else if(tab === 'progres') { _showMobView('mob-progres-view'); _renderProgres(); }
 };
+
+window._mobShowTendonSite = function(id) { _tendonSite = id; _renderTendons(); };
 
 window._mobLogRecup = function() {
   const zones = _currentRecup ? _currentRecup.blocks.map(b => b.zone.id) : [];

@@ -1549,6 +1549,7 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
     <div class="mob-tabs">
       <button class="mob-tab active" data-mob-tab="routine" onclick="showMobiliteTab('routine')">🧘 Routine du jour</button>
       <button class="mob-tab" data-mob-tab="recup" onclick="showMobiliteTab('recup')">💆 Récup</button>
+      <button class="mob-tab" data-mob-tab="tendons" onclick="showMobiliteTab('tendons')">🩹 Tendons</button>
       <button class="mob-tab" data-mob-tab="bilan" onclick="showMobiliteTab('bilan')">📋 Bilan</button>
       <button class="mob-tab" data-mob-tab="progres" onclick="showMobiliteTab('progres')">📈 Progrès</button>
     </div>
@@ -1556,6 +1557,7 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
 
   <div id="mob-routine-view" class="prog-view active-view"><div id="mobRoutineContent"></div></div>
   <div id="mob-recup-view" class="prog-view"><div id="mobRecupContent"></div></div>
+  <div id="mob-tendons-view" class="prog-view"><div id="mobTendonsContent"></div></div>
   <div id="mob-bilan-view" class="prog-view"><div id="mobBilanContent"></div></div>
   <div id="mob-progres-view" class="prog-view"><div id="mobProgresContent"></div></div>
 </div>
@@ -2379,6 +2381,55 @@ const MOBILITY_DRILLS = [
   { id:'hanches_mass',     zone:'hanches',     method:'massage', nom:'Rouleau fessiers / quadriceps',scheme:'30–60 s / côté',cue:'Assis sur le rouleau pour le fessier, puis à plat ventre pour le quadriceps. Lent, respiration.', muscles:['fessiers','quad'], minLevel:0 },
   { id:'cp_mass',          zone:'chaine_post', method:'massage', nom:'Rouleau ischios / mollets',   scheme:'30–60 s / côté', cue:'Rouler l’arrière de la cuisse puis le mollet, du bas vers le haut. Éviter l’arrière du genou.', muscles:['ischio','mollets'], minLevel:0 },
   { id:'chevilles_mass',   zone:'chevilles',   method:'massage', nom:'Voûte plantaire / mollet',    scheme:'30–45 s / côté', cue:'Balle sous la voûte plantaire, puis rouler le mollet. Pression modérée.',              muscles:['mollets'], minLevel:0 },
+];
+
+// Renfort tendineux (bloc opt-in « Tendons »). La CHARGE PROGRESSIVE (lourde et lente / HSR,
+// excentrique) est le pilier ; l’isométrie est une option antalgique à tester (effet individuel,
+// non garanti, prudence au coude). Le tendon s’adapte plus lentement que le muscle → espacer les
+// séances lourdes. Auto-gestion, pas un traitement. Cf. article Guide « tendons » (resources.js)
+// et journal §20 ; littérature : Cook & Purdam, Beyer/Kongsgaard (HSR), Challoumas, Rio vs
+// van der Vlist/Clifford (isométrie contestée).
+const TENDON_SITES = [
+  {
+    id:'genou', label:'Genou (rotulien)', icon:'🦵',
+    isometric:{ nom:'Extension isométrique / Spanish squat', scheme:'5 × 30–45 s · repos 1–2 min · 1×/jour',
+      cue:'Genou vers 60°, effort net mais tolérable (~7/10). C’est au genou que l’effet antalgique est le mieux décrit — mais il reste individuel.' },
+    loading:{ nom:'Squat lent chargé (HSR)', scheme:'3–4 × 6–8 · tempo 3 s descente / 3 s montée · 3×/sem (48 h d’écart)',
+      cue:'Charge lourde et progressive (squat, presse, décline squat). Le pilier du renforcement tendineux.' },
+    caution:null,
+  },
+  {
+    id:'achille', label:'Achille', icon:'🦶',
+    isometric:{ nom:'Élévation de talon tenue', scheme:'5 × 30–45 s · 1×/jour',
+      cue:'Sur une marche, monte sur la pointe et tiens. NB : au tendon d’Achille, l’effet antalgique immédiat de l’isométrie n’est pas démontré.' },
+    loading:{ nom:'Mollet lourd et lent (HSR)', scheme:'3–4 × 6–8 · tempo 3–3 · 3×/sem',
+      cue:'Debout (gastrocnémiens) puis assis genou fléchi (soléaire), charge progressive. La référence pour l’Achille.' },
+    caution:null,
+  },
+  {
+    id:'hanche', label:'Hanche latérale (fessier)', icon:'🕺',
+    isometric:{ nom:'Abduction isométrique', scheme:'5 × 30–45 s / côté · 1×/jour',
+      cue:'Debout ou couché sur le côté, pousse en abduction contre une résistance fixe (mur, sangle).' },
+    loading:{ nom:'Abduction chargée progressive', scheme:'3 × 8–12 / côté · 3×/sem',
+      cue:'Élastique ou charge, amplitude contrôlée. Ici c’est surtout la gestion de charge qui prime.' },
+    caution:'Éviter la compression du tendon : ne pas croiser les jambes, éviter l’appui prolongé sur une hanche et les étirements en adduction.',
+  },
+  {
+    id:'epaule', label:'Épaule (coiffe)', icon:'💪',
+    isometric:{ nom:'Rotation externe isométrique', scheme:'5 × 30–45 s · 1×/jour',
+      cue:'Coude au corps, pousse l’avant-bras vers l’extérieur contre un montant fixe.' },
+    loading:{ nom:'Rotation externe élastique progressive', scheme:'3 × 10–12 · 3×/sem',
+      cue:'Charge progressive à l’élastique, tempo contrôlé. NB : ici l’isométrie n’est pas supérieure à la charge dynamique.' },
+    caution:null,
+  },
+  {
+    id:'coude', label:'Coude (épicondyle)', icon:'🦾',
+    isometric:{ nom:'Tenue de poignet (extension ou flexion)', scheme:'5 × 30–45 s · sous le seuil de douleur',
+      cue:'Tiens une charge légère, poignet fixe.' },
+    loading:{ nom:'Renforcement de poignet lent (HSR / Tyler twist)', scheme:'3 × 10–15 · tempo lent · 3×/sem',
+      cue:'Charge progressive, tempo lent (barre flexible ou haltère léger).' },
+    caution:'Au coude, l’isométrie peut AUGMENTER la douleur : reste nettement sous le seuil douloureux, ou passe directement à la charge lente et progressive.',
+  },
 ];
 
 // ── Grossesse program config ──────────────────────────────────────────────────
@@ -9174,14 +9225,49 @@ function _renderRecup() {
     <div class="mob-disclaimer">Objectif : détente et amplitude après l'effort. Le bénéfice sur la récupération est modeste (preuve limitée) — pas de forçage, respiration lente. En cas de douleur, arrête.</div>`;
 }
 
+// ── Rendu : renfort tendineux (bloc opt-in) ────────────────────────────────────
+
+let _tendonSite = null;
+
+function _tendonDrillCard(kind, d) {
+  return `<div class="mob-drill">
+      <div class="mob-drill-head"><span class="mob-drill-name">${esc(d.nom)}</span><span class="mob-drill-scheme">${esc(d.scheme)}</span></div>
+      <div class="mob-drill-cue"><strong>${esc(kind)} —</strong> ${esc(d.cue)}</div>
+    </div>`;
+}
+
+function _renderTendons() {
+  const el = document.getElementById('mobTendonsContent');
+  if(!el) return;
+  const picker = TENDON_SITES.map(s =>
+    `<button class="mob-dur-btn ${s.id === _tendonSite ? 'active' : ''}" onclick="_mobShowTendonSite('${s.id}')">${s.icon} ${esc(s.label)}</button>`
+  ).join('');
+  let html = `<div class="wiz-note" style="margin-bottom:10px">Renfort et auto-gestion des gênes tendineuses. La <strong>charge progressive</strong> (lourde et lente) est le pilier ; l’isométrie est une option antalgique à tester — utile chez certains, pas garantie. <button class="mob-inline-link" onclick="openGuideArticle('tendons')">En savoir plus dans le Guide →</button></div>`;
+  html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">${picker}</div>`;
+  const site = TENDON_SITES.find(s => s.id === _tendonSite);
+  if(site) {
+    html += `<div class="mob-block-title" style="margin-top:12px">${site.icon} ${esc(site.label)}</div>`;
+    if(site.caution) html += `<div class="mob-caution">⚠️ ${esc(site.caution)}</div>`;
+    html += _tendonDrillCard('Charge progressive (le pilier)', site.loading);
+    html += _tendonDrillCard('Isométrie (antalgie — à tester)', site.isometric);
+  } else {
+    html += `<div class="empty" style="margin-top:16px">Choisis une zone pour voir le protocole.</div>`;
+  }
+  html += `<div class="mob-disclaimer">Option d’auto-gestion, pas un traitement. Doser à la douleur (tolérable pendant, pas de flambée le lendemain) ; le tendon récupère plus lentement que le muscle → espacer les séances lourdes (~48 h). Douleur invalidante ou nocturne, gonflement, ou aucune amélioration après 6–12 semaines → consulter un kiné ou un médecin. Ceci n’est pas un avis médical.</div>`;
+  el.innerHTML = html;
+}
+
 // ── Handlers exposés (onclick inline) ──────────────────────────────────────────
 
 window.showMobiliteTab = function(tab) {
   if(tab === 'routine') { _showMobView('mob-routine-view'); _renderRoutine(null, false); }
   else if(tab === 'recup') { _showMobView('mob-recup-view'); _renderRecup(); }
+  else if(tab === 'tendons') { _showMobView('mob-tendons-view'); _renderTendons(); }
   else if(tab === 'bilan') { _showMobView('mob-bilan-view'); _renderBilan(); }
   else if(tab === 'progres') { _showMobView('mob-progres-view'); _renderProgres(); }
 };
+
+window._mobShowTendonSite = function(id) { _tendonSite = id; _renderTendons(); };
 
 window._mobLogRecup = function() {
   const zones = _currentRecup ? _currentRecup.blocks.map(b => b.zone.id) : [];
@@ -9420,6 +9506,38 @@ const RESOURCES = [
         { name: 'AND / DC / ACSM — Nutrition & Performance (2016)', url: 'https://pubmed.ncbi.nlm.nih.gov/26891166/', desc: 'Besoins en glucides selon le volume, repères lipides/protéines.' },
         { name: 'ISSN — Nutrient Timing (2017)', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC5596471/', desc: 'Glucides 5–12 g/kg/jour selon l’intensité ; protéines toutes les 3–4 h.' },
         { name: 'ANSES — Protéines : besoins', url: 'https://www.anses.fr/fr/system/files/NUT-Ra-Proteines.pdf', desc: "Référence française : ~0,83 g/kg/jour, limite haute tolérée 2,2 g/kg/jour." } ] }
+    ]
+  },
+
+  {
+    id: 'tendons', category: 'Comprendre', icon: '🩹', title: 'Tendons & charge',
+    summary: "Comment un tendon se renforce, la place réelle de l'isométrie (utile mais pas magique) et les repères de charge — avec les garde-fous.",
+    blocks: [
+      { type: 'p', text: "Un tendon transmet la force du muscle à l'os. Il **s'adapte à la charge** — mais **lentement** : le remodelage du collagène et la rigidité de la matrice mettent plus de temps que l'adaptation musculaire, d'où un besoin de **récupération plus longue** (c'est pourquoi le suivi musculaire de l'app donne aux tendons une demi-vie plus longue). Une tendinopathie survient quand la charge dépasse durablement la capacité du tendon." },
+      { type: 'h2', text: "Comment un tendon se renforce" },
+      { type: 'p', text: "Le **pilier**, c'est la **charge mécanique progressive**. La *résistance lourde et lente* (**HSR**) et le travail *excentrique* donnent les meilleurs résultats et surpassent le repos, les infiltrations ou les ondes de choc à moyen terme. À l'inverse, le travail **concentrique seul est le moins efficace**. On progresse par paliers, en respectant une douleur tolérable." },
+      { type: 'h2', text: "L'isométrie : utile, mais pas magique" },
+      { type: 'p', text: "L'idée que tenir une contraction **isométrique** calme la douleur vient d'une étude de 2015 (Rio) — **spectaculaire mais sur 6 sujets seulement**. Les travaux **postérieurs la nuancent fortement** : aucun soulagement immédiat démontré au tendon d'Achille, douleur parfois **augmentée** au coude, et globalement l'isométrie **n'est pas supérieure** à la charge dynamique. C'est donc une **option à tester** — surtout pour le genou (rotulien) en phase douloureuse — dont l'effet est **individuel et non garanti**, jamais une baguette magique." },
+      { type: 'h2', text: "Repères de charge" },
+      { type: 'table', head: ['Type', 'Dosage indicatif', 'Rôle'], rows: [
+        ['Isométrique', '~5 × 30–45 s, effort ~7/10, 1–2×/jour', "Antalgie possible (à tester), charger tôt en phase irritable"],
+        ['Lourd & lent (HSR)', '3–4 × 6–8, tempo 3 s / 3 s, 3×/sem (48 h d’écart)', 'Le pilier — construit la capacité du tendon'],
+        ['Excentrique', '~3 × 15, charge progressive, ~12 sem.', 'Efficace aussi ; volume plus lourd, observance parfois moindre'] ] },
+      { type: 'h2', text: "Selon le tendon" },
+      { type: 'list', variant: 'plain', items: [
+        "**Rotulien (genou)** — site où l'isométrie est la mieux décrite ; puis squat lourd et lent.",
+        "**Achille** — charge lourde et lente (référence) ; isométrie sans effet antalgique immédiat démontré.",
+        "**Hanche latérale (fessier)** — surtout **gestion de charge** : éviter la compression (croiser les jambes, appui prolongé) ; renforcement en abduction.",
+        "**Coiffe des rotateurs** — charge progressive ; l'isométrie n'y est pas supérieure.",
+        "**Coude (épicondyle)** — l'isométrie peut **augmenter** la douleur : rester sous le seuil, privilégier la charge lente." ] },
+      { type: 'warn', text: "Une tendinopathie se **gère** sur plusieurs semaines/mois, elle ne se « répare » pas en un geste. Doser à la douleur (tolérable pendant, pas de flambée le lendemain). Douleur invalidante ou nocturne, gonflement, perte de force, ou aucune amélioration après 6–12 semaines de charge bien conduite → **consulter un kiné ou un médecin**. Ceci n'est pas un avis médical." },
+      { type: 'sources', items: [
+        { name: 'Cook & Purdam (2009), BJSM', url: 'https://pubmed.ncbi.nlm.nih.gov/18812414/', desc: "Modèle du continuum de la tendinopathie — base de la charge progressive." },
+        { name: 'Beyer/Kongsgaard et coll. (2015)', url: 'https://pubmed.ncbi.nlm.nih.gov/26018970/', desc: 'HSR (lourd & lent) ≈ excentrique, meilleure observance ; paramètres de charge.' },
+        { name: 'Challoumas et coll. (2021)', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC8634001/', desc: 'Méta-analyse rotulien : charge en 1re intention ; concentrique = le moins efficace.' },
+        { name: 'Clifford, Challoumas, Millar (2020)', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC7406028/', desc: "Méta-analyse : l'isométrie n'est pas supérieure à l'isotonique ; réponse variable." },
+        { name: 'van der Vlist et coll. (2020)', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC7496962/', desc: "Achille (n=91) : aucun soulagement immédiat par l'isométrie." },
+        { name: 'Article de référence (Training-Thérapie)', url: 'https://pros.training-therapie.fr/lisometrie-est-elle-la-baguette-magique-contre-les-tendinopathies/', desc: "« Ni solution unique ni méthode magique » — cadrage, HIMA/PIMA, facteurs de vie." } ] }
     ]
   },
 

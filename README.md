@@ -159,6 +159,8 @@ Tracker-App/
     │   ├── wizard.js           # Wizard de programme (8 étapes)
     │   ├── nutrition-plan.js   # Section Nutrition : plans + calcul Mifflin-St Jeor
     │   ├── mobilite.js         # Section Mobilité : bilan + routine du jour + récup (SRA-aware)
+    │   ├── resources.js        # Guide : articles éducatifs data-driven (RESOURCES + moteur de rendu)
+    │   ├── help.js             # Aide contextuelle : boutons ? + popover (deep-link vers le Guide)
     │   └── app.js              # Routing, init, migration ATHX, cycle de vie programmes
     ├── css/
     │   ├── base.css
@@ -172,7 +174,7 @@ Tracker-App/
         ├── musculaire.html
         ├── programme.html
         ├── programmes.html     # Wizard + liste programmes
-        ├── doc.html
+        ├── doc.html            # Guide : shell (nav + contenu) rempli par resources.js
         ├── nutrition.html      # Section Nutrition (liste / détail / wizard)
         └── mobilite.html       # Section Mobilité (routine / récup / bilan / progrès)
 ```
