@@ -226,6 +226,77 @@ function _seanceDuJourCard(prog, semaine, week) {
   </div>`;
 }
 
+/** Variante « Séance du jour » pour le programme legacy ATHX (jours Mercredi/Jeudi, EXERCISES). */
+function _seanceDuJourLegacyCard(week) {
+  const todayIdx  = new Date().getDay();
+  const todayName = _WEEKDAYS_FR[todayIdx];
+  const days      = ['Mercredi', 'Jeudi'];
+  const ph        = PHASES[week - 1] || PHASES[0];
+  const phaseLabel = PHASE_LABELS[ph] || '';
+  const badge      = PHASE_STYLE[ph] || { bg:'var(--surface2)', color:'var(--text2)' };
+
+  // ── Jour de repos ──
+  if(!days.includes(todayName)) {
+    const idxOf = n => _WEEKDAYS_FR.indexOf(n);
+    const next  = days.filter(d => idxOf(d) > todayIdx).sort((a,b) => idxOf(a) - idxOf(b))[0] || days[0];
+    return `<div class="today-card today-rest">
+      <div class="today-rest-emoji">😴</div>
+      <div class="today-rest-title">Repos aujourd'hui</div>
+      <div class="today-rest-sub">Aucune séance prévue le ${esc(todayName.toLowerCase())} sur ton programme ATHX. La récupération fait partie du plan.</div>
+      <div class="today-rest-next">Prochaine séance : <strong>${esc(next)}</strong></div>
+      <button class="today-rest-cta" type="button" onclick="showSection('mobilite-section')">Voir une routine mobilité 🧘</button>
+    </div>`;
+  }
+
+  // ── Jour d'entraînement ──
+  const exs = EXERCISES.filter(e => e.day === todayName);
+  let sec = 0;
+  exs.forEach(ex => {
+    const sc   = ex.repScheme[week - 1];
+    const sets = parseSets(sc) || 4;
+    const reps = parseReps(sc) || 6;
+    sec += sets * (Math.max(20, reps * 3) + 150);
+  });
+  const estMin = Math.round(sec / 60);
+
+  const exosHtml = exs.map((ex, i) => {
+    const scheme = ex.repScheme[week - 1] || '';
+    const plan   = ex.plan[week - 1];
+    const kg     = plan ? `· <span class="kg">${plan} ${esc(ex.unit || 'kg')}</span>` : '';
+    const isPrim = _COMPOUND_IDS_TRK.has(ex.id) || i < 3;
+    const cue    = EXERCISE_CUES[ex.id] || ex.refText;
+    return `<div class="today-exo">
+      <div class="today-exo-num">${i+1}</div>
+      <div class="today-exo-main">
+        <div class="today-exo-row1">
+          <span class="today-exo-name">${esc(ex.nom || ex.name || ex.id)}</span>
+          <span class="today-exo-target">${esc(scheme)} ${kg}</span>
+        </div>
+        <div class="today-exo-tags"><span class="today-tag ${isPrim ? 'prim' : 'acc'}">${isPrim ? 'Primaire' : 'Accessoire'}</span></div>
+        ${cue ? `<div class="today-exo-cue">${esc(cue)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="today-card">
+    <div class="today-top">
+      <div class="today-eyebrow">
+        <span class="today-kicker">Séance du jour · ${esc(todayName)}</span>
+        <span class="today-phase" style="background:${badge.bg};color:${badge.color}">${esc(phaseLabel)}</span>
+      </div>
+      <div class="today-title">Programme ATHX</div>
+      <div class="today-meta">
+        <span>⏱ <b>~${estMin} min</b></span>
+        <span>🏋 <b>${exs.length} exercice${exs.length > 1 ? 's' : ''}</b></span>
+      </div>
+    </div>
+    <div class="today-exos">${exosHtml}</div>
+    <div class="today-cta-wrap">
+      <button class="today-cta" type="button" onclick="document.getElementById('day-${esc(todayName)}')?.scrollIntoView({behavior:'smooth',block:'start'})">Commencer la saisie ↓</button>
+    </div>
+  </div>`;
+}
+
 function _renderProgSaisie(prog) {
   // Grossesse programs have their own complete renderer
   if(prog.subtype === 'grossesse') {
@@ -824,11 +895,14 @@ function _renderLegacySaisie() {
   const days = ['Mercredi', 'Jeudi'];
   let html = _progSelectorUI() + _vacancesBannersUI();
 
+  // Récap « Séance du jour » en tête (Phase 1 — variante legacy ATHX)
+  html += _seanceDuJourLegacyCard(week);
+
   days.forEach(day => {
     const exs = EXERCISES.filter(e => e.day === day);
     if(!exs.length) return;
 
-    html += `<div class="day-card">
+    html += `<div class="day-card" id="day-${esc(day)}">
       <div class="day-header"><span class="day-name">${day}</span></div>
       <div class="ex-wrap">`;
 
