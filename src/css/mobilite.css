@@ -1,7 +1,7 @@
 /* mobilite.css — Section Mobilité (bilan + routine du jour + progrès) */
 
-.mob-tabs{display:flex;gap:6px;margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.mob-tabs::-webkit-scrollbar{display:none}
+/* Rangée repliable : les 5 onglets restent tous visibles (2 lignes) plutôt que débordés hors écran (P1-C) */
+.mob-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .mob-tab{flex:0 0 auto;font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:999px;cursor:pointer;white-space:nowrap}
 .mob-tab.active{background:var(--text);color:var(--surface);border-color:var(--text)}
 
