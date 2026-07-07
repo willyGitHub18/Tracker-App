@@ -107,3 +107,23 @@ header .sub { font-size: 11px; color: rgba(255,255,255,.45); display: block; }
 .help-pop-body{font-size:12px;line-height:1.6;color:var(--text2)}
 .help-pop-body strong{color:var(--text)}
 .help-guide-link{margin-top:10px;display:inline-block;background:none;border:none;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;padding:0;touch-action:manipulation}
+
+/* ── Onboarding : écran de bienvenue (premier lancement) ── */
+.welcome-overlay{position:fixed;inset:0;z-index:10000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.welcome-card{max-width:380px;width:100%;text-align:center;padding:8px 4px}
+.welcome-brand{font-family:var(--mono,ui-monospace,monospace);font-weight:700;font-size:15px;letter-spacing:-.01em;color:var(--text);margin-bottom:28px}
+.welcome-emoji{font-size:46px;line-height:1;margin-bottom:14px}
+.welcome-title{font-size:26px;font-weight:700;color:var(--text);margin:0 0 10px;letter-spacing:-.02em}
+.welcome-sub{font-size:15px;line-height:1.55;color:var(--text2);margin:0 auto 26px;max-width:320px}
+.welcome-cta{display:block;width:100%;min-height:52px;background:var(--text);color:#fff;border:none;border-radius:14px;font-family:var(--sans);font-size:16px;font-weight:600;cursor:pointer;touch-action:manipulation;transition:opacity .15s}
+.welcome-cta:hover{opacity:.9}
+.welcome-alt{display:block;width:100%;min-height:48px;margin-top:12px;background:none;border:none;color:var(--text2);font-family:var(--sans);font-size:14px;font-weight:500;cursor:pointer;touch-action:manipulation;text-decoration:underline;text-underline-offset:3px}
+.welcome-alt:hover{color:var(--text)}
+
+/* ── État vide : pas encore de programme ── */
+.empty-onboard{text-align:center;padding:48px 24px}
+.empty-onboard-emoji{font-size:40px;line-height:1;margin-bottom:14px}
+.empty-onboard-title{font-size:19px;font-weight:700;color:var(--text);margin-bottom:8px}
+.empty-onboard-sub{font-size:14px;line-height:1.5;color:var(--text2);max-width:300px;margin:0 auto 20px}
+.empty-onboard-btn{min-height:48px;padding:12px 24px;background:var(--text);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600}
+.empty-onboard-btn:hover{background:var(--text);opacity:.9}

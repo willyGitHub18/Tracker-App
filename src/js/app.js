@@ -218,6 +218,51 @@ window.showWizard = function() {
   initWizard();
 };
 
+// ── Onboarding : écran de bienvenue au premier lancement ────────────────────────
+function _dismissWelcome() { document.getElementById('welcome-overlay')?.remove(); }
+
+function _showWelcome() {
+  if(document.getElementById('welcome-overlay')) return;
+  const ov = document.createElement('div');
+  ov.id = 'welcome-overlay';
+  ov.className = 'welcome-overlay';
+  ov.innerHTML = `
+    <div class="welcome-card">
+      <div class="welcome-brand">Just2Train</div>
+      <div class="welcome-emoji">👋</div>
+      <h2 class="welcome-title">Bienvenue</h2>
+      <p class="welcome-sub">Construis ton programme d'entraînement personnalisé en quelques questions — objectif, niveau, matériel, nutrition.</p>
+      <button class="welcome-cta" id="welcomeStart">Commencer →</button>
+      <button class="welcome-alt" id="welcomeAthx">ou pars du modèle ATHX / Hyrox</button>
+    </div>`;
+  document.body.appendChild(ov);
+  document.getElementById('welcomeStart').onclick = () => { _dismissWelcome(); window._startOnboarding(); };
+  document.getElementById('welcomeAthx').onclick  = () => { _dismissWelcome(); _createAthxTemplate(); };
+}
+
+// Lance le wizard de création de programme (depuis la bienvenue ou l'état vide du tracker)
+window._startOnboarding = function() {
+  _dismissWelcome();
+  showSection('programmes');
+  window.showWizard();
+};
+
+// Crée + active le programme modèle ATHX à la demande (choix « ou pars du modèle »)
+function _createAthxTemplate() {
+  const id   = newProgramId();
+  const prog = buildAthxProgram(id);
+  prog.status = 'active';
+  saveProgram(prog);
+  if(typeof window._activateNewProgram === 'function') {
+    window._activateNewProgram(id);
+  } else {
+    addActiveProgram(id);
+    setActiveProgram(id);
+    showSection('tracker');
+    initWeekSel();
+  }
+}
+
 
 // ── Program card click handlers ──────────────────────────────────────────────
 window._viewProg = function(id) {
@@ -1263,17 +1308,10 @@ function _migrateAthxIfNeeded() {
     if(hasLegacyData) break;
   }
 
-  // Create ATHX program regardless (template always useful)
-  const id   = newProgramId();
-  const prog = buildAthxProgram(id);
-
-  if(!hasLegacyData) {
-    // No data — just create as a template, don't activate
-    prog.status = 'active';
-    saveProgram(prog);
-    // Don't set as active — let user choose
-  } else {
-    // Has legacy data — migrate and activate
+  if(hasLegacyData) {
+    // Données legacy présentes → migrer le programme ATHX et l'activer.
+    const id   = newProgramId();
+    const prog = buildAthxProgram(id);
     prog.status = 'active';
     saveProgram(prog);
     addActiveProgram(id);
@@ -1286,6 +1324,9 @@ function _migrateAthxIfNeeded() {
     prog.migratedFrom = 'athx_legacy';
     saveProgram(prog);
   }
+  // Installation neuve (aucune donnée legacy) : NE PLUS semer ATHX d'office. L'onboarding
+  // (welcome → wizard) crée le premier programme ; ATHX reste dispo comme modèle optionnel
+  // via l'écran de bienvenue (_createAthxTemplate).
 
   dbSet(MIGRATION_KEY, true);
 }
@@ -1313,6 +1354,10 @@ async function init() {
   document.getElementById('btnExportCSV')?.addEventListener('click',  exportCSV);
   // Init wizard
   initWizard();
+
+  // Premier lancement : aucun programme → écran de bienvenue (onboarding), plutôt que
+  // de déposer l'utilisateur dans un programme qui n'est pas le sien.
+  if(getPrograms().length === 0) _showWelcome();
 
   // SW
   const isDeployed = location.hostname.includes('github.io') || (location.protocol==='https:'&&!location.hostname.includes('claudeusercontent'));

@@ -112,6 +112,26 @@ header .sub { font-size: 11px; color: rgba(255,255,255,.45); display: block; }
 .help-pop-body strong{color:var(--text)}
 .help-guide-link{margin-top:10px;display:inline-block;background:none;border:none;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;padding:0;touch-action:manipulation}
 
+/* ── Onboarding : écran de bienvenue (premier lancement) ── */
+.welcome-overlay{position:fixed;inset:0;z-index:10000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.welcome-card{max-width:380px;width:100%;text-align:center;padding:8px 4px}
+.welcome-brand{font-family:var(--mono,ui-monospace,monospace);font-weight:700;font-size:15px;letter-spacing:-.01em;color:var(--text);margin-bottom:28px}
+.welcome-emoji{font-size:46px;line-height:1;margin-bottom:14px}
+.welcome-title{font-size:26px;font-weight:700;color:var(--text);margin:0 0 10px;letter-spacing:-.02em}
+.welcome-sub{font-size:15px;line-height:1.55;color:var(--text2);margin:0 auto 26px;max-width:320px}
+.welcome-cta{display:block;width:100%;min-height:52px;background:var(--text);color:#fff;border:none;border-radius:14px;font-family:var(--sans);font-size:16px;font-weight:600;cursor:pointer;touch-action:manipulation;transition:opacity .15s}
+.welcome-cta:hover{opacity:.9}
+.welcome-alt{display:block;width:100%;min-height:48px;margin-top:12px;background:none;border:none;color:var(--text2);font-family:var(--sans);font-size:14px;font-weight:500;cursor:pointer;touch-action:manipulation;text-decoration:underline;text-underline-offset:3px}
+.welcome-alt:hover{color:var(--text)}
+
+/* ── État vide : pas encore de programme ── */
+.empty-onboard{text-align:center;padding:48px 24px}
+.empty-onboard-emoji{font-size:40px;line-height:1;margin-bottom:14px}
+.empty-onboard-title{font-size:19px;font-weight:700;color:var(--text);margin-bottom:8px}
+.empty-onboard-sub{font-size:14px;line-height:1.5;color:var(--text2);max-width:300px;margin:0 auto 20px}
+.empty-onboard-btn{min-height:48px;padding:12px 24px;background:var(--text);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600}
+.empty-onboard-btn:hover{background:var(--text);opacity:.9}
+
 /* ── TRACKER STYLES ── */
 .tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px}
 .tab-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:7px 10px;border:none;border-radius:7px;background:transparent;color:var(--text2);cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
@@ -4093,6 +4113,19 @@ function _getNextPlanGeneric(prog, ex, week, semaine) {
 // ── Legacy ATHX tracker (unchanged logic) ────────────────────────────────────
 
 function _renderLegacySaisie() {
+  // Premier lancement : aucun programme actif ET aucune donnée ATHX legacy → état
+  // vide accueillant, plutôt que la grille ATHX codée en dur (qui n'est pas « son »
+  // programme). L'onboarding (welcome → wizard) crée le premier programme.
+  if(!_hasAthxData() && !getActiveProgram()) {
+    const c = document.getElementById('saisieContent');
+    if(c) c.innerHTML = `<div class="empty-onboard">
+      <div class="empty-onboard-emoji">🏋️</div>
+      <div class="empty-onboard-title">Pas encore de programme</div>
+      <div class="empty-onboard-sub">Crée ton programme personnalisé en quelques questions — ou pars d'un modèle.</div>
+      <button class="save-btn empty-onboard-btn" onclick="window._startOnboarding && window._startOnboarding()">Créer mon programme</button>
+    </div>`;
+    return;
+  }
   const week  = parseInt(document.getElementById('weekSel').value, 10) || 1;
   const ph    = PHASES[week - 1] || PHASES[0];
   const badge = document.getElementById('phaseBadge');
@@ -10088,6 +10121,51 @@ window.showWizard = function() {
   initWizard();
 };
 
+// ── Onboarding : écran de bienvenue au premier lancement ────────────────────────
+function _dismissWelcome() { document.getElementById('welcome-overlay')?.remove(); }
+
+function _showWelcome() {
+  if(document.getElementById('welcome-overlay')) return;
+  const ov = document.createElement('div');
+  ov.id = 'welcome-overlay';
+  ov.className = 'welcome-overlay';
+  ov.innerHTML = `
+    <div class="welcome-card">
+      <div class="welcome-brand">Just2Train</div>
+      <div class="welcome-emoji">👋</div>
+      <h2 class="welcome-title">Bienvenue</h2>
+      <p class="welcome-sub">Construis ton programme d'entraînement personnalisé en quelques questions — objectif, niveau, matériel, nutrition.</p>
+      <button class="welcome-cta" id="welcomeStart">Commencer →</button>
+      <button class="welcome-alt" id="welcomeAthx">ou pars du modèle ATHX / Hyrox</button>
+    </div>`;
+  document.body.appendChild(ov);
+  document.getElementById('welcomeStart').onclick = () => { _dismissWelcome(); window._startOnboarding(); };
+  document.getElementById('welcomeAthx').onclick  = () => { _dismissWelcome(); _createAthxTemplate(); };
+}
+
+// Lance le wizard de création de programme (depuis la bienvenue ou l'état vide du tracker)
+window._startOnboarding = function() {
+  _dismissWelcome();
+  showSection('programmes');
+  window.showWizard();
+};
+
+// Crée + active le programme modèle ATHX à la demande (choix « ou pars du modèle »)
+function _createAthxTemplate() {
+  const id   = newProgramId();
+  const prog = buildAthxProgram(id);
+  prog.status = 'active';
+  saveProgram(prog);
+  if(typeof window._activateNewProgram === 'function') {
+    window._activateNewProgram(id);
+  } else {
+    addActiveProgram(id);
+    setActiveProgram(id);
+    showSection('tracker');
+    initWeekSel();
+  }
+}
+
 
 // ── Program card click handlers ──────────────────────────────────────────────
 window._viewProg = function(id) {
@@ -11133,17 +11211,10 @@ function _migrateAthxIfNeeded() {
     if(hasLegacyData) break;
   }
 
-  // Create ATHX program regardless (template always useful)
-  const id   = newProgramId();
-  const prog = buildAthxProgram(id);
-
-  if(!hasLegacyData) {
-    // No data — just create as a template, don't activate
-    prog.status = 'active';
-    saveProgram(prog);
-    // Don't set as active — let user choose
-  } else {
-    // Has legacy data — migrate and activate
+  if(hasLegacyData) {
+    // Données legacy présentes → migrer le programme ATHX et l'activer.
+    const id   = newProgramId();
+    const prog = buildAthxProgram(id);
     prog.status = 'active';
     saveProgram(prog);
     addActiveProgram(id);
@@ -11156,6 +11227,9 @@ function _migrateAthxIfNeeded() {
     prog.migratedFrom = 'athx_legacy';
     saveProgram(prog);
   }
+  // Installation neuve (aucune donnée legacy) : NE PLUS semer ATHX d'office. L'onboarding
+  // (welcome → wizard) crée le premier programme ; ATHX reste dispo comme modèle optionnel
+  // via l'écran de bienvenue (_createAthxTemplate).
 
   dbSet(MIGRATION_KEY, true);
 }
@@ -11183,6 +11257,10 @@ async function init() {
   document.getElementById('btnExportCSV')?.addEventListener('click',  exportCSV);
   // Init wizard
   initWizard();
+
+  // Premier lancement : aucun programme → écran de bienvenue (onboarding), plutôt que
+  // de déposer l'utilisateur dans un programme qui n'est pas le sien.
+  if(getPrograms().length === 0) _showWelcome();
 
   // SW
   const isDeployed = location.hostname.includes('github.io') || (location.protocol==='https:'&&!location.hostname.includes('claudeusercontent'));

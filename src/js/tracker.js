@@ -668,6 +668,19 @@ function _getNextPlanGeneric(prog, ex, week, semaine) {
 // ── Legacy ATHX tracker (unchanged logic) ────────────────────────────────────
 
 function _renderLegacySaisie() {
+  // Premier lancement : aucun programme actif ET aucune donnée ATHX legacy → état
+  // vide accueillant, plutôt que la grille ATHX codée en dur (qui n'est pas « son »
+  // programme). L'onboarding (welcome → wizard) crée le premier programme.
+  if(!_hasAthxData() && !getActiveProgram()) {
+    const c = document.getElementById('saisieContent');
+    if(c) c.innerHTML = `<div class="empty-onboard">
+      <div class="empty-onboard-emoji">🏋️</div>
+      <div class="empty-onboard-title">Pas encore de programme</div>
+      <div class="empty-onboard-sub">Crée ton programme personnalisé en quelques questions — ou pars d'un modèle.</div>
+      <button class="save-btn empty-onboard-btn" onclick="window._startOnboarding && window._startOnboarding()">Créer mon programme</button>
+    </div>`;
+    return;
+  }
   const week  = parseInt(document.getElementById('weekSel').value, 10) || 1;
   const ph    = PHASES[week - 1] || PHASES[0];
   const badge = document.getElementById('phaseBadge');
