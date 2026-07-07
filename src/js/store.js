@@ -48,6 +48,29 @@ export function importRecords(cleanObj) {
   }
 }
 
+// ── Profil utilisateur (global, persisté — source unique sexe + poids) ────────
+const _VALID_SEXE = ['H', 'F'];
+/** Lecture normalisée : { sexe:'H'|'F', bodyWeight:number|null }. Défaut sexe 'H'. */
+export function getProfile() {
+  const p = dbGet('profile') || {};
+  const bw = Number(p.bodyWeight);
+  return {
+    sexe: _VALID_SEXE.includes(p.sexe) ? p.sexe : 'H',
+    bodyWeight: (isFinite(bw) && bw >= 30 && bw <= 300) ? bw : null,
+  };
+}
+/** Écriture partielle validée. Champs hors bornes → ignorés (poids null accepté pour effacer). */
+export function setProfile(patch) {
+  const next = getProfile();
+  if(patch && _VALID_SEXE.includes(patch.sexe)) next.sexe = patch.sexe;
+  if(patch && 'bodyWeight' in patch) {
+    if(patch.bodyWeight === null || patch.bodyWeight === '') next.bodyWeight = null;
+    else { const bw = Number(patch.bodyWeight); if(isFinite(bw) && bw >= 30 && bw <= 300) next.bodyWeight = bw; }
+  }
+  dbSet('profile', next);
+  return next;
+}
+
 /** Find the highest week that has any data */
 export function getLatestWeek(exercises) {
   let max = 1;

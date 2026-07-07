@@ -151,6 +151,17 @@ header{position:relative}
 .sheet-actions{display:flex;flex-direction:column;gap:10px}
 .sheet-btn{min-height:48px;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;font-family:var(--sans);font-size:15px;font-weight:500;color:var(--text);cursor:pointer;touch-action:manipulation}
 .sheet-btn:hover{background:var(--border)}
+/* Hub Réglages : sections + champs Profil (P1-A) */
+.sheet-section{padding-top:4px;margin-bottom:18px}
+.sheet-section+.sheet-section{border-top:1px solid var(--border);padding-top:16px}
+.sheet-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:12px}
+.settings-field{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;margin-bottom:8px}
+.settings-field label{font-size:15px;color:var(--text);font-weight:500}
+.settings-input{font-family:var(--sans);font-size:15px;min-height:44px;padding:6px 12px;border:1px solid var(--border-md);border-radius:10px;background:var(--surface);color:var(--text);outline:none}
+.settings-input:focus{border-color:#1a5fb4}
+.settings-field .settings-input{max-width:150px}
+.settings-input-suffix{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--text2)}
+.settings-input-suffix .settings-input{width:96px;text-align:right}
 
 /* ── Vacances : panneau repliable (P0-2) ── */
 .vac-collapsible{margin-top:16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden}
@@ -2797,6 +2808,29 @@ function importRecords(cleanObj) {
   }
 }
 
+// ── Profil utilisateur (global, persisté — source unique sexe + poids) ────────
+const _VALID_SEXE = ['H', 'F'];
+/** Lecture normalisée : { sexe:'H'|'F', bodyWeight:number|null }. Défaut sexe 'H'. */
+function getProfile() {
+  const p = dbGet('profile') || {};
+  const bw = Number(p.bodyWeight);
+  return {
+    sexe: _VALID_SEXE.includes(p.sexe) ? p.sexe : 'H',
+    bodyWeight: (isFinite(bw) && bw >= 30 && bw <= 300) ? bw : null,
+  };
+}
+/** Écriture partielle validée. Champs hors bornes → ignorés (poids null accepté pour effacer). */
+function setProfile(patch) {
+  const next = getProfile();
+  if(patch && _VALID_SEXE.includes(patch.sexe)) next.sexe = patch.sexe;
+  if(patch && 'bodyWeight' in patch) {
+    if(patch.bodyWeight === null || patch.bodyWeight === '') next.bodyWeight = null;
+    else { const bw = Number(patch.bodyWeight); if(isFinite(bw) && bw >= 30 && bw <= 300) next.bodyWeight = bw; }
+  }
+  dbSet('profile', next);
+  return next;
+}
+
 /** Find the highest week that has any data */
 function getLatestWeek(exercises) {
   let max = 1;
@@ -4598,13 +4632,14 @@ function renderProgression() {
   };
   const EX_COLORS = { press:'#1a5fb4', squat:'#7c4a00', deadlift:'#1b6b45' };
   const EX_NAMES  = { press:'Strict Press', squat:'Back Squat', deadlift:'Deadlift' };
-  const BW = 73;
+  const _prof = (typeof getProfile === 'function') ? getProfile() : { sexe:'H', bodyWeight:null };
+  const BW = _prof.bodyWeight || 73;  // poids de corps du profil (Réglages) ; 73 kg par défaut
 
   container.innerHTML = `
     <div class="prog-filters">
       <div class="prog-filter-group">
         <label>Sexe</label>
-        <select id="benchSex"><option value="M" selected>Homme</option><option value="F">Femme</option></select>
+        <select id="benchSex"><option value="M"${_prof.sexe === 'F' ? '' : ' selected'}>Homme</option><option value="F"${_prof.sexe === 'F' ? ' selected' : ''}>Femme</option></select>
       </div>
       <div class="prog-filter-note">Source : Strength Level · population générale entraînée</div>
     </div>
@@ -4636,7 +4671,10 @@ function renderProgression() {
       </div>
     </div>`;
 
-  document.getElementById('benchSex').addEventListener('change', refreshBench);
+  document.getElementById('benchSex').addEventListener('change', () => {
+    if(typeof setProfile === 'function') setProfile({ sexe: document.getElementById('benchSex').value === 'F' ? 'F' : 'H' });
+    refreshBench();
+  });
 
   // Build progression chart
   const totalWeeks = prog ? prog.totalWeeks : 17;
@@ -5427,6 +5465,7 @@ function exportJSON() {
     nutrition_plans: (typeof dbGet === 'function' ? dbGet('nutrition_plans') : null) || [],
     mobility_assessment: (typeof dbGet === 'function' ? dbGet('mobility_assessment') : null) || null,
     mobility_logs: (typeof dbGet === 'function' ? dbGet('mobility_logs') : null) || [],
+    profile: (typeof dbGet === 'function' ? dbGet('profile') : null) || null,
   };
   _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
 }
@@ -5525,6 +5564,9 @@ function importJSON(event) {
       }
       if(Array.isArray(parsed.mobility_logs) && typeof dbSet === 'function') {
         dbSet('mobility_logs', sanitizeImportedLogs(parsed.mobility_logs));
+      }
+      if(parsed.profile && typeof parsed.profile === 'object' && typeof setProfile === 'function') {
+        setProfile(parsed.profile);  // setProfile valide sexe (H/F) + poids (30-300) et ignore le reste
       }
       if(Array.isArray(parsed.active_programs) && parsed.active_programs.length > 0 && typeof dbSet === 'function') {
         dbSet('programs_active', parsed.active_programs.map(id => safeId(id)).filter(Boolean));
@@ -7683,6 +7725,10 @@ async function initWizard() {
     duree: 12, competition: null, name: '', orm: {}, bodyWeight: null,
   });
 
+  // Pré-remplir le poids de corps depuis le profil global (Réglages ⚙), source unique
+  const _prof = (typeof getProfile === 'function') ? getProfile() : null;
+  if(_prof && _prof.bodyWeight != null) _config.bodyWeight = _prof.bodyWeight;
+
   // Pre-fill ORM from existing tracker data
   _prefillOrm();
 
@@ -8322,7 +8368,10 @@ function _collectStep() {
   const bwEl = document.getElementById('bodyWeight');
   if(bwEl) {
     const bw = parseFloat(bwEl.value);
-    if(isFinite(bw) && bw >= 30 && bw <= 200) _config.bodyWeight = bw;
+    if(isFinite(bw) && bw >= 30 && bw <= 200) {
+      _config.bodyWeight = bw;
+      if(typeof setProfile === 'function') setProfile({ bodyWeight: bw });  // remonte vers le profil global (source unique)
+    }
   }
 
   if(_step === 7) {  // step6() (compétition) est rendu à l'index 7 du renderer
@@ -10212,28 +10261,59 @@ let _settingsEsc = null;
 
 window._openSettings = function() {
   if(document.getElementById('settings-sheet')) return;
+  const prof = (typeof getProfile === 'function') ? getProfile() : { sexe: 'H', bodyWeight: null };
   const ov = document.createElement('div');
   ov.id = 'settings-sheet';
   ov.className = 'sheet-overlay';
   ov.innerHTML = `
-    <div class="sheet-card" role="dialog" aria-label="Données" aria-modal="true">
+    <div class="sheet-card" role="dialog" aria-label="Réglages" aria-modal="true">
       <div class="sheet-head">
-        <span class="sheet-title">Données</span>
+        <span class="sheet-title">Réglages</span>
         <button class="sheet-close" type="button" aria-label="Fermer" onclick="window._closeSettings()">&#x2715;</button>
       </div>
-      <p class="sheet-note">Sauvegarde et restauration de tes données. Tout est stocké uniquement sur cet appareil.</p>
-      <div class="sheet-actions">
-        <button class="sheet-btn" type="button" onclick="exportJSON()">&#x2B07; Export JSON</button>
-        <button class="sheet-btn" type="button" onclick="exportCSV()">&#x2B07; Export CSV</button>
-        <button class="sheet-btn" type="button" onclick="document.getElementById('importFileInput').click()">&#x2B06; Importer un fichier</button>
+
+      <div class="sheet-section">
+        <div class="sheet-section-title">Profil</div>
+        <div class="settings-field">
+          <label for="setSexe">Sexe</label>
+          <select id="setSexe" class="settings-input">
+            <option value="H"${prof.sexe === 'H' ? ' selected' : ''}>Homme</option>
+            <option value="F"${prof.sexe === 'F' ? ' selected' : ''}>Femme</option>
+          </select>
+        </div>
+        <div class="settings-field">
+          <label for="setBodyWeight">Poids de corps</label>
+          <span class="settings-input-suffix">
+            <input type="number" id="setBodyWeight" class="settings-input" inputmode="decimal"
+                   min="30" max="300" step="0.5" placeholder="kg" value="${prof.bodyWeight != null ? prof.bodyWeight : ''}">
+            <span>kg</span>
+          </span>
+        </div>
+        <p class="sheet-note">Sert à estimer tes charges (nouveaux programmes) et à te situer dans le benchmark de force.</p>
       </div>
-      <input type="file" id="importFileInput" accept=".json" onchange="importJSON(event)" style="display:none">
-      <span class="import-feedback" id="importFeedback">&#x2713; Import réussi</span>
+
+      <div class="sheet-section">
+        <div class="sheet-section-title">Données</div>
+        <p class="sheet-note">Sauvegarde et restauration de tes données. Tout est stocké uniquement sur cet appareil.</p>
+        <div class="sheet-actions">
+          <button class="sheet-btn" type="button" onclick="exportJSON()">&#x2B07; Export JSON</button>
+          <button class="sheet-btn" type="button" onclick="exportCSV()">&#x2B07; Export CSV</button>
+          <button class="sheet-btn" type="button" onclick="document.getElementById('importFileInput').click()">&#x2B06; Importer un fichier</button>
+        </div>
+        <input type="file" id="importFileInput" accept=".json" onchange="importJSON(event)" style="display:none">
+        <span class="import-feedback" id="importFeedback">&#x2713; Import réussi</span>
+      </div>
     </div>`;
   document.body.appendChild(ov);
   ov.addEventListener('click', e => { if(e.target === ov) window._closeSettings(); });
   _settingsEsc = e => { if(e.key === 'Escape') window._closeSettings(); };
   document.addEventListener('keydown', _settingsEsc);
+
+  // Persistance immédiate du profil (source unique)
+  const sx = document.getElementById('setSexe');
+  const bw = document.getElementById('setBodyWeight');
+  if(sx && typeof setProfile === 'function') sx.addEventListener('change', () => setProfile({ sexe: sx.value }));
+  if(bw && typeof setProfile === 'function') bw.addEventListener('change', () => setProfile({ bodyWeight: bw.value }));
 };
 
 window._closeSettings = function() {

@@ -2,7 +2,7 @@
  * io.js — JSON and CSV import/export
  */
 
-import { getAllRecords, importRecords, getVacancesList, addVacances, setVacances } from './store.js';
+import { getAllRecords, importRecords, getVacancesList, addVacances, setVacances, setProfile } from './store.js';
 import { validateImport, safeId, sanitizeDeep, sanitizeImportedProgram,
          sanitizeImportedPlan, sanitizeImportedAssessment, sanitizeImportedLogs } from './security.js';
 import { EXERCISES }                    from './data.js';
@@ -24,6 +24,7 @@ export function exportJSON() {
     nutrition_plans: (typeof dbGet === 'function' ? dbGet('nutrition_plans') : null) || [],
     mobility_assessment: (typeof dbGet === 'function' ? dbGet('mobility_assessment') : null) || null,
     mobility_logs: (typeof dbGet === 'function' ? dbGet('mobility_logs') : null) || [],
+    profile: (typeof dbGet === 'function' ? dbGet('profile') : null) || null,
   };
   _download(JSON.stringify(payload, null, 2), `athx_${_dateStr()}.json`, 'application/json');
 }
@@ -122,6 +123,9 @@ export function importJSON(event) {
       }
       if(Array.isArray(parsed.mobility_logs) && typeof dbSet === 'function') {
         dbSet('mobility_logs', sanitizeImportedLogs(parsed.mobility_logs));
+      }
+      if(parsed.profile && typeof parsed.profile === 'object' && typeof setProfile === 'function') {
+        setProfile(parsed.profile);  // setProfile valide sexe (H/F) + poids (30-300) et ignore le reste
       }
       if(Array.isArray(parsed.active_programs) && parsed.active_programs.length > 0 && typeof dbSet === 'function') {
         dbSet('programs_active', parsed.active_programs.map(id => safeId(id)).filter(Boolean));

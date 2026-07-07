@@ -87,6 +87,10 @@ export async function initWizard() {
     duree: 12, competition: null, name: '', orm: {}, bodyWeight: null,
   });
 
+  // Pré-remplir le poids de corps depuis le profil global (Réglages ⚙), source unique
+  const _prof = (typeof getProfile === 'function') ? getProfile() : null;
+  if(_prof && _prof.bodyWeight != null) _config.bodyWeight = _prof.bodyWeight;
+
   // Pre-fill ORM from existing tracker data
   _prefillOrm();
 
@@ -726,7 +730,10 @@ function _collectStep() {
   const bwEl = document.getElementById('bodyWeight');
   if(bwEl) {
     const bw = parseFloat(bwEl.value);
-    if(isFinite(bw) && bw >= 30 && bw <= 200) _config.bodyWeight = bw;
+    if(isFinite(bw) && bw >= 30 && bw <= 200) {
+      _config.bodyWeight = bw;
+      if(typeof setProfile === 'function') setProfile({ bodyWeight: bw });  // remonte vers le profil global (source unique)
+    }
   }
 
   if(_step === 7) {  // step6() (compétition) est rendu à l'index 7 du renderer

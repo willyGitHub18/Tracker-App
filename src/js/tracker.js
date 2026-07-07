@@ -1127,13 +1127,14 @@ export function renderProgression() {
   };
   const EX_COLORS = { press:'#1a5fb4', squat:'#7c4a00', deadlift:'#1b6b45' };
   const EX_NAMES  = { press:'Strict Press', squat:'Back Squat', deadlift:'Deadlift' };
-  const BW = 73;
+  const _prof = (typeof getProfile === 'function') ? getProfile() : { sexe:'H', bodyWeight:null };
+  const BW = _prof.bodyWeight || 73;  // poids de corps du profil (Réglages) ; 73 kg par défaut
 
   container.innerHTML = `
     <div class="prog-filters">
       <div class="prog-filter-group">
         <label>Sexe</label>
-        <select id="benchSex"><option value="M" selected>Homme</option><option value="F">Femme</option></select>
+        <select id="benchSex"><option value="M"${_prof.sexe === 'F' ? '' : ' selected'}>Homme</option><option value="F"${_prof.sexe === 'F' ? ' selected' : ''}>Femme</option></select>
       </div>
       <div class="prog-filter-note">Source : Strength Level · population générale entraînée</div>
     </div>
@@ -1165,7 +1166,10 @@ export function renderProgression() {
       </div>
     </div>`;
 
-  document.getElementById('benchSex').addEventListener('change', refreshBench);
+  document.getElementById('benchSex').addEventListener('change', () => {
+    if(typeof setProfile === 'function') setProfile({ sexe: document.getElementById('benchSex').value === 'F' ? 'F' : 'H' });
+    refreshBench();
+  });
 
   // Build progression chart
   const totalWeeks = prog ? prog.totalWeeks : 17;

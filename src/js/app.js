@@ -269,28 +269,59 @@ let _settingsEsc = null;
 
 window._openSettings = function() {
   if(document.getElementById('settings-sheet')) return;
+  const prof = (typeof getProfile === 'function') ? getProfile() : { sexe: 'H', bodyWeight: null };
   const ov = document.createElement('div');
   ov.id = 'settings-sheet';
   ov.className = 'sheet-overlay';
   ov.innerHTML = `
-    <div class="sheet-card" role="dialog" aria-label="Données" aria-modal="true">
+    <div class="sheet-card" role="dialog" aria-label="Réglages" aria-modal="true">
       <div class="sheet-head">
-        <span class="sheet-title">Données</span>
+        <span class="sheet-title">Réglages</span>
         <button class="sheet-close" type="button" aria-label="Fermer" onclick="window._closeSettings()">&#x2715;</button>
       </div>
-      <p class="sheet-note">Sauvegarde et restauration de tes données. Tout est stocké uniquement sur cet appareil.</p>
-      <div class="sheet-actions">
-        <button class="sheet-btn" type="button" onclick="exportJSON()">&#x2B07; Export JSON</button>
-        <button class="sheet-btn" type="button" onclick="exportCSV()">&#x2B07; Export CSV</button>
-        <button class="sheet-btn" type="button" onclick="document.getElementById('importFileInput').click()">&#x2B06; Importer un fichier</button>
+
+      <div class="sheet-section">
+        <div class="sheet-section-title">Profil</div>
+        <div class="settings-field">
+          <label for="setSexe">Sexe</label>
+          <select id="setSexe" class="settings-input">
+            <option value="H"${prof.sexe === 'H' ? ' selected' : ''}>Homme</option>
+            <option value="F"${prof.sexe === 'F' ? ' selected' : ''}>Femme</option>
+          </select>
+        </div>
+        <div class="settings-field">
+          <label for="setBodyWeight">Poids de corps</label>
+          <span class="settings-input-suffix">
+            <input type="number" id="setBodyWeight" class="settings-input" inputmode="decimal"
+                   min="30" max="300" step="0.5" placeholder="kg" value="${prof.bodyWeight != null ? prof.bodyWeight : ''}">
+            <span>kg</span>
+          </span>
+        </div>
+        <p class="sheet-note">Sert à estimer tes charges (nouveaux programmes) et à te situer dans le benchmark de force.</p>
       </div>
-      <input type="file" id="importFileInput" accept=".json" onchange="importJSON(event)" style="display:none">
-      <span class="import-feedback" id="importFeedback">&#x2713; Import réussi</span>
+
+      <div class="sheet-section">
+        <div class="sheet-section-title">Données</div>
+        <p class="sheet-note">Sauvegarde et restauration de tes données. Tout est stocké uniquement sur cet appareil.</p>
+        <div class="sheet-actions">
+          <button class="sheet-btn" type="button" onclick="exportJSON()">&#x2B07; Export JSON</button>
+          <button class="sheet-btn" type="button" onclick="exportCSV()">&#x2B07; Export CSV</button>
+          <button class="sheet-btn" type="button" onclick="document.getElementById('importFileInput').click()">&#x2B06; Importer un fichier</button>
+        </div>
+        <input type="file" id="importFileInput" accept=".json" onchange="importJSON(event)" style="display:none">
+        <span class="import-feedback" id="importFeedback">&#x2713; Import réussi</span>
+      </div>
     </div>`;
   document.body.appendChild(ov);
   ov.addEventListener('click', e => { if(e.target === ov) window._closeSettings(); });
   _settingsEsc = e => { if(e.key === 'Escape') window._closeSettings(); };
   document.addEventListener('keydown', _settingsEsc);
+
+  // Persistance immédiate du profil (source unique)
+  const sx = document.getElementById('setSexe');
+  const bw = document.getElementById('setBodyWeight');
+  if(sx && typeof setProfile === 'function') sx.addEventListener('change', () => setProfile({ sexe: sx.value }));
+  if(bw && typeof setProfile === 'function') bw.addEventListener('change', () => setProfile({ bodyWeight: bw.value }));
 };
 
 window._closeSettings = function() {
