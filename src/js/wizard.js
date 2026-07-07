@@ -19,6 +19,7 @@ const _config = {
   domaine:          null,
   niveau:           null,
   age:              null,
+  sexe:             null,  // 'H' | 'F' — ajuste l'estimation 1RM (ratios féminins) + profil global
   bodyWeight:       null,  // kg — pour estimer les 1RM si non renseignés
   seancesParSemaine: 3,
   dureeSeance:      60,
@@ -80,16 +81,19 @@ const DUREES_RECOMMANDEES = {
 export async function initWizard() {
   _step = 1;
   Object.assign(_config, {
-    domaine: null, niveau: null, age: null, seancesParSemaine: 3,
+    domaine: null, niveau: null, age: null, sexe: null, seancesParSemaine: 3,
     grossesse_type: null, mois_grossesse: 5, postnatal_phase: null,
     nutrition: null,
     dureeSeance: 60, materiel: [], cardioModalities: [], mobilityZones: [], exercicesForces: [], exercicesExclus: [],
     duree: 12, competition: null, name: '', orm: {}, bodyWeight: null,
   });
 
-  // Pré-remplir le poids de corps depuis le profil global (Réglages ⚙), source unique
+  // Pré-remplir sexe + poids depuis le profil global (Réglages ⚙), source unique
   const _prof = (typeof getProfile === 'function') ? getProfile() : null;
-  if(_prof && _prof.bodyWeight != null) _config.bodyWeight = _prof.bodyWeight;
+  if(_prof) {
+    _config.sexe = _prof.sexe || null;               // 'H' par défaut côté profil
+    if(_prof.bodyWeight != null) _config.bodyWeight = _prof.bodyWeight;
+  }
 
   // Pre-fill ORM from existing tracker data
   _prefillOrm();
@@ -211,6 +215,14 @@ function step2b() {
       <div class="wiz-age-row"><span>Volume mobilité</span><strong>${Math.round(mod.mobilityPct*100)}% des séances</strong></div>
       ${mod.volumeMult < 1 ? `<div class="wiz-age-row"><span>Ajustement volume</span><strong style="color:var(--amber)">−${Math.round((1-mod.volumeMult)*100)}% vs baseline</strong></div>` : ''}
     </div>` : ''}
+
+    <div class="wiz-field" style="margin-top:16px">
+      <label class="wiz-label">Sexe <span style="font-size:11px;color:var(--text3)">(ajuste l'estimation de tes charges de départ)</span></label>
+      <div class="wiz-chips">
+        <button class="wiz-chip ${_config.sexe === 'H' ? 'selected' : ''}" data-chip="sexe" data-value="H">Homme</button>
+        <button class="wiz-chip ${_config.sexe === 'F' ? 'selected' : ''}" data-chip="sexe" data-value="F">Femme</button>
+      </div>
+    </div>
 
     <div class="wiz-field" style="margin-top:16px">
       <label class="wiz-label">Ton poids de corps <span style="font-size:11px;color:var(--text3)">(utilisé pour estimer tes charges si tu ne connais pas tes 1RM)</span></label>
@@ -625,7 +637,7 @@ function step7() {
       <div class="wiz-orm-grid">
         ${_ormExercises().map(ex => {
           const manual = _config.orm[ex.id];
-          const _sexe = (typeof getProfile === 'function') ? getProfile().sexe : 'H';
+          const _sexe = _config.sexe || ((typeof getProfile === 'function') ? getProfile().sexe : 'H');
           const estimated = _config.bodyWeight ? _estimateORM(ex.id, _config.bodyWeight, _config.niveau, _sexe) : null;
           const val = manual || estimated || '';
           const isEstimated = !manual && estimated;
@@ -746,6 +758,10 @@ function _collectStep() {
       if(typeof setProfile === 'function') setProfile({ bodyWeight: bw });  // remonte vers le profil global (source unique)
     }
   }
+  // Sexe choisi au wizard → remonte vers le profil global (source unique)
+  if(_config.sexe && typeof setProfile === 'function') {
+    setProfile({ sexe: _config.sexe });
+  }
 
   if(_step === 7) {  // step6() (compétition) est rendu à l'index 7 du renderer
     const dateEl = document.getElementById('competDate');
@@ -784,6 +800,15 @@ function _initWizardEvents() {
   // Attach to stable parent — wizardContent innerHTML is replaced on each step
   // so we must use a parent that persists across renders
   const stable = document.getElementById('wizard-view') || document.getElementById('programmes') || document.body;
+
+  // Persiste le poids saisi dès la frappe — sinon un clic pastille/carte sur la même
+  // étape (sexe, âge) le perdrait au re-render. Validation finale des bornes dans _collectStep.
+  stable.addEventListener('input', e => {
+    if(e.target && e.target.id === 'bodyWeight') {
+      const v = e.target.value.trim();
+      _config.bodyWeight = v === '' ? null : (parseFloat(v) || null);
+    }
+  });
 
   stable.addEventListener('click', e => {
     // Only handle clicks inside wizardContent
