@@ -7,7 +7,7 @@
 :root{
   --bg:#f6f5f0;--surface:#ffffff;--surface2:#f0ede6;
   --border:rgba(0,0,0,0.08);--border-md:rgba(0,0,0,0.14);
-  --text:#1a1a18;--text2:#6b6b65;--text3:#9b9b94;
+  --text:#1a1a18;--text2:#6b6b65;--text3:#6f6f68;/* text3 assombri : WCAG AA sur blanc (5.06:1) & crème (4.64:1) — P2-B (était #9b9b94 ≈ 2.6:1, échec) */
   --blue:#1a5fb4;--blue-bg:#e8f0fc;
   --green:#1b6b45;--green-bg:#e0f4eb;
   --amber:#7c4a00;--amber-bg:#fdf0d8;
@@ -17,12 +17,15 @@
   --max-w:900px;
 }
 button,select,input,[data-select],[data-toggle],[data-chip]{touch-action:manipulation;}
+/* Focus clavier visible & cohérent sur tous les contrôles (P2-B). Ne s'affiche qu'au clavier (:focus-visible), pas au tap. */
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:3px}
+.bottom-nav-btn:focus-visible{outline-offset:-3px}
 body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
 
 /* HEADER */
 header{background:var(--text);color:#fff;padding:12px 16px;text-align:center;box-sizing:border-box;width:100%;overflow:hidden}
 header h1{font-family:var(--mono);font-size:17px;font-weight:500;letter-spacing:-.02em;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-header .sub{font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono);display:block}
+header .sub{font-size:11px;color:rgba(255,255,255,.6);font-family:var(--mono);display:block}
 
 /* TOP NAV */
 .top-nav{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -1641,7 +1644,6 @@ tr.set-row-skipped .set-rpe{opacity:.35;text-decoration:line-through}
   <button class="bottom-nav-btn active" data-section="tracker" onclick="showSection('tracker')"><span class="tab-icon">📈</span><span>Tracker</span></button>
   <button class="bottom-nav-btn" data-section="musculaire" onclick="showSection('musculaire');renderMusculaire()"><span class="tab-icon">⚡</span><span>Muscles</span></button>
   <button class="bottom-nav-btn" data-section="mobilite-section" onclick="showSection('mobilite-section')"><span class="tab-icon">🧘</span><span>Mobilité</span></button>
-  <button class="bottom-nav-btn" data-section="doc" onclick="showSection('doc')"><span class="tab-icon">📚</span><span>Guide</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" integrity="sha512-ZwR1/gSZM3ai6vCdI+LVF1zSq/5HznD3ZSTk7kajkaj4D292NLuduDCO1c/NT8Id+jE58KYLKT7hXnbtryGmMg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><script>
 /* -- db.js -- */
@@ -10353,7 +10355,7 @@ window._openSettings = function() {
           <label for="setBodyWeight">Poids de corps</label>
           <span class="settings-input-suffix">
             <input type="number" id="setBodyWeight" class="settings-input" inputmode="decimal"
-                   min="30" max="300" step="0.5" placeholder="kg" value="${prof.bodyWeight != null ? prof.bodyWeight : ''}">
+                   min="30" max="300" step="0.5" placeholder="75" value="${prof.bodyWeight != null ? prof.bodyWeight : ''}">
             <span>kg</span>
           </span>
         </div>
@@ -10370,6 +10372,13 @@ window._openSettings = function() {
         </div>
         <input type="file" id="importFileInput" accept=".json" onchange="importJSON(event)" style="display:none">
         <span class="import-feedback" id="importFeedback">&#x2713; Import réussi</span>
+      </div>
+
+      <div class="sheet-section">
+        <div class="sheet-section-title">Aide</div>
+        <div class="sheet-actions">
+          <button class="sheet-btn" type="button" onclick="window._closeSettings();showSection('doc')">&#x1F4DA; Ouvrir le Guide</button>
+        </div>
       </div>
     </div>`;
   document.body.appendChild(ov);

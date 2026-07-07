@@ -293,7 +293,7 @@ window._openSettings = function() {
           <label for="setBodyWeight">Poids de corps</label>
           <span class="settings-input-suffix">
             <input type="number" id="setBodyWeight" class="settings-input" inputmode="decimal"
-                   min="30" max="300" step="0.5" placeholder="kg" value="${prof.bodyWeight != null ? prof.bodyWeight : ''}">
+                   min="30" max="300" step="0.5" placeholder="75" value="${prof.bodyWeight != null ? prof.bodyWeight : ''}">
             <span>kg</span>
           </span>
         </div>
@@ -310,6 +310,13 @@ window._openSettings = function() {
         </div>
         <input type="file" id="importFileInput" accept=".json" onchange="importJSON(event)" style="display:none">
         <span class="import-feedback" id="importFeedback">&#x2713; Import réussi</span>
+      </div>
+
+      <div class="sheet-section">
+        <div class="sheet-section-title">Aide</div>
+        <div class="sheet-actions">
+          <button class="sheet-btn" type="button" onclick="window._closeSettings();showSection('doc')">&#x1F4DA; Ouvrir le Guide</button>
+        </div>
       </div>
     </div>`;
   document.body.appendChild(ov);
