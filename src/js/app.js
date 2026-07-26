@@ -15,7 +15,7 @@ import { getPrograms, getActivePrograms, getArchivedPrograms, getProgram, getPro
          exportProgramJSON, exportProgramMD, exportAllPrograms, importAllPrograms,
          setProgExStatus, getCurrentWeek, setStartDate } from './programs.js';
 import { buildAthxProgram, EXERCISE_CUES } from './data.js';
-import { getRecord, getVacances, setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
+import { getRecord, getVacancesList, setVacances, clearAllVacances, addVacances, removeVacances } from './store.js';
 import { renderNutritionSection, bindNutritionEvents } from './nutrition-plan.js';
 import { renderMobiliteSection } from './mobilite.js';
 import { renderResources } from './resources.js';
@@ -349,7 +349,7 @@ window._viewProg = function(id) {
   requestAnimationFrame(() => _renderProgDetailView(prog, detailView));
 };
 
-window._confirmReprise = function(repriseWeek, manualFirstSkip) {
+window._confirmReprise = function(repriseWeek, manualFirstSkip, debut, fin) {
   const prog = getActiveProgram();
   let lastDataWeek = 0;
 
@@ -386,12 +386,14 @@ window._confirmReprise = function(repriseWeek, manualFirstSkip) {
     _showSaveToast(`✓ Reprise confirmée en S${repriseWeek}`);
   }
 
-  const vac = getVacances();
+  const vac = getVacancesList();
   if(vac.length) {
-    const lastVac = vac[vac.length-1];
-    lastVac.repriseWeek = repriseWeek;
+    // Cible la période qu'on vient d'ajouter par ses dates (addVacances trie par debut,
+    // donc l'index n'est pas fiable si une période future existe déjà) ; repli sur la dernière.
+    const target = (debut && fin && vac.find(v => v.debut === debut && v.fin === fin)) || vac[vac.length-1];
+    target.repriseWeek = repriseWeek;
     // Use manual firstSkippedWeek if provided, otherwise auto-detect
-    lastVac.firstSkippedWeek = (manualFirstSkip === -1) ? repriseWeek : (manualFirstSkip || (weeksToSkip.length > 0 ? weeksToSkip[0] : repriseWeek));
+    target.firstSkippedWeek = (manualFirstSkip === -1) ? repriseWeek : (manualFirstSkip || (weeksToSkip.length > 0 ? weeksToSkip[0] : repriseWeek));
     setVacances(vac);
   }
   renderSaisie();
@@ -623,10 +625,10 @@ window._saveVacances = function() {
   const suggestedReprise = Math.min(lastDataWeek + 1, totalWeeks);
 
   // Show reprise dialog
-  _showRepriseDialog(suggestedReprise, totalWeeks, lastDataWeek, prog, manualFirstSkip);
+  _showRepriseDialog(suggestedReprise, totalWeeks, lastDataWeek, prog, manualFirstSkip, d, f);
 };
 
-function _showRepriseDialog(suggested, total, lastData, prog, manualFirstSkip) {
+function _showRepriseDialog(suggested, total, lastData, prog, manualFirstSkip, debut, fin) {
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
 
@@ -665,7 +667,7 @@ function _showRepriseDialog(suggested, total, lastData, prog, manualFirstSkip) {
   btnConfirm.onclick = () => {
     const week = parseInt(sel.value);
     modal.remove();
-    window._confirmReprise(week, manualFirstSkip);
+    window._confirmReprise(week, manualFirstSkip, debut, fin);
   };
 
   row.append(btnIgnore, btnConfirm);
