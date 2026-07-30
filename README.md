@@ -23,11 +23,14 @@ Application de suivi d'entraînement personnalisée — PWA déployable sur iPho
 
 ### 🏖 Gestion vacances / congés
 - Ajout de plusieurs périodes avec dates et **niveau d'activité** (sédentaire, activité légère, sport régulier, programme vacances, musculation légère)
-- Fusion automatique des périodes proches (< 7 jours d'écart)
-- **Coefficient de reprise** calculé automatiquement selon durée et activité :
-  - ≤ 2 sem : 95% des charges · RPE ≤ 7.5
-  - 3–4 sem : 85% · RPE ≤ 7
-  - > 4 sem : 75% · RPE ≤ 6.5
+- Fusion automatique des périodes proches (< 7 jours d'écart) — appliquée partout : saisir « 2 × 1 semaine » donne exactement le même résultat qu'une seule période de 2 semaines, et deux saisies qui se chevauchent ne comptent pas double
+- **Coefficient de reprise** calculé automatiquement selon durée et activité. Deux courbes, la première prioritaire — **sur la semaine de reprise, la bannière et les charges affichent la même valeur** :
+  - **Par semaine** (dès qu'une semaine de reprise est confirmée) — cumule toutes les périodes des 8 dernières semaines avec décroissance :
+    - ≤ 1,5 sem : 95% des charges · RPE ≤ 7.5
+    - ≤ 3 sem : 88% · RPE ≤ 7
+    - ≤ 5 sem : 80% · RPE ≤ 6.5
+    - \> 5 sem : 72% · RPE ≤ 6
+  - **Calendaire** (repli, actif 14 jours après la fin du congé, période unique) : ≤ 2 sem → 95% · 3–4 sem → 85% · > 4 sem → 75%
   - Bonus activité pondéré par durée : jusqu'à +8%
 - **Semaine de reprise suggérée d'après les dates** : la semaine de programme contenant le lendemain du dernier jour de congé (valable que le congé soit saisi avant, pendant ou après). Le dialogue affiche la plage de dates de chaque semaine (`S11 · 13 juil. – 19 juil.`). Modèle « calendrier ferme » : la date de fin du programme ne bouge pas, un congé consomme des semaines
 - Panneau de reprise avec charges calculées par exercice
@@ -254,7 +257,7 @@ Politique complète, modèle de menace et résultat de l'audit : **`Documentatio
 | Mesure | Description |
 |---|---|
 | Échappement HTML | `esc()` sur toutes les valeurs dynamiques (saisie / API / import) avant `innerHTML` |
-| Assainissement import | **Tous** les blocs importés (programmes, plans nutrition, mobilité, tracking) passent par un sanitizer avant écriture — `safeId` (ids), `safeLabel`/`sanitizeDeep` (texte + anti prototype-pollution), coercition numérique des plans |
+| Assainissement import | **Tous** les blocs importés (programmes, plans nutrition, mobilité, tracking, **vacances**) passent par un sanitizer avant écriture — `safeId` (ids), `safeLabel`/`sanitizeDeep` (texte + anti prototype-pollution), coercition numérique des plans, dates ISO strictes + semaines en entier borné pour les vacances |
 | Sanitisation records | `sanitizeRecord()` : kg < 1000, reps < 100, RPE ≤ 10 ; fichier plafonné à 512 Ko |
 | Export CSV | Cellules `= + - @` préfixées `'` (anti-injection de formule) |
 | CSP + SRI | `Content-Security-Policy` en `<meta>` (`connect-src` limité à self + wger → anti-exfiltration) ; Chart.js chargé avec `integrity` (SRI) |
