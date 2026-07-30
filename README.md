@@ -29,6 +29,7 @@ Application de suivi d'entraînement personnalisée — PWA déployable sur iPho
   - 3–4 sem : 85% · RPE ≤ 7
   - > 4 sem : 75% · RPE ≤ 6.5
   - Bonus activité pondéré par durée : jusqu'à +8%
+- **Semaine de reprise suggérée d'après les dates** : la semaine de programme contenant le lendemain du dernier jour de congé (valable que le congé soit saisi avant, pendant ou après). Le dialogue affiche la plage de dates de chaque semaine (`S11 · 13 juil. – 19 juil.`). Modèle « calendrier ferme » : la date de fin du programme ne bouge pas, un congé consomme des semaines
 - Panneau de reprise avec charges calculées par exercice
 - Bannière "Vacances en cours" ou "Reprise — X% des charges"
 - Exporté / importé dans le JSON de sauvegarde

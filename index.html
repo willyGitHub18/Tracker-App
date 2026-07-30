@@ -10921,6 +10921,30 @@ window._clearVacances = function() {
   renderSaisie();
 };
 
+// ── Vacances : semaine de programme ↔ dates ──────────────────────────────────
+// Modèle « calendrier ferme » : startDate ne bouge pas, un congé consomme donc
+// des semaines de programme (même règle que getCurrentWeek, programs.js:116).
+// Les dates sont des chaînes 'YYYY-MM-DD' → parsées à minuit UTC des deux côtés,
+// l'écart est un multiple exact de 24 h (pas de dérive de fuseau).
+
+function _weekOfDate(prog, dateStr) {
+  if(!prog?.startDate || !dateStr) return null;
+  const start = new Date(prog.startDate).getTime();
+  const d     = new Date(dateStr).getTime();
+  if(isNaN(start) || isNaN(d)) return null;
+  return Math.floor((d - start) / 604800000) + 1;
+}
+
+// Plage de dates couverte par la semaine w — sert à étiqueter le menu déroulant
+function _weekDateRange(prog, w) {
+  if(!prog?.startDate) return null;
+  const start = new Date(prog.startDate).getTime();
+  if(isNaN(start)) return null;
+  const from = start + (w - 1) * 604800000;
+  const fmt  = t => new Date(t).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', timeZone: 'UTC' });
+  return `${fmt(from)} – ${fmt(from + 6 * 86400000)}`;
+}
+
 window._saveVacances = function() {
   const d = document.getElementById('vacDebut')?.value;
   const f = document.getElementById('vacFin')?.value;
@@ -10965,7 +10989,18 @@ window._saveVacances = function() {
     }
   }
 
-  const suggestedReprise = Math.min(lastDataWeek + 1, totalWeeks);
+  // Semaine de reprise = celle qui contient le LENDEMAIN du dernier jour de congé.
+  // Basée sur les dates, donc valable que la saisie ait lieu avant, pendant ou
+  // après le congé — contrairement à getCurrentWeek(), qui ne connaît qu'aujourd'hui,
+  // et à lastDataWeek+1, qui ignore purement et simplement la durée du congé.
+  let suggestedReprise = _weekOfDate(prog, new Date(new Date(f).getTime() + 86400000).toISOString().split('T')[0]);
+  if(!suggestedReprise) {
+    // Pas de date de démarrage (ATHX legacy) : estimation par la durée du congé
+    const semainesOff = Math.max(1, Math.round((new Date(f) - new Date(d)) / 86400000 / 7));
+    suggestedReprise = lastDataWeek + semainesOff + 1;
+  }
+  // Jamais avant la dernière semaine entraînée, jamais au-delà du programme
+  suggestedReprise = Math.min(Math.max(suggestedReprise, lastDataWeek + 1), totalWeeks);
 
   // Show reprise dialog
   _showRepriseDialog(suggestedReprise, totalWeeks, lastDataWeek, prog, manualFirstSkip, d, f);
@@ -10991,7 +11026,9 @@ function _showRepriseDialog(suggested, total, lastData, prog, manualFirstSkip, d
   for(let w = 1; w <= total; w++) {
     const o = document.createElement('option');
     o.value = w;
-    o.textContent = w === suggested ? 'S' + w + ' (suggérée)' : 'S' + w;
+    // Dates affichées : la semaine se vérifie d'un coup d'œil au lieu de se deviner
+    const range = _weekDateRange(prog, w);
+    o.textContent = 'S' + w + (range ? ' · ' + range : '') + (w === suggested ? ' (suggérée)' : '');
     if(w === suggested) o.selected = true;
     sel.appendChild(o);
   }
