@@ -837,7 +837,12 @@ function _getNextPlanGeneric(prog, ex, week, semaine) {
     };
   }
 
-  const rc = repriseCoeff();
+  // Coefficient par semaine (cumulatif, celui qu'affiche la bannière) prioritaire,
+  // repli calendaire sinon. Avant, seul le repli calendaire servait ici : la
+  // bannière annonçait 88 % pendant que la reco S+1 appliquait 95 %, et la
+  // réduction expirait 14 jours après le congé alors que la bannière restait.
+  const _vacListRc = getVacancesList();
+  const rc = (_vacListRc.length ? repriseCoeffForWeek(week + 1, _vacListRc) : null) || repriseCoeff();
   if(rc) {
     const _bkValsRc = (rec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0);
     const bk = _bkValsRc.length ? Math.max(..._bkValsRc) : 0;

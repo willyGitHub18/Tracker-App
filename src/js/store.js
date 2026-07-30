@@ -139,9 +139,10 @@ export function clearAllVacances() {
   dbSet('vacances_list', []);
 }
 
-// Compat legacy (single period)
-export function getVacances() { return null; }
-export function vacancesDuree() { return 0; }
+// Stubs legacy supprimés (v3.31.1) : `getVacances()` renvoyait `null` et
+// `vacancesDuree()` renvoyait `0`. Aucun appelant restant — mais `getVacances()`
+// avait causé le bug §33 (`null.length` → TypeError silencieuse au milieu de
+// _confirmReprise). Utiliser `getVacancesList()`, qui renvoie toujours un tableau.
 
 /**
  * Retourne le coefficient de reprise basé sur la DERNIÈRE période terminée.

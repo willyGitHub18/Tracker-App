@@ -137,16 +137,31 @@ export function importJSON(event) {
 
       // Restore vacances periods if present (including repriseWeek + firstSkippedWeek)
       if(Array.isArray(parsed.vacances)) {
-        parsed.vacances.forEach(v => {
-          if(!v?.debut || !v?.fin) return;
+        // Assainissement (règle security.md §5.3) : dates ISO strictes, semaines
+        // coercées en entiers bornés. Ces clés pilotent le coefficient de reprise
+        // et les bannières — une valeur non numérique les rendait muets (NaN).
+        const _isISO = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
+                            && !isNaN(new Date(s).getTime());
+        const _week  = n => {
+          // Primitifs seuls : sans ce garde, ['11'] ou {toString:()=>'11'} passent par Number()
+          if(typeof n !== 'number' && typeof n !== 'string') return null;
+          const w = Math.floor(Number(n));
+          return (w >= 1 && w <= 520) ? w : null;
+        };
+        parsed.vacances.slice(0, 200).forEach(v => {
+          if(!_isISO(v?.debut) || !_isISO(v?.fin)) return;
           addVacances(v.debut, v.fin, v.activite || 'sedentaire');
           // Restore week metadata if present
-          if(v.repriseWeek || v.firstSkippedWeek) {
+          const rw = _week(v.repriseWeek), fsw = _week(v.firstSkippedWeek);
+          if(rw || fsw) {
             const list = getVacancesList();
-            const last = list[list.length - 1];
-            if(last) {
-              if(v.repriseWeek) last.repriseWeek = v.repriseWeek;
-              if(v.firstSkippedWeek) last.firstSkippedWeek = v.firstSkippedWeek;
+            // addVacances TRIE par debut : cibler par dates, jamais par index —
+            // un import non chronologique attachait les métadonnées à la mauvaise
+            // période (même classe de bug que le fix §33 dans _confirmReprise).
+            const target = list.find(p => p.debut === v.debut && p.fin === v.fin);
+            if(target) {
+              if(rw)  target.repriseWeek = rw;
+              if(fsw) target.firstSkippedWeek = fsw;
               setVacances(list);
             }
           }
