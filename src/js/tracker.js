@@ -10,8 +10,8 @@ import { EXERCISES, PHASES, PHASE_LABELS, PHASE_STYLE, MUSCLE_MAP, EXERCISE_CUES
 import { getRecord, setRecord, getExStatus, setExStatus,
          normRecord, bestKg, getLatestWeek,
          getVacancesList, addVacances, removeVacances, clearAllVacances,
-         repriseCoeff, repriseCoeffForWeek, mergeVacPeriods,
-         vacancesStatus, ACTIVITE_LABELS } from './store.js';
+         repriseCoeffForWeek, repriseCoeffFor, mergeVacPeriods,
+         ACTIVITE_LABELS } from './store.js';
 import { parseSets, parseReps, calcAdj, getNextPlan } from './progression.js';
 import { repaintMuscles }  from './musculaire.js';
 import { renderGrossesseProgram } from './grossesse.js';
@@ -298,6 +298,18 @@ function _seanceDuJourLegacyCard(week) {
   </div>`;
 }
 
+// Dernière charge RÉELLEMENT enregistrée pour un exercice avant `week` (0 / absence
+// de données → null). Sert de base à la charge de reprise quand les semaines
+// précédentes sont des semaines de congé (aucun record).
+function _lastLoggedKg(prog, exId, week) {
+  for(let w = week - 1; w >= 1; w--) {
+    const r    = normRecord(getProgRecord(prog.id, exId, w));
+    const vals = (r?.sets || []).map(s => s?.kg || 0).filter(v => v > 0);
+    if(vals.length) return Math.max(...vals);
+  }
+  return null;
+}
+
 function _renderProgSaisie(prog) {
   // Grossesse programs have their own complete renderer
   if(prog.subtype === 'grossesse') {
@@ -365,13 +377,23 @@ function _renderProgSaisie(prog) {
       // Plan dynamique : utilise la recommandation S issue de S-1 si elle existe
       // (logique Lafay adaptative), sinon retombe sur le kgPlan théorique (1RM × % phase)
       let plan = ex.kgPlan;
+      let planFromPrev = false;
       if(week > 1) {
         const prevSemaine = prog.semaines?.[week - 2];
         const prevEx = prevSemaine?.jours?.flatMap(d => d.exercices).find(e => e.id === ex.id);
         if(prevSemaine && prevEx && !prevSemaine.isDeload) {
           const prevNxt = _getNextPlanGeneric(prog, prevEx, week - 1, prevSemaine);
-          if(prevNxt?.kg) plan = prevNxt.kg;
+          if(prevNxt?.kg) { plan = prevNxt.kg; planFromPrev = true; }
         }
+      }
+      // Semaine de reprise : S-1 est une semaine de congé, donc sans données → la reco
+      // S-1 est nulle et le plan retombait sur le kgPlan théorique, à PLEINE charge.
+      // La réduction n'existait alors que dans la bannière. On l'applique ici à la
+      // dernière charge réellement soulevée avant le congé (journal §37).
+      if(!planFromPrev) {
+        const _rcPlan = repriseCoeffFor(week, getVacancesList());
+        const _refKg  = _rcPlan ? _lastLoggedKg(prog, ex.id, week) : null;
+        if(_refKg) plan = Math.round(_refKg * _rcPlan.coeff / 1.25) * 1.25;
       }
       const scheme   = ex.scheme;
       const nSets    = _parseSetsGeneric(scheme);
@@ -837,12 +859,12 @@ function _getNextPlanGeneric(prog, ex, week, semaine) {
     };
   }
 
-  // Coefficient par semaine (cumulatif, celui qu'affiche la bannière) prioritaire,
-  // repli calendaire sinon. Avant, seul le repli calendaire servait ici : la
-  // bannière annonçait 88 % pendant que la reco S+1 appliquait 95 %, et la
-  // réduction expirait 14 jours après le congé alors que la bannière restait.
-  const _vacListRc = getVacancesList();
-  const rc = (_vacListRc.length ? repriseCoeffForWeek(week + 1, _vacListRc) : null) || repriseCoeff();
+  // Coefficient de reprise via la source unique `repriseCoeffFor` : cumulatif par
+  // semaine, repli calendaire uniquement si aucune reprise n'a été déclarée. On vise
+  // `week + 1` (c'est le plan S+1 qu'on produit) ; la bannière vise la semaine courante.
+  // Avant, le repli calendaire s'appliquait aussi APRÈS la semaine de reprise et son
+  // bonus d'activité pouvait atteindre 1,00 : bannière 93 %, reco « 100 % » (§37).
+  const rc = repriseCoeffFor(week + 1, getVacancesList());
   if(rc) {
     const _bkValsRc = (rec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0);
     const bk = _bkValsRc.length ? Math.max(..._bkValsRc) : 0;
@@ -876,6 +898,16 @@ function _getNextPlanGeneric(prog, ex, week, semaine) {
 }
 
 // ── Legacy ATHX tracker (unchanged logic) ────────────────────────────────────
+
+// Variante legacy ATHX de `_lastLoggedKg` (records globaux, pas par programme).
+function _lastLoggedKgLegacy(exId, week) {
+  for(let w = week - 1; w >= 1; w--) {
+    const r    = normRecord(getRecord(exId, w));
+    const vals = (r?.sets || []).map(s => s?.kg || 0).filter(v => v > 0);
+    if(vals.length) return Math.max(...vals);
+  }
+  return null;
+}
 
 function _renderLegacySaisie() {
   // Premier lancement : aucun programme actif ET aucune donnée ATHX legacy → état
@@ -920,15 +952,26 @@ function _renderLegacySaisie() {
       // Plan dynamique : utilise la recommandation Lafay de la dernière semaine NORMALE
       // (pas deload) pour ajuster le poids de départ de chaque nouveau bloc
       let plan = staticPlan;
+      let planFromPrev = false;
       if(week > 1) {
         // Trouver la dernière semaine normale (non-deload) avant cette semaine
         for(let pw = week - 1; pw >= 1; pw--) {
           const prevScheme = ex.repScheme[pw - 1];
           if(prevScheme === 'Deload' || prevScheme === 'Taper' || prevScheme === 'Repos') continue;
           const nxt = getNextPlan(ex, pw);
-          if(nxt?.kg) { plan = nxt.kg; break; }
+          // `nodata` = S-1 sans données (typiquement une semaine de congé) : le plan
+          // officiel est reconduit, ce n'est pas une reco issue d'une perf réelle.
+          if(nxt?.kg) { plan = nxt.kg; planFromPrev = nxt.outcome !== 'nodata'; break; }
           break; // si la semaine précédente n'a pas de données, garder le plan statique
         }
+      }
+      // Semaine de reprise (même correctif que le renderer générique, §37) : appliquer
+      // le coefficient à la dernière charge réellement soulevée avant le congé, plutôt
+      // que d'afficher le plan officiel à pleine charge.
+      if(!planFromPrev) {
+        const _rcPlan = repriseCoeffFor(week, getVacancesList());
+        const _refKg  = _rcPlan ? _lastLoggedKgLegacy(ex.id, week) : null;
+        if(_refKg) plan = Math.round(_refKg * _rcPlan.coeff / 1.25) * 1.25;
       }
       // For deload/taper: use previous normal week's set count
       const nSets = (() => {
@@ -1244,7 +1287,6 @@ function _vacancesUI() { return _vacancesBannersUI() + _vacancesSetupUI(); }
 // Bannières contextuelles (reprise / vacances en cours / à venir) — restent visibles
 // en haut de la saisie car elles informent sur la semaine courante (P0-2).
 function _vacancesBannersUI() {
-  const _stat = vacancesStatus();
   const _list = getVacancesList();
   const _fmt  = d => d ? new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
 
@@ -1282,11 +1324,16 @@ function _vacancesBannersUI() {
     const _vac = _merged.find(v => (_getFirstSkippedWeek(v) || 999) > _currentWeek);
     const _sw = _vac ? _getFirstSkippedWeek(_vac) : null;
     if(_sw) html += `<div class="reprise-banner" style="background:#fff8e1;border-color:#f9a825;color:#7c4a00">📅 Vacances à venir — ${_fmt(_vac.debut)} → ${_fmt(_vac.fin)} · Séances sautées à partir de S${_sw}</div>`;
-  } else if(_stat?.reprise) {
-    // Calendar fallback for reprise within 14 days
-    html += `<div class="reprise-panel">
-      <div class="reprise-panel-title">⚡ ${esc(_stat.label)}</div>
-      <div class="reprise-panel-coeff">Coefficient : <strong>${Math.round(_stat.coeff*100)}%</strong> · RPE cible : <strong>${_stat.rpeTarget}</strong></div>
+  } else {
+    // Repli calendaire (reprise dans les 14 jours) — via la source unique, donc
+    // uniquement pour un congé saisi SANS semaine de reprise (dialogue « Ignorer »).
+    // Avec des métadonnées de semaine, ce panneau réapparaissait sur les semaines
+    // suivant la reprise (97 % affiché) alors que la reco S+1 était déjà repassée en
+    // Lafay normal : même contradiction que §36 #3, dans l'autre sens (§37).
+    const _rcCal = repriseCoeffFor(_currentWeek, _list);
+    if(_rcCal) html += `<div class="reprise-panel">
+      <div class="reprise-panel-title">⚡ ${esc(_rcCal.label)}</div>
+      <div class="reprise-panel-coeff">Coefficient : <strong>${Math.round(_rcCal.coeff*100)}%</strong> · RPE cible : <strong>${_rcCal.rpeTarget}</strong></div>
       <div class="reprise-note">Les recommandations S+1 sont automatiquement ajustées.</div>
     </div>`;
   }

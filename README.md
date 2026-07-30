@@ -24,14 +24,14 @@ Application de suivi d'entraînement personnalisée — PWA déployable sur iPho
 ### 🏖 Gestion vacances / congés
 - Ajout de plusieurs périodes avec dates et **niveau d'activité** (sédentaire, activité légère, sport régulier, programme vacances, musculation légère)
 - Fusion automatique des périodes proches (< 7 jours d'écart) — appliquée partout : saisir « 2 × 1 semaine » donne exactement le même résultat qu'une seule période de 2 semaines, et deux saisies qui se chevauchent ne comptent pas double
-- **Coefficient de reprise** calculé automatiquement selon durée et activité. Deux courbes, la première prioritaire — **sur la semaine de reprise, la bannière et les charges affichent la même valeur** :
-  - **Par semaine** (dès qu'une semaine de reprise est confirmée) — cumule toutes les périodes des 8 dernières semaines avec décroissance :
+- **Coefficient de reprise** calculé automatiquement selon durée et activité. Une **source unique** (`repriseCoeffFor`) répond partout — bannière, ligne « Plan » et reco S+1 affichent donc **toujours la même valeur**. La réduction s'applique à la **seule semaine de reprise** : ensuite la progression Lafay repart normalement de ce qui a été fait pendant la reprise (modèle « calendrier ferme », cf. journal §37) :
+  - **Par semaine** (dès qu'une semaine de reprise est confirmée) — fait foi ; cumule toutes les périodes des 8 dernières semaines avec décroissance :
     - ≤ 1,5 sem : 95% des charges · RPE ≤ 7.5
     - ≤ 3 sem : 88% · RPE ≤ 7
     - ≤ 5 sem : 80% · RPE ≤ 6.5
     - \> 5 sem : 72% · RPE ≤ 6
-  - **Calendaire** (repli, actif 14 jours après la fin du congé, période unique) : ≤ 2 sem → 95% · 3–4 sem → 85% · > 4 sem → 75%
-  - Bonus activité pondéré par durée : jusqu'à +8%
+  - **Calendaire** (repli utilisé uniquement si **aucune** semaine de reprise n'a été confirmée — dialogue « Ignorer » ; actif 14 jours après la fin du congé) : ≤ 2 sem → 95% · 3–4 sem → 85% · > 4 sem → 75%
+  - Bonus activité pondéré par durée : jusqu'à +8%, **plafonné à 97%** — le bonus adoucit la réduction, il ne l'annule jamais
 - **Semaine de reprise suggérée d'après les dates** : la semaine de programme contenant le lendemain du dernier jour de congé (valable que le congé soit saisi avant, pendant ou après). Le dialogue affiche la plage de dates de chaque semaine (`S11 · 13 juil. – 19 juil.`). Modèle « calendrier ferme » : la date de fin du programme ne bouge pas, un congé consomme des semaines
 - Panneau de reprise avec charges calculées par exercice
 - Bannière "Vacances en cours" ou "Reprise — X% des charges"

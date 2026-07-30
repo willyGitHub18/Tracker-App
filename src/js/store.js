@@ -158,6 +158,13 @@ export function clearAllVacances() {
  * @param {number} week - semaine actuelle (repriseWeek)
  * @param {Array} list  - liste des vacances avec repriseWeek
  */
+// Plafond du coefficient : le bonus d'activité **adoucit** la réduction, il ne
+// l'annule jamais. Sans ce plafond, `Math.min(1, …)` laissait un congé de 2 semaines
+// en « Sport régulier » (+5 %) sortir à 1,00 sur la courbe calendaire (0,95 + 0,05) :
+// la reco S+1 annonçait « charge réduite à 100 % » — donc aucune réduction — pendant
+// que la bannière affichait 93 %. Cf. journal §37.
+export const MAX_REPRISE_COEFF = 0.97;
+
 export function repriseCoeffForWeek(currentWeek, list) {
   if(!list || !list.length) return null;
 
@@ -223,7 +230,7 @@ export function repriseCoeffForWeek(currentWeek, list) {
   else if(totalSkippedWeeks <= 5)   { baseCoeff = 0.80; rpeTarget = '≤ 6.5'; labelBase = 'Reprise modérée'; }
   else                               { baseCoeff = 0.72; rpeTarget = '≤ 6';   labelBase = 'Reprise prudente'; }
 
-  const finalCoeff = Math.min(1, Math.round((baseCoeff + actBonus) * 100) / 100);
+  const finalCoeff = Math.min(MAX_REPRISE_COEFF, Math.round((baseCoeff + actBonus) * 100) / 100);
   const rpe = finalCoeff >= 0.95 ? '≤ 7.5' : finalCoeff >= 0.88 ? '≤ 7' : finalCoeff >= 0.82 ? '≤ 6.5' : '≤ 6';
   const skippedLabel = totalSkippedWeeks <= 1.5 ? '~1 semaine'
     : totalSkippedWeeks <= 3 ? '~2-3 semaines'
@@ -239,6 +246,25 @@ export function repriseCoeffForWeek(currentWeek, list) {
   };
 }
 
+/**
+ * Période (fusionnée) que vise le chemin **calendaire** : la dernière période
+ * terminée dont la fin est dans les 14 derniers jours. Extrait de `repriseCoeff`
+ * pour que `repriseCoeffFor` puisse tester si cette période porte, ou non, une
+ * semaine de reprise déclarée.
+ */
+function _calendarRepriseTarget(merged, today) {
+  let target = null;
+  for(const p of merged) {
+    const fin = new Date(p.fin); fin.setHours(0,0,0,0);
+    if(fin < today) {
+      const joursSinceFin = Math.round((today - fin) / 86400000);
+      if(joursSinceFin <= 14) target = { ...p, joursSinceFin };
+    }
+    // Période en cours → info affichée ailleurs, mais pas de coefficient
+  }
+  return target;
+}
+
 export function repriseCoeff() {
   const list = getVacancesList();
   if(!list.length) return null;
@@ -249,25 +275,7 @@ export function repriseCoeff() {
   // Fusionner les périodes qui se chevauchent ou sont proches (< 7 jours d'écart)
   const merged = _mergePeriods(list, 7);
 
-  // Trouver la dernière période pertinente pour la reprise
-  // = période terminée ET fin dans les 14 derniers jours (fenêtre de reprise)
-  let repriseTarget = null;
-  for(const p of merged) {
-    const fin = new Date(p.fin);
-    fin.setHours(0,0,0,0);
-    const debut = new Date(p.debut);
-    debut.setHours(0,0,0,0);
-
-    if(fin < today) {
-      // Période passée — dans la fenêtre de reprise de 14 jours ?
-      const joursSinceFin = Math.round((today - fin) / 86400000);
-      if(joursSinceFin <= 14) {
-        repriseTarget = { ...p, joursSinceFin };
-      }
-    }
-    // Si période en cours → afficher info mais pas de coeff
-  }
-
+  const repriseTarget = _calendarRepriseTarget(merged, today);
   if(!repriseTarget) return null;
 
   const jours = Math.round((new Date(repriseTarget.fin) - new Date(repriseTarget.debut)) / 86400000);
@@ -295,7 +303,7 @@ export function repriseCoeff() {
     ? (ACTIVITE_LABELS[srcPeriods[0].activite] || ACTIVITE_LABELS.sedentaire).label
     : 'Activité mixte';
 
-  const finalCoeff = Math.min(1, Math.round((baseCoeff + actBonus) * 100) / 100);
+  const finalCoeff = Math.min(MAX_REPRISE_COEFF, Math.round((baseCoeff + actBonus) * 100) / 100);
   // Ajuster RPE cible si le bonus remonte le coeff
   const rpe = finalCoeff >= 0.95 ? '≤ 7.5' : finalCoeff >= 0.88 ? '≤ 7' : '≤ 6.5';
 
@@ -306,6 +314,40 @@ export function repriseCoeff() {
     jours,
     actBonus: Math.round(actBonus * 100),
   };
+}
+
+/**
+ * **Point d'entrée unique** pour « quel coefficient de reprise s'applique à la
+ * semaine `week` ? ». À utiliser partout plutôt que d'enchaîner soi-même
+ * `repriseCoeffForWeek(...) || repriseCoeff()`.
+ *
+ * Modèle retenu (journal §37) : les **métadonnées de semaine font foi** et la
+ * réduction ne concerne que **la semaine de reprise**. Passée cette semaine, Lafay
+ * repart normalement depuis ce qui a réellement été fait pendant la reprise.
+ *
+ * Le chemin calendaire n'est donc plus qu'un **repli** pour les congés saisis sans
+ * semaine de reprise (dialogue « Ignorer ») : sinon la bannière (qui interroge la
+ * semaine courante) et la reco S+1 (qui interroge `week + 1`) répondaient sur deux
+ * courbes différentes — 93 % à l'écran, 100 % sur les charges.
+ *
+ * @param {number} week  - semaine visée (celle dont on veut le coefficient)
+ * @param {Array}  [list] - périodes de vacances (défaut : `getVacancesList()`)
+ */
+export function repriseCoeffFor(week, list) {
+  const l = list || getVacancesList();
+  if(!l.length) return null;
+
+  const byWeek = repriseCoeffForWeek(week, l);
+  if(byWeek) return byWeek;
+
+  // Aucune reprise déclarée sur la période que viserait le calendrier → repli.
+  // Si elle en porte une, c'est elle qui fait foi : hors de sa semaine de reprise,
+  // pas de réduction (sinon la réduction survivrait 14 jours sur l'autre courbe).
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = _calendarRepriseTarget(mergeVacPeriods(l, 7), today);
+  if(!target || target.repriseWeek) return null;
+
+  return repriseCoeff();
 }
 
 /** Statut de la période en cours (pour affichage dans le tracker) */

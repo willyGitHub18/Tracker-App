@@ -11,7 +11,7 @@
  */
 
 import { EXERCISES } from './data.js';
-import { getRecord, getExStatus, normRecord, repriseCoeff, getVacancesList, repriseCoeffForWeek } from './store.js';
+import { getRecord, getExStatus, normRecord, getVacancesList, repriseCoeffFor } from './store.js';
 
 export function parseSets(scheme) {
   if(!scheme || ['Deload','—','Taper','Repos'].includes(scheme)) return 0;
@@ -158,15 +158,13 @@ export function getNextPlan(ex, week) {
   const status        = getExStatus(ex.id, week);
 
   /* ── Vacances : ajuster la charge de reprise ── */
-  // Use cumulative week-based coeff if available, fallback to calendar-based
+  // Source unique : `repriseCoeffFor` (métadonnées de semaine prioritaires, repli
+  // calendaire seulement si aucune reprise n'a été déclarée). On interroge `week + 1`
+  // puisque c'est le plan de la semaine suivante qu'on produit ici — la bannière, elle,
+  // interroge la semaine courante. Avant, le repli calendaire s'appliquait aussi APRÈS
+  // la semaine de reprise : la bannière annonçait 93 % et la reco 100 % (journal §37).
   const vacList = typeof getVacancesList === 'function' ? getVacancesList() : [];
-  // Coefficient par semaine prioritaire, repli calendaire sinon. Le ternaire
-  // d'origine ne repliait JAMAIS dès qu'une période existait : un congé saisi
-  // sans confirmer la reprise (« Ignorer ») affichait la bannière calendaire
-  // mais laissait la reco S+1 à pleine charge.
-  const rc = ((typeof repriseCoeffForWeek === 'function' && vacList.length)
-    ? repriseCoeffForWeek(week + 1, vacList)  // week+1 = next week (the reprise week)
-    : null) || repriseCoeff();
+  const rc = (typeof repriseCoeffFor === 'function') ? repriseCoeffFor(week + 1, vacList) : null;
   if(rc) {
     const repriseKg = Math.round(currentKg * rc.coeff / 1.25) * 1.25;
     return { kg: repriseKg, rule: `${rc.label} · charge réduite à ${Math.round(rc.coeff*100)}% · RPE cible ${rc.rpeTarget}`, outcome: 'vacances', plateauCount: 0 };
