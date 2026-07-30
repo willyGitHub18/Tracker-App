@@ -160,17 +160,13 @@ export function vacancesDuree() { return 0; }
 export function repriseCoeffForWeek(currentWeek, list) {
   if(!list || !list.length) return null;
 
-  // Collect all skipped week ranges that end before currentWeek (within last 8 weeks)
-  const ranges = [];
-  for(const vac of list) {
-    const rw = vac.repriseWeek;
-    if(!rw || rw !== currentWeek) continue; // only for the reprise week itself
-    // Estimate skipped weeks: from first skipped to repriseWeek-1
-    // We stored skipped statuses, so count them
-    ranges.push(vac);
-  }
+  // Périodes proches (< 7 j d'écart) ou qui se chevauchent → fusionnées d'abord :
+  // saisir « 2 × 1 semaine » doit donner exactement le même résultat qu'une seule
+  // période de 2 semaines, et une double saisie ne doit pas compter double.
+  const merged = mergeVacPeriods(list, 7);
 
-  if(!ranges.length) return null;
+  // Il faut qu'une période fusionnée reprenne exactement à la semaine courante
+  if(!merged.some(v => v.repriseWeek === currentWeek)) return null;
 
   // Count total skipped weeks across all overlapping vacation periods
   // Use repriseWeek and estimate: look at all vac entries whose repriseWeek <= currentWeek
@@ -179,7 +175,7 @@ export function repriseCoeffForWeek(currentWeek, list) {
   let weightedBonus = 0;
   let totalWeightDays = 0;
 
-  for(const vac of list) {
+  for(const vac of merged) {
     const rw = vac.repriseWeek;
     if(!rw) continue;
     // Only count vacations that ended at or before currentWeek and started within 8 weeks
@@ -203,11 +199,16 @@ export function repriseCoeffForWeek(currentWeek, list) {
     const effectiveSkipped = skippedWks * decayFactor;
     totalSkippedWeeks += effectiveSkipped;
 
-    // Activity bonus (weighted by duration)
-    const bonus = (ACTIVITE_LABELS[vac.activite] || ACTIVITE_LABELS.sedentaire).bonus;
-    const dur = skippedWks;
-    weightedBonus += bonus * dur;
-    totalWeightDays += dur;
+    // Activity bonus (weighted by duration) — pondéré sur les périodes SOURCES,
+    // pour qu'une fusion « sédentaire + muscu légère » garde bien la moyenne.
+    for(const src of (vac.sources || [vac])) {
+      const bonus = (ACTIVITE_LABELS[src.activite] || ACTIVITE_LABELS.sedentaire).bonus;
+      const dur = (src.debut && src.fin)
+        ? Math.max(1, Math.round(Math.max(0, new Date(src.fin) - new Date(src.debut)) / 86400000 / 7))
+        : skippedWks;
+      weightedBonus += bonus * dur;
+      totalWeightDays += dur;
+    }
   }
 
   if(totalSkippedWeeks === 0) return null;
@@ -338,20 +339,49 @@ export function vacancesStatus() {
   return null;
 }
 
-function _mergePeriods(list, gapDays) {
-  if(!list.length) return [];
+/**
+ * Fusionne les périodes de vacances proches (< `gapDays` d'écart) ou qui se
+ * chevauchent, en conservant les métadonnées de semaine.
+ *
+ * Contrairement à une fusion naïve (qui garderait les champs de la 1ʳᵉ période) :
+ *  - `repriseWeek`      → **max** des valeurs définies (la semaine où l'on reprend
+ *                         réellement, sinon le coefficient ne se déclencherait jamais) ;
+ *  - `firstSkippedWeek` → **min** (la première semaine effectivement sautée) ;
+ *  - `sources`          → périodes d'origine, pour pondérer le bonus d'activité.
+ *
+ * Une période sans `repriseWeek` (dialogue « Ignorer ») hérite ainsi de celle de
+ * sa voisine et cesse d'être invisible au calcul.
+ *
+ * @param {Array}  list     - périodes brutes (`vacances_list`)
+ * @param {number} gapDays  - écart max, en jours, pour fusionner
+ */
+export function mergeVacPeriods(list, gapDays) {
+  if(!list || !list.length) return [];
   const sorted = [...list].sort((a,b) => new Date(a.debut) - new Date(b.debut));
-  const merged = [{ ...sorted[0] }];
+  const _absorb = (grp, p) => {
+    if(new Date(p.fin) > new Date(grp.fin)) grp.fin = p.fin;
+    if(p.repriseWeek)      grp.repriseWeek = Math.max(grp.repriseWeek || 0, p.repriseWeek);
+    if(p.firstSkippedWeek) grp.firstSkippedWeek = Math.min(grp.firstSkippedWeek || Infinity, p.firstSkippedWeek);
+    grp.sources.push(p);
+    return grp;
+  };
+  const merged = [_absorb({ ...sorted[0], sources: [] }, sorted[0])];
   for(let i = 1; i < sorted.length; i++) {
     const prev = merged[merged.length - 1];
     const cur  = sorted[i];
     const gap  = Math.round((new Date(cur.debut) - new Date(prev.fin)) / 86400000);
     if(gap <= gapDays) {
       // Fusionner : étendre la période précédente
-      if(new Date(cur.fin) > new Date(prev.fin)) prev.fin = cur.fin;
+      _absorb(prev, cur);
     } else {
-      merged.push({ ...cur });
+      merged.push(_absorb({ ...cur, sources: [] }, cur));
     }
   }
   return merged;
+}
+
+// Chemin calendaire (repriseCoeff / vacancesStatus) : ne lit que debut/fin/activite,
+// les champs supplémentaires de mergeVacPeriods lui sont transparents.
+function _mergePeriods(list, gapDays) {
+  return mergeVacPeriods(list, gapDays);
 }

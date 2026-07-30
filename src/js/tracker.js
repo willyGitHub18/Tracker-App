@@ -10,7 +10,8 @@ import { EXERCISES, PHASES, PHASE_LABELS, PHASE_STYLE, MUSCLE_MAP, EXERCISE_CUES
 import { getRecord, setRecord, getExStatus, setExStatus,
          normRecord, bestKg, getLatestWeek,
          getVacancesList, addVacances, removeVacances, clearAllVacances,
-         repriseCoeff, vacancesStatus, ACTIVITE_LABELS } from './store.js';
+         repriseCoeff, repriseCoeffForWeek, mergeVacPeriods,
+         vacancesStatus, ACTIVITE_LABELS } from './store.js';
 import { parseSets, parseReps, calcAdj, getNextPlan } from './progression.js';
 import { repaintMuscles }  from './musculaire.js';
 import { renderGrossesseProgram } from './grossesse.js';
@@ -1217,9 +1218,12 @@ function _getFirstSkippedWeek(vac) {
   return rw - 1;
 }
 
-function _getVacBannerForWeek(list, week) {
-  if(!list.length) return null;
-  for(const vac of list) {
+// `merged` = sortie de mergeVacPeriods (périodes proches déjà fusionnées) : sans ça,
+// deux semaines saisies séparément déclenchent une fausse bannière « Reprise » au
+// milieu du congé (la 1ʳᵉ période portant sa propre repriseWeek).
+function _getVacBannerForWeek(merged, week) {
+  if(!merged.length) return null;
+  for(const vac of merged) {
     const rw = vac.repriseWeek;
     if(!rw) continue;
     const sw = _getFirstSkippedWeek(vac) ?? rw;
@@ -1242,7 +1246,10 @@ function _vacancesBannersUI() {
   let html = '';
   // Week-based banner logic (not calendar-based)
   const _currentWeek = parseInt(document.getElementById('weekSel')?.value || '1', 10);
-  const _vacBanner = _getVacBannerForWeek(_list, _currentWeek);
+  // Vue fusionnée (< 7 j d'écart) : « 2 × 1 semaine » se comporte comme une seule
+  // période de 2 semaines, ici comme dans repriseCoeffForWeek.
+  const _merged = (typeof mergeVacPeriods === 'function') ? mergeVacPeriods(_list, 7) : _list;
+  const _vacBanner = _getVacBannerForWeek(_merged, _currentWeek);
 
   if(_vacBanner === 'reprise') {
     // Use cumulative deconditioning coefficient
@@ -1259,7 +1266,7 @@ function _vacancesBannersUI() {
       <div class="reprise-note">Basé sur ${_skipped ? _skipped + ' semaine(s) de repos cumulé' : 'tes périodes de repos'}. Reco S+1 ajustée sur ta dernière perf avant les vacances.</div>
     </div>`;
   } else if(_vacBanner === 'en_cours') {
-    const _vac = _list.find(v => {
+    const _vac = _merged.find(v => {
       const rw = v.repriseWeek || 999;
       const sw = _getFirstSkippedWeek(v);
       return _currentWeek >= sw && _currentWeek < rw;
@@ -1267,8 +1274,7 @@ function _vacancesBannersUI() {
     const _repriseW = _vac?.repriseWeek;
     html += `<div class="reprise-banner" style="background:#f0e8fc;border-color:#c0a0e8;color:#5a0090">🏖 Semaine de vacances${_repriseW ? ` — reprise prévue en S${_repriseW}` : ''}</div>`;
   } else if(_vacBanner === 'a_venir') {
-    const _vac = _list.slice().sort((a,b)=>new Date(a.debut)-new Date(b.debut))
-      .find(v => (_getFirstSkippedWeek(v) || 999) > _currentWeek);
+    const _vac = _merged.find(v => (_getFirstSkippedWeek(v) || 999) > _currentWeek);
     const _sw = _vac ? _getFirstSkippedWeek(_vac) : null;
     if(_sw) html += `<div class="reprise-banner" style="background:#fff8e1;border-color:#f9a825;color:#7c4a00">📅 Vacances à venir — ${_fmt(_vac.debut)} → ${_fmt(_vac.fin)} · Séances sautées à partir de S${_sw}</div>`;
   } else if(_stat?.reprise) {
