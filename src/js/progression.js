@@ -13,6 +13,7 @@
 import { EXERCISES } from './data.js';
 import { getRecord, getExStatus, getExStatusRaw, normRecord, getVacancesList,
          repriseCoeffFor, vacancesBreakWeeks } from './store.js';
+import { MAX_SETS_PER_WEEK } from './security.js';
 
 export function parseSets(scheme) {
   if(!scheme || ['Deload','—','Taper','Repos'].includes(scheme)) return 0;
@@ -113,10 +114,12 @@ export function nSetsForWeek(ex, week) {
   if(!base) base = parseSets(prevNormalRef(ex, week)?.scheme || '') || 4;
   // Ne jamais masquer des séries **déjà saisies** : des séances ont pu être
   // enregistrées sur la ligne excédentaire avant ce correctif.
+  // Plafonné : cette longueur vient du stockage, donc potentiellement d'un backup
+  // importé — sans le plafond elle bornait la boucle de rendu de la grille (§41).
   const rec = normRecord(getRecord(ex.id, week));
   const logged = (rec?.sets || [])
     .filter(s => s && (s.kg != null || s.reps != null || s.skipped)).length;
-  return Math.max(base, logged);
+  return Math.min(Math.max(base, logged), MAX_SETS_PER_WEEK);
 }
 
 /** Reps cibles d'une semaine : barème de la semaine, ou de la référence si non prescrit. */

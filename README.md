@@ -265,7 +265,7 @@ Politique complète, modèle de menace et résultat de l'audit : **`Documentatio
 |---|---|
 | Échappement HTML | `esc()` sur toutes les valeurs dynamiques (saisie / API / import) avant `innerHTML` |
 | Assainissement import | **Tous** les blocs importés (programmes, plans nutrition, mobilité, tracking, **vacances**) passent par un sanitizer avant écriture — `safeId` (ids), `safeLabel`/`sanitizeDeep` (texte + anti prototype-pollution), coercition numérique des plans, dates ISO strictes + semaines en entier borné pour les vacances |
-| Sanitisation records | `sanitizeRecord()` : kg < 1000, reps < 100, RPE ≤ 10 ; fichier plafonné à 512 Ko |
+| Sanitisation records | `sanitizeRecord()` : kg < 1000, reps < 100, RPE ≤ 10, **≤ 20 séries par semaine** (borne de boucle au rendu) ; fichier plafonné à 512 Ko |
 | Export CSV | Cellules `= + - @` préfixées `'` (anti-injection de formule) |
 | CSP + SRI | `Content-Security-Policy` en `<meta>` (`connect-src` limité à self + wger → anti-exfiltration) ; Chart.js chargé avec `integrity` (SRI) |
 | Service Worker | Cache **same-origin only** (anti cache-poisoning), `message` filtré par origine |

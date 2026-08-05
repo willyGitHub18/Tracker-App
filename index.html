@@ -1836,12 +1836,22 @@ function esc(str) {
 }
 
 /** Sanitise and validate a single set record before storage */
+/**
+ * Plafond du nombre de séries d'une semaine. Les bornes de `sanitizeRecord` portaient
+ * jusqu'ici sur les **valeurs** (kg < 1000, reps < 100, RPE ≤ 10) mais **pas sur la
+ * longueur** du tableau. Depuis que la grille dérive son nombre de lignes des séries
+ * réellement saisies (`nSetsForWeek`, §40), cette longueur est devenue une **borne de
+ * boucle de rendu** : un backup forgé avec ~18 000 séries figeait la vue. Le plus grand
+ * barème réel est de 5 séries — 20 laisse toute la marge utile. Cf. journal §41.
+ */
+const MAX_SETS_PER_WEEK = 20;
+
 function sanitizeRecord(rec) {
   if(!rec || typeof rec !== 'object') return null;
   const out = {};
 
   if(Array.isArray(rec.sets)) {
-    out.sets = rec.sets.map(s => {
+    out.sets = rec.sets.slice(0, MAX_SETS_PER_WEEK).map(s => {
       if(!s || typeof s !== 'object') return { kg: null, reps: null, rpe: null, skipped: false };
       // Série explicitement marquée "non effectuée" — distinct de kg=0 (poids du corps volontaire)
       const skipped = s.skipped === true;
@@ -3403,10 +3413,12 @@ function nSetsForWeek(ex, week) {
   if(!base) base = parseSets(prevNormalRef(ex, week)?.scheme || '') || 4;
   // Ne jamais masquer des séries **déjà saisies** : des séances ont pu être
   // enregistrées sur la ligne excédentaire avant ce correctif.
+  // Plafonné : cette longueur vient du stockage, donc potentiellement d'un backup
+  // importé — sans le plafond elle bornait la boucle de rendu de la grille (§41).
   const rec = normRecord(getRecord(ex.id, week));
   const logged = (rec?.sets || [])
     .filter(s => s && (s.kg != null || s.reps != null || s.skipped)).length;
-  return Math.max(base, logged);
+  return Math.min(Math.max(base, logged), MAX_SETS_PER_WEEK);
 }
 
 /** Reps cibles d'une semaine : barème de la semaine, ou de la référence si non prescrit. */

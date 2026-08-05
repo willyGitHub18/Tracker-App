@@ -15,12 +15,22 @@ export function esc(str) {
 }
 
 /** Sanitise and validate a single set record before storage */
+/**
+ * Plafond du nombre de séries d'une semaine. Les bornes de `sanitizeRecord` portaient
+ * jusqu'ici sur les **valeurs** (kg < 1000, reps < 100, RPE ≤ 10) mais **pas sur la
+ * longueur** du tableau. Depuis que la grille dérive son nombre de lignes des séries
+ * réellement saisies (`nSetsForWeek`, §40), cette longueur est devenue une **borne de
+ * boucle de rendu** : un backup forgé avec ~18 000 séries figeait la vue. Le plus grand
+ * barème réel est de 5 séries — 20 laisse toute la marge utile. Cf. journal §41.
+ */
+export const MAX_SETS_PER_WEEK = 20;
+
 export function sanitizeRecord(rec) {
   if(!rec || typeof rec !== 'object') return null;
   const out = {};
 
   if(Array.isArray(rec.sets)) {
-    out.sets = rec.sets.map(s => {
+    out.sets = rec.sets.slice(0, MAX_SETS_PER_WEEK).map(s => {
       if(!s || typeof s !== 'object') return { kg: null, reps: null, rpe: null, skipped: false };
       // Série explicitement marquée "non effectuée" — distinct de kg=0 (poids du corps volontaire)
       const skipped = s.skipped === true;
