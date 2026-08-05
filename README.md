@@ -9,10 +9,10 @@ Application de suivi d'entraînement personnalisée — PWA déployable sur iPho
 ### 📊 Tracker de charges
 - Saisie **série par série** : charge, reps, RPE pour chaque exercice
 - Analyse multi-axe en temps réel : RPE, reps réalisées vs plan, complétude des séries, charge vs plan
-- **Recommandation S+1** inspirée de la méthode Lafay :
-  - Progression (+1 palier) si toutes séries validées + RPE ≤ 8.5
+- **Recommandation S+1** inspirée de la méthode Lafay — appliquée aux programmes **générés comme** au programme ATHX legacy :
+  - Progression (+1 palier) si toutes séries validées + RPE ≤ 8.5. Une semaine réellement réussie **progresse toujours**, même si les semaines précédentes formaient un plateau
   - Consolidation si RPE élevé ou reps incomplètes
-  - Recul automatique après 3 semaines de plateau
+  - Recul automatique après 3 semaines de plateau **consécutives**. La série repart de zéro après une coupure : semaines de congé et semaine de reprise, ou tout trou de ≥ 2 semaines sans séance (congé « Ignorer », blessure, arrêt non saisi). Une seule semaine manquée reste transparente
   - Recul d'urgence si RPE > 9.5 ou reps < 80% du plan
 - **Statuts de séance** par exercice : Normale / ⚡ Post-compét / 🔵 Deload / Sautée
   - **Deload** : grille de saisie visible (charge ~60%), aucune analyse de progression, ne compte pas dans le plateau
@@ -33,6 +33,7 @@ Application de suivi d'entraînement personnalisée — PWA déployable sur iPho
   - **Calendaire** (repli utilisé uniquement si **aucune** semaine de reprise n'a été confirmée — dialogue « Ignorer » ; actif 14 jours après la fin du congé) : ≤ 2 sem → 95% · 3–4 sem → 85% · > 4 sem → 75%
   - Bonus activité pondéré par durée : jusqu'à +8%, **plafonné à 97%** — le bonus adoucit la réduction, il ne l'annule jamais
 - **Semaine de reprise suggérée d'après les dates** : la semaine de programme contenant le lendemain du dernier jour de congé (valable que le congé soit saisi avant, pendant ou après). Le dialogue affiche la plage de dates de chaque semaine (`S11 · 13 juil. – 19 juil.`). Modèle « calendrier ferme » : la date de fin du programme ne bouge pas, un congé consomme des semaines
+- **Le compteur de plateau ne traverse pas un congé** : après la coupure, la charge a changé, donc la série de plateau antérieure ne s'applique plus. Sans cela une reprise réussie se faisait reculer au nom d'un plateau d'avant le départ (cf. journal §38)
 - Panneau de reprise avec charges calculées par exercice
 - Bannière "Vacances en cours" ou "Reprise — X% des charges"
 - Exporté / importé dans le JSON de sauvegarde

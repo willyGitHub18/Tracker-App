@@ -3163,6 +3163,40 @@ function repriseCoeffFor(week, list) {
   return repriseCoeff();
 }
 
+/**
+ * Semaines de programme **neutralisées par un congé**, pour tout calcul de série
+ * consécutive (compteur de plateau Lafay) : les semaines effectivement sautées
+ * (`firstSkippedWeek` → `repriseWeek - 1`) **et** la semaine de reprise elle-même.
+ *
+ * Pourquoi la semaine de reprise en fait partie : sa charge est volontairement
+ * réduite (cf. `repriseCoeffFor`), donc la juger contre le plan à pleine charge la
+ * classerait en `partial`/`high_rpe` — elle viendrait **allonger** un plateau au
+ * lieu de le remettre à zéro. Un plateau, c'est N semaines consécutives à la
+ * **même** charge sans progresser : après un congé la charge a changé, l'ancienne
+ * série ne parle plus de la charge courante (journal §38).
+ *
+ * **Point d'entrée unique**, lu par les deux chemins (ATHX legacy `progression.js`
+ * et programmes générés `tracker.js`) — comme `repriseCoeffFor` pour le coefficient.
+ *
+ * @param {Array} [list] - périodes de vacances (défaut : `getVacancesList()`)
+ * @returns {Set<number>} semaines à ne pas traverser
+ */
+function vacancesBreakWeeks(list) {
+  const l = list || getVacancesList();
+  if(!l.length) return new Set();
+  const out = new Set();
+  for(const v of mergeVacPeriods(l, 7)) {
+    const rw = Number(v.repriseWeek);
+    if(!isFinite(rw) || rw < 1) continue;   // congé « Ignorer » → couvert par la règle du trou de données
+    out.add(rw);
+    const fsw  = Number(v.firstSkippedWeek);
+    // Sans `firstSkippedWeek`, au moins la semaine qui précède la reprise a été sautée.
+    const from = (isFinite(fsw) && fsw >= 1) ? fsw : rw - 1;
+    for(let w = Math.max(1, from); w < rw; w++) out.add(w);
+  }
+  return out;
+}
+
 /** Statut de la période en cours (pour affichage dans le tracker) */
 function vacancesStatus() {
   const list = getVacancesList();
@@ -3309,11 +3343,31 @@ function weekOutcome(ex, week) {
   return 'partial';
 }
 
+/**
+ * Nombre de semaines de plateau **consécutives** avant `beforeWeek`.
+ *
+ * Deux ruptures de série, toutes deux liées au déconditionnement (journal §38) :
+ *  1. **Congé déclaré** — les semaines sautées et la semaine de reprise arrêtent le
+ *     décompte (`vacancesBreakWeeks`, source unique dans `store.js`). Sans cela ces
+ *     semaines sortaient en `nodata`, donc *transparentes* : un plateau d'avant le
+ *     congé traversait la coupure et faisait reculer la semaine de reprise — déjà
+ *     réduite par le coefficient. Une reprise **réussie** ressortait en
+ *     « 4 semaines de plateau — recul d'un palier ».
+ *  2. **Trou de ≥ 2 semaines sans séance** — couvre le congé saisi puis « Ignorer »
+ *     (aucune métadonnée de semaine), la blessure et l'arrêt non saisi, sans avoir
+ *     besoin d'un calendrier (l'ATHX legacy n'a pas de `startDate`). Une **seule**
+ *     semaine manquée reste transparente, comme avant.
+ */
 function consecutivePlateaux(ex, beforeWeek) {
+  const brkWeeks = typeof vacancesBreakWeeks === 'function' ? vacancesBreakWeeks() : new Set();
   let count = 0;
+  let gap   = 0;   // semaines consécutives sans séance réelle
   for(let w = beforeWeek - 1; w >= 1; w--) {
+    if(brkWeeks.has(w)) break;
     const o = weekOutcome(ex, w);
-    if(['skipped','hyrox','nodata','deload'].includes(o)) continue;
+    if(o === 'nodata' || o === 'skipped') { if(++gap >= 2) break; continue; }
+    gap = 0;
+    if(['hyrox','deload'].includes(o)) continue;
     if(['partial','high_rpe'].includes(o)) { count++; continue; }
     break;
   }
@@ -3415,6 +3469,9 @@ function getNextPlan(ex, week) {
   }
 
   let nextKg, rule;
+  // Compteur affiché : une semaine réussie **casse** le plateau, on ne veut donc
+  // pas afficher « Plateau : 3/3 » à côté d'une progression (cf. branche `success`).
+  let plateauShown = plateauCount;
 
   if(status === 'skipped') {
     nextKg = currentKg;
@@ -3428,12 +3485,17 @@ function getNextPlan(ex, week) {
   } else if(outcome === 'overload') {
     nextKg = Math.max(currentKg - p, p);
     rule   = 'RPE > 9.5 — charge excessive. Recul d\'un palier.';
+  } else if(outcome === 'success') {
+    // `success` est testé AVANT le plateau : une semaine réellement réussie (séries
+    // pleines, reps ≥ 95 %, RPE ≤ 8.5) doit progresser, pas reculer. L'ordre inverse
+    // faisait reculer une semaine réussie dès que la série antérieure atteignait 3 —
+    // y compris hors congé (journal §38).
+    nextKg = currentKg + p;
+    rule   = 'Toutes séries validées + RPE ≤ 8.5 — progression d\'un palier ✓';
+    plateauShown = 0;
   } else if(plateauCount >= 3) {
     nextKg = Math.max(currentKg - p, p);
     rule   = `${plateauCount} semaines de plateau — recul d'un palier (règle Lafay).`;
-  } else if(outcome === 'success') {
-    nextKg = currentKg + p;
-    rule   = 'Toutes séries validées + RPE ≤ 8.5 — progression d\'un palier ✓';
   } else if(outcome === 'high_rpe') {
     nextKg = currentKg;
     rule   = 'Séries complètes mais RPE élevé (8.5–9.5) — consolide à la même charge.';
@@ -3445,7 +3507,7 @@ function getNextPlan(ex, week) {
       : 'Séries incomplètes — répète la même charge (règle Lafay).';
   }
 
-  return { kg: Math.round(nextKg / 1.25) * 1.25, rule, outcome, plateauCount };
+  return { kg: Math.round(nextKg / 1.25) * 1.25, rule, outcome, plateauCount: plateauShown };
 }
 
 /**
@@ -4103,6 +4165,7 @@ function _renderProgSaisie(prog) {
               ${helpBtn('reco-s1')}
             </div>
             <div class="reason">${esc(nxt.rule)}</div>
+            ${nxt.plateauCount > 0 ? `<div class="reason" style="margin-top:2px">Plateau : <strong>${nxt.plateauCount}/3 sem.</strong></div>` : ''}
           </div>`;
         }
       }
@@ -4460,6 +4523,72 @@ function _calcAdjGeneric(prog, ex, week, semaine) {
   return { type: hasDanger?'behind':hasWarn?'slight_behind':'ahead', signals, bk, avgRpe, avgReps };
 }
 
+/** Exercice tel que planifié pour une semaine donnée (le scheme peut varier). */
+function _exForWeek(prog, exId, week) {
+  const sem = prog.semaines?.[week - 1];
+  return sem?.jours?.flatMap(d => d.exercices || []).find(e => e.id === exId) || null;
+}
+
+/**
+ * Classement de performance d'une semaine passée, pour les programmes générés —
+ * pendant de `weekOutcome` (ATHX legacy). Extrait de `_getNextPlanGeneric`, qui
+ * l'utilise désormais : une **seule** source de vérité pour « comment s'est passée
+ * cette semaine », sinon le compteur de plateau et le message affiché divergent.
+ *
+ * Volontairement limité à la performance : les cas `vacances`, séries non effectuées
+ * et statuts manuels restent traités par `_getNextPlanGeneric` (qui a besoin des
+ * charges), et les semaines de deload/taper structurelles ne sont pas reclassées ici.
+ */
+function _weekOutcomeGeneric(prog, exId, week) {
+  const status = getProgExStatus(prog.id, exId, week);
+  if(status === 'skipped') return 'skipped';
+  if(status === 'hyrox')   return 'hyrox';
+  if(status === 'deload')  return 'deload';
+
+  const rec = normRecord(getProgRecord(prog.id, exId, week));
+  if(!rec?.sets?.some(s => s && (s.kg != null || s.skipped))) return 'nodata';
+
+  const ex    = _exForWeek(prog, exId, week);
+  const nSets = _parseSetsGeneric(ex?.scheme) || 4;
+
+  const skippedSets = rec.sets.filter(s => s?.skipped === true);
+  if(skippedSets.length > 0 && !rec.sets.some(s => s && s.kg != null)) {
+    return (skippedSets.length / nSets) >= 0.5 ? 'injury_suspected' : 'partial_skip';
+  }
+
+  const done     = rec.sets.filter(s => s?.reps);
+  const avgRpe   = done.length ? done.reduce((a,s)=>a+(parseFloat(s.rpe)||7),0)/done.length : null;
+  const avgReps  = done.length ? done.reduce((a,s)=>a+(s.reps||0),0)/done.length : null;
+  const planReps = parseReps(ex?.scheme) || 5;
+
+  if(avgRpe != null && avgRpe > 9.5) return 'overload';
+  if(avgReps != null && planReps > 0 && avgReps/planReps < 0.8) return 'crush';
+  if(avgRpe != null && avgRpe <= 8.5 && avgReps != null && avgReps/planReps >= 0.95) return 'success';
+  if(avgRpe != null && avgRpe > 8.5) return 'high_rpe';
+  return 'partial';
+}
+
+/**
+ * Compteur de plateau pour les programmes générés — pendant de `consecutivePlateaux`
+ * (ATHX legacy), **mêmes règles de rupture** : semaines neutralisées par un congé
+ * (`vacancesBreakWeeks`) et trou de ≥ 2 semaines sans séance. Cf. journal §38.
+ */
+function _consecutivePlateauxGeneric(prog, exId, beforeWeek) {
+  const brkWeeks = vacancesBreakWeeks();
+  let count = 0;
+  let gap   = 0;
+  for(let w = beforeWeek - 1; w >= 1; w--) {
+    if(brkWeeks.has(w)) break;
+    const o = _weekOutcomeGeneric(prog, exId, w);
+    if(o === 'nodata' || o === 'skipped') { if(++gap >= 2) break; continue; }
+    gap = 0;
+    if(o === 'hyrox' || o === 'deload') continue;
+    if(o === 'partial' || o === 'high_rpe') { count++; continue; }
+    break;
+  }
+  return count;
+}
+
 function _getNextPlanGeneric(prog, ex, week, semaine) {
   if(week >= (prog.totalWeeks || 17)) return null;
   const rec = normRecord(getProgRecord(prog.id, ex.id, week));
@@ -4488,6 +4617,7 @@ function _getNextPlanGeneric(prog, ex, week, semaine) {
         ? `${skippedSets.length} série(s) non effectuée(s) — possible blessure/manque de force. Recul de 2 paliers par précaution.`
         : `${skippedSets.length} série(s) non effectuée(s) — recul d'un palier par précaution.`,
       outcome: severe ? 'injury_suspected' : 'partial_skip',
+      plateauCount: 0,
     };
   }
 
@@ -4501,7 +4631,7 @@ function _getNextPlanGeneric(prog, ex, week, semaine) {
     const _bkValsRc = (rec.sets||[]).map(s=>s?.kg||0).filter(v=>v>0);
     const bk = _bkValsRc.length ? Math.max(..._bkValsRc) : 0;
     const repriseKg = Math.round(bk * rc.coeff / 1.25) * 1.25;
-    return { kg:repriseKg, rule:`${rc.label} · ${Math.round(rc.coeff*100)}% · RPE ${rc.rpeTarget}`, outcome:'vacances' };
+    return { kg:repriseKg, rule:`${rc.label} · ${Math.round(rc.coeff*100)}% · RPE ${rc.rpeTarget}`, outcome:'vacances', plateauCount:0 };
   }
 
   const status   = getProgExStatus(prog.id, ex.id, week);
@@ -4509,24 +4639,28 @@ function _getNextPlanGeneric(prog, ex, week, semaine) {
   const bk       = _bkVals3.length ? Math.max(..._bkVals3) : 0;
   const p        = ex.id === 'squat' || ex.id === 'deadlift' ? 2.5 : 1.25;
 
-  if(status === 'skipped') return { kg:bk, rule:'Séance sautée — même charge.', outcome:'skipped' };
-  if(status === 'deload')  return { kg: ex.kgPlan || bk, rule:'Retour au plan S+1.', outcome:'deload' };
+  if(status === 'skipped') return { kg:bk, rule:'Séance sautée — même charge.', outcome:'skipped', plateauCount:0 };
+  if(status === 'deload')  return { kg: ex.kgPlan || bk, rule:'Retour au plan S+1.', outcome:'deload', plateauCount:0 };
 
-  const avgRpe  = (() => {
-    const done = (rec.sets||[]).filter(s=>s?.reps);
-    return done.length ? done.reduce((a,s)=>a+(parseFloat(s.rpe)||7),0)/done.length : null;
-  })();
-  const avgReps = (() => {
-    const done = (rec.sets||[]).filter(s=>s?.reps);
-    return done.length ? done.reduce((a,s)=>a+(s.reps||0),0)/done.length : null;
-  })();
-  const planReps = parseReps(ex.scheme) || 5;
+  // Règle de plateau Lafay, désormais appliquée aussi aux programmes générés (avant :
+  // seul l'ATHX legacy la connaissait). `success` est testé AVANT le plateau — une
+  // semaine réellement réussie progresse, elle ne recule pas (journal §38).
+  const outcome      = _weekOutcomeGeneric(prog, ex.id, week);
+  const plateauCount = _consecutivePlateauxGeneric(prog, ex.id, week);
 
-  if(avgRpe != null && avgRpe > 9.5) return { kg:Math.max(bk-p,p), rule:'RPE > 9.5 — recul d\'un palier.', outcome:'overload' };
-  if(avgReps != null && planReps > 0 && avgReps/planReps < 0.8) return { kg:Math.max(bk-2*p,p), rule:'Reps insuffisantes — recul 2 paliers.', outcome:'crush' };
-  if(avgRpe != null && avgRpe <= 8.5 && avgReps != null && avgReps/planReps >= 0.95) return { kg:bk+p, rule:'Toutes séries validées ✓ — progression d\'un palier.', outcome:'success' };
-  if(avgRpe != null && avgRpe > 8.5) return { kg:bk, rule:'RPE élevé — consolide à la même charge.', outcome:'high_rpe' };
-  return { kg:bk, rule:'Séries incomplètes — même charge.', outcome:'partial' };
+  if(outcome === 'overload') return { kg:Math.max(bk-p,p),   rule:'RPE > 9.5 — recul d\'un palier.',              outcome, plateauCount };
+  if(outcome === 'crush')    return { kg:Math.max(bk-2*p,p), rule:'Reps insuffisantes — recul 2 paliers.',        outcome, plateauCount };
+  if(outcome === 'success')  return { kg:bk+p,               rule:'Toutes séries validées ✓ — progression d\'un palier.', outcome, plateauCount:0 };
+  if(plateauCount >= 3)      return { kg:Math.max(bk-p,p),   rule:`${plateauCount} semaines de plateau — recul d'un palier (règle Lafay).`, outcome, plateauCount };
+  if(outcome === 'high_rpe') return { kg:bk, rule:'RPE élevé — consolide à la même charge.', outcome, plateauCount };
+  return {
+    kg: bk,
+    rule: plateauCount >= 1
+      ? `${plateauCount + 1} semaine(s) de plateau. Encore ${3 - plateauCount - 1} avant recul.`
+      : 'Séries incomplètes — même charge.',
+    outcome: 'partial',
+    plateauCount,
+  };
 }
 
 // ── Legacy ATHX tracker (unchanged logic) ────────────────────────────────────

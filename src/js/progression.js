@@ -11,7 +11,8 @@
  */
 
 import { EXERCISES } from './data.js';
-import { getRecord, getExStatus, normRecord, getVacancesList, repriseCoeffFor } from './store.js';
+import { getRecord, getExStatus, normRecord, getVacancesList, repriseCoeffFor,
+         vacancesBreakWeeks } from './store.js';
 
 export function parseSets(scheme) {
   if(!scheme || ['Deload','—','Taper','Repos'].includes(scheme)) return 0;
@@ -65,11 +66,31 @@ export function weekOutcome(ex, week) {
   return 'partial';
 }
 
+/**
+ * Nombre de semaines de plateau **consécutives** avant `beforeWeek`.
+ *
+ * Deux ruptures de série, toutes deux liées au déconditionnement (journal §38) :
+ *  1. **Congé déclaré** — les semaines sautées et la semaine de reprise arrêtent le
+ *     décompte (`vacancesBreakWeeks`, source unique dans `store.js`). Sans cela ces
+ *     semaines sortaient en `nodata`, donc *transparentes* : un plateau d'avant le
+ *     congé traversait la coupure et faisait reculer la semaine de reprise — déjà
+ *     réduite par le coefficient. Une reprise **réussie** ressortait en
+ *     « 4 semaines de plateau — recul d'un palier ».
+ *  2. **Trou de ≥ 2 semaines sans séance** — couvre le congé saisi puis « Ignorer »
+ *     (aucune métadonnée de semaine), la blessure et l'arrêt non saisi, sans avoir
+ *     besoin d'un calendrier (l'ATHX legacy n'a pas de `startDate`). Une **seule**
+ *     semaine manquée reste transparente, comme avant.
+ */
 export function consecutivePlateaux(ex, beforeWeek) {
+  const brkWeeks = typeof vacancesBreakWeeks === 'function' ? vacancesBreakWeeks() : new Set();
   let count = 0;
+  let gap   = 0;   // semaines consécutives sans séance réelle
   for(let w = beforeWeek - 1; w >= 1; w--) {
+    if(brkWeeks.has(w)) break;
     const o = weekOutcome(ex, w);
-    if(['skipped','hyrox','nodata','deload'].includes(o)) continue;
+    if(o === 'nodata' || o === 'skipped') { if(++gap >= 2) break; continue; }
+    gap = 0;
+    if(['hyrox','deload'].includes(o)) continue;
     if(['partial','high_rpe'].includes(o)) { count++; continue; }
     break;
   }
@@ -171,6 +192,9 @@ export function getNextPlan(ex, week) {
   }
 
   let nextKg, rule;
+  // Compteur affiché : une semaine réussie **casse** le plateau, on ne veut donc
+  // pas afficher « Plateau : 3/3 » à côté d'une progression (cf. branche `success`).
+  let plateauShown = plateauCount;
 
   if(status === 'skipped') {
     nextKg = currentKg;
@@ -184,12 +208,17 @@ export function getNextPlan(ex, week) {
   } else if(outcome === 'overload') {
     nextKg = Math.max(currentKg - p, p);
     rule   = 'RPE > 9.5 — charge excessive. Recul d\'un palier.';
+  } else if(outcome === 'success') {
+    // `success` est testé AVANT le plateau : une semaine réellement réussie (séries
+    // pleines, reps ≥ 95 %, RPE ≤ 8.5) doit progresser, pas reculer. L'ordre inverse
+    // faisait reculer une semaine réussie dès que la série antérieure atteignait 3 —
+    // y compris hors congé (journal §38).
+    nextKg = currentKg + p;
+    rule   = 'Toutes séries validées + RPE ≤ 8.5 — progression d\'un palier ✓';
+    plateauShown = 0;
   } else if(plateauCount >= 3) {
     nextKg = Math.max(currentKg - p, p);
     rule   = `${plateauCount} semaines de plateau — recul d'un palier (règle Lafay).`;
-  } else if(outcome === 'success') {
-    nextKg = currentKg + p;
-    rule   = 'Toutes séries validées + RPE ≤ 8.5 — progression d\'un palier ✓';
   } else if(outcome === 'high_rpe') {
     nextKg = currentKg;
     rule   = 'Séries complètes mais RPE élevé (8.5–9.5) — consolide à la même charge.';
@@ -201,7 +230,7 @@ export function getNextPlan(ex, week) {
       : 'Séries incomplètes — répète la même charge (règle Lafay).';
   }
 
-  return { kg: Math.round(nextKg / 1.25) * 1.25, rule, outcome, plateauCount };
+  return { kg: Math.round(nextKg / 1.25) * 1.25, rule, outcome, plateauCount: plateauShown };
 }
 
 /**

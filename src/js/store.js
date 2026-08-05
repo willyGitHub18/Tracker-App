@@ -350,6 +350,40 @@ export function repriseCoeffFor(week, list) {
   return repriseCoeff();
 }
 
+/**
+ * Semaines de programme **neutralisées par un congé**, pour tout calcul de série
+ * consécutive (compteur de plateau Lafay) : les semaines effectivement sautées
+ * (`firstSkippedWeek` → `repriseWeek - 1`) **et** la semaine de reprise elle-même.
+ *
+ * Pourquoi la semaine de reprise en fait partie : sa charge est volontairement
+ * réduite (cf. `repriseCoeffFor`), donc la juger contre le plan à pleine charge la
+ * classerait en `partial`/`high_rpe` — elle viendrait **allonger** un plateau au
+ * lieu de le remettre à zéro. Un plateau, c'est N semaines consécutives à la
+ * **même** charge sans progresser : après un congé la charge a changé, l'ancienne
+ * série ne parle plus de la charge courante (journal §38).
+ *
+ * **Point d'entrée unique**, lu par les deux chemins (ATHX legacy `progression.js`
+ * et programmes générés `tracker.js`) — comme `repriseCoeffFor` pour le coefficient.
+ *
+ * @param {Array} [list] - périodes de vacances (défaut : `getVacancesList()`)
+ * @returns {Set<number>} semaines à ne pas traverser
+ */
+export function vacancesBreakWeeks(list) {
+  const l = list || getVacancesList();
+  if(!l.length) return new Set();
+  const out = new Set();
+  for(const v of mergeVacPeriods(l, 7)) {
+    const rw = Number(v.repriseWeek);
+    if(!isFinite(rw) || rw < 1) continue;   // congé « Ignorer » → couvert par la règle du trou de données
+    out.add(rw);
+    const fsw  = Number(v.firstSkippedWeek);
+    // Sans `firstSkippedWeek`, au moins la semaine qui précède la reprise a été sautée.
+    const from = (isFinite(fsw) && fsw >= 1) ? fsw : rw - 1;
+    for(let w = Math.max(1, from); w < rw; w++) out.add(w);
+  }
+  return out;
+}
+
 /** Statut de la période en cours (pour affichage dans le tracker) */
 export function vacancesStatus() {
   const list = getVacancesList();
