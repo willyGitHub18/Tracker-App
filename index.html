@@ -3375,6 +3375,46 @@ function prevNormalRef(ex, week) {
   return null;
 }
 
+/**
+ * 1RM estimé (formule d'Epley) — permet de comparer deux séances de **barèmes
+ * différents** : 50 kg × 3 reps et 47,5 kg × 5 reps valent ~55 kg tous les deux.
+ * Utilisé uniquement là où le programme ne prescrit pas de barème (journal §40).
+ */
+function e1RM(kg, reps) {
+  const k = Number(kg), r = Number(reps);
+  if(!isFinite(k) || k <= 0 || !isFinite(r) || r <= 0) return 0;
+  return k * (1 + r / 30);
+}
+
+/**
+ * Nombre de séries de la grille pour une semaine.
+ *
+ * ⚠ **`ex.sets` (`data.js`) contient les reps par série, pas un nombre de séries**,
+ * malgré son nom : `press.sets[10] === 5` alors que le barème de S11 est `4×5`. Les
+ * trois sites qui dessinaient puis relisaient la grille des semaines de deload s'en
+ * servaient comme d'un compte de séries → **une ligne de trop** (5 au lieu de 4), et
+ * ils doivent rester d'accord entre eux sous peine de perdre ou d'inventer une série.
+ * Le barème fait foi ; sur une semaine de deload/taper, celui de la semaine normale
+ * de référence (journal §40).
+ */
+function nSetsForWeek(ex, week) {
+  const scheme = ex.repScheme?.[week - 1] || '';
+  let base = parseSets(scheme);
+  if(!base) base = parseSets(prevNormalRef(ex, week)?.scheme || '') || 4;
+  // Ne jamais masquer des séries **déjà saisies** : des séances ont pu être
+  // enregistrées sur la ligne excédentaire avant ce correctif.
+  const rec = normRecord(getRecord(ex.id, week));
+  const logged = (rec?.sets || [])
+    .filter(s => s && (s.kg != null || s.reps != null || s.skipped)).length;
+  return Math.max(base, logged);
+}
+
+/** Reps cibles d'une semaine : barème de la semaine, ou de la référence si non prescrit. */
+function planRepsForWeek(ex, week) {
+  const scheme = ex.repScheme?.[week - 1] || '';
+  return parseReps(scheme) ?? parseReps(prevNormalRef(ex, week)?.scheme || '');
+}
+
 function weekOutcome(ex, week) {
   const status = getExStatus(ex.id, week);
   if(status === 'skipped') return 'skipped';
@@ -3387,8 +3427,8 @@ function weekOutcome(ex, week) {
   // Deload codée passée en « Normale » : le barème vient de la dernière semaine
   // normale, sinon 'Deload' ne fournit ni séries ni reps et les replis (4×5) seraient
   // faux dans un bloc en 4×4 — 4 reps sur un plan de 5 sortirait en `partial`.
-  const scheme   = (isOverriddenDeload(ex, week) ? prevNormalRef(ex, week)?.scheme : null)
-                   || ex.repScheme[week - 1];
+  const _ovr     = isOverriddenDeload(ex, week) ? prevNormalRef(ex, week) : null;
+  const scheme   = _ovr?.scheme || ex.repScheme[week - 1];
   const planReps = parseReps(scheme) || 5;
   const nSets    = parseSets(scheme) || 4;
 
@@ -3408,12 +3448,38 @@ function weekOutcome(ex, week) {
   const avgReps = done.length ? done.reduce((a, s) => a + (s.reps || 0), 0) / done.length : null;
   const setPct  = nSets > 0 ? done.length / nSets : 0;
 
-  if(avgReps !== null && planReps > 0 && avgReps / planReps < 0.8) return 'crush';
+  const perfRatio = perfRatioFor(ex, week, { ovr: _ovr, sets, avgReps, planReps });
+
+  if(perfRatio !== null && perfRatio < 0.8) return 'crush';
   if(avgRpe !== null && avgRpe > 9.5) return 'overload';
-  if(setPct >= 1 && (avgReps === null || avgReps / planReps >= 0.95)) {
+  if(setPct >= 1 && (perfRatio === null || perfRatio >= 0.95)) {
     return (avgRpe !== null && avgRpe > 8.5) ? 'high_rpe' : 'success';
   }
   return 'partial';
+}
+
+/**
+ * Ratio de performance de la semaine, seul juge des seuils 0,8 / 0,95 / 1,1.
+ *
+ * Semaine normale → **reps réalisées / reps du plan** (le barème est la consigne, s'en
+ * écarter doit se voir). Semaine de deload passée en « Normale » → **équivalence en
+ * 1RM estimé** : le programme n'y prescrit aucun barème, et comparer les reps brutes
+ * punissait une séance plus lourde à reps moindres. Cas réel : press S12, 50 kg × 3
+ * reps × 5 séries à RPE 8 sortait en `crush` (3/5 = 60 % d'un objectif de 5 reps) avec
+ * « recul de 2 paliers », alors que 50 × 3 ≈ 55 kg de 1RM estimé contre 48,75 × 5
+ * ≈ 56,9, soit 97 % — une bonne séance (journal §40).
+ *
+ * Une vraie sous-performance reste détectée : 40 kg × 3 → 44 kg estimé, 77 % → `crush`.
+ */
+function perfRatioFor(ex, week, { ovr, sets, avgReps, planReps }) {
+  if(avgReps == null || !(planReps > 0)) return null;
+  const refKg = ovr?.kg;
+  if(!ovr || !refKg) return avgReps / planReps;
+  const kgs = (sets || []).map(s => s?.kg || 0).filter(v => v > 0);
+  const bk  = kgs.length ? Math.max(...kgs) : 0;
+  const ref = e1RM(refKg, planReps);
+  if(!bk || !ref) return avgReps / planReps;
+  return e1RM(bk, avgReps) / ref;
 }
 
 /**
@@ -3726,8 +3792,28 @@ function calcAdj(ex, week) {
     }
   }
 
-  // Axe reps
-  if(repRatio != null) {
+  // Axe reps — jugé par `perfRatioFor` : reps brutes sur une semaine normale, équivalence
+  // en 1RM estimé sur une deload passée en « Normale » (le programme n'y prescrit aucun
+  // barème). Cf. §40 : 50 kg × 3 reps ne doit pas se lire comme 60 % d'un objectif de 5.
+  const perfRatio = perfRatioFor(ex, week, { ovr: _ovr, sets, avgReps, planReps });
+  if(perfRatio != null && _ovr) {
+    const r    = round1(avgReps);
+    const eSes = round1(e1RM(bk, avgReps));
+    const eRef = round1(e1RM(planKg, planReps));
+    const equiv = `${r} reps à ${bk} ${ex.unit} — 1RM estimé ${eSes} kg contre ${eRef} attendus (${planKg} × ${planReps})`;
+    if(perfRatio < 0.8) {
+      signals.push({ type: 'danger', text: `${equiv}. Nettement en dessous — réduis la charge.` });
+      nextBonus -= (ex.id === 'squat' || ex.id === 'deadlift') ? 5 : 2.5;
+    } else if(perfRatio < 0.95) {
+      signals.push({ type: 'warn', text: `${equiv}. Un peu en dessous — consolide avant de progresser.` });
+      nextBonus -= 1.25;
+    } else if(perfRatio >= 1.1) {
+      signals.push({ type: 'good', text: `${equiv} — objectif dépassé. Augmente la charge.` });
+      nextBonus += 1.25;
+    } else {
+      signals.push({ type: 'good', text: `${equiv} — équivalent au barème attendu ✓` });
+    }
+  } else if(repRatio != null) {
     const r = round1(avgReps);
     if(repRatio < 0.8) {
       signals.push({ type: 'danger', text: `${r} reps/série (plan : ${planReps}). Réduis la charge.` });
@@ -4637,10 +4723,15 @@ function _calcAdjGeneric(prog, ex, week, semaine) {
     else signals.push({type:'neutral', text:`RPE ${Math.round(avgRpe*10)/10} — bon calibrage.`});
   }
   if(avgReps != null && planReps > 0) {
-    const ratio = avgReps / planReps;
-    if(ratio < 0.8) signals.push({type:'danger', text:`${Math.round(avgReps*10)/10} reps/série — insuffisant.`});
-    else if(ratio >= 0.95) signals.push({type:'good', text:`${Math.round(avgReps*10)/10} reps/série ✓`});
-    else signals.push({type:'warn', text:`${Math.round(avgReps*10)/10} reps/série (plan: ${planReps}).`});
+    const ratio = _perfRatioGeneric(rec, _ovrRef, avgReps, planReps);
+    const r = Math.round(avgReps*10)/10;
+    // Sur une deload overridée, le message explique l'équivalence (§40).
+    const lbl = _ovrRef
+      ? `${r} reps à ${bk} ${ex.unit || 'kg'} — 1RM estimé ${Math.round(e1RM(bk, avgReps)*10)/10} kg contre ${Math.round(e1RM(planKg, planReps)*10)/10} attendus`
+      : `${r} reps/série`;
+    if(ratio < 0.8) signals.push({type:'danger', text:`${lbl} — insuffisant.`});
+    else if(ratio >= 0.95) signals.push({type:'good', text:`${lbl} ✓`});
+    else signals.push({type:'warn', text:`${lbl} (plan: ${planReps}).`});
   }
   if(planKg && Math.abs(bk - planKg) >= 1.25) {
     const d = Math.round((bk-planKg)*10)/10;
@@ -4696,6 +4787,22 @@ function _prevNormalRefGeneric(prog, exId, week) {
 }
 
 /**
+ * Ratio de performance d'une semaine (programmes générés) — pendant de `perfRatioFor` :
+ * reps brutes en semaine normale, **équivalence en 1RM estimé** sur une deload passée
+ * en « Normale » (§40).
+ */
+function _perfRatioGeneric(rec, ovrRef, avgReps, planReps) {
+  if(avgReps == null || !(planReps > 0)) return null;
+  const refKg = ovrRef?.kg;
+  if(!ovrRef || !refKg) return avgReps / planReps;
+  const kgs = (rec?.sets || []).map(s => s?.kg || 0).filter(v => v > 0);
+  const bk  = kgs.length ? Math.max(...kgs) : 0;
+  const ref = e1RM(refKg, planReps);
+  if(!bk || !ref) return avgReps / planReps;
+  return e1RM(bk, avgReps) / ref;
+}
+
+/**
  * Classement de performance d'une semaine passée, pour les programmes générés —
  * pendant de `weekOutcome` (ATHX legacy). Extrait de `_getNextPlanGeneric`, qui
  * l'utilise désormais : une **seule** source de vérité pour « comment s'est passée
@@ -4716,8 +4823,9 @@ function _weekOutcomeGeneric(prog, exId, week) {
 
   // Deload passée en « Normale » : barème de la dernière semaine normale, pas celui
   // (gonflé en reps) de la semaine de deload.
-  const _ovrScheme = _isOverriddenDeloadGeneric(prog, exId, week)
-    ? _prevNormalRefGeneric(prog, exId, week)?.scheme : null;
+  const _ovrRefO = _isOverriddenDeloadGeneric(prog, exId, week)
+    ? _prevNormalRefGeneric(prog, exId, week) : null;
+  const _ovrScheme = _ovrRefO?.scheme || null;
   const ex    = _exForWeek(prog, exId, week);
   const nSets = _parseSetsGeneric(_ovrScheme || ex?.scheme) || 4;
 
@@ -4731,9 +4839,13 @@ function _weekOutcomeGeneric(prog, exId, week) {
   const avgReps  = done.length ? done.reduce((a,s)=>a+(s.reps||0),0)/done.length : null;
   const planReps = parseReps(_ovrScheme || ex?.scheme) || 5;
 
+  // Deload passée en « Normale » : équivalence en 1RM estimé plutôt que reps brutes —
+  // le programme n'y prescrit pas de barème (§40, même règle que le chemin legacy).
+  const _perf = _perfRatioGeneric(rec, _ovrRefO, avgReps, planReps);
+
   if(avgRpe != null && avgRpe > 9.5) return 'overload';
-  if(avgReps != null && planReps > 0 && avgReps/planReps < 0.8) return 'crush';
-  if(avgRpe != null && avgRpe <= 8.5 && avgReps != null && avgReps/planReps >= 0.95) return 'success';
+  if(_perf != null && _perf < 0.8) return 'crush';
+  if(avgRpe != null && avgRpe <= 8.5 && _perf != null && _perf >= 0.95) return 'success';
   if(avgRpe != null && avgRpe > 8.5) return 'high_rpe';
   return 'partial';
 }
@@ -4927,20 +5039,13 @@ function _renderLegacySaisie() {
         const _refKg  = _rcPlan ? _lastLoggedKgLegacy(ex.id, week) : null;
         if(_refKg) plan = Math.round(_refKg * _rcPlan.coeff / 1.25) * 1.25;
       }
-      // For deload/taper: use previous normal week's set count
-      const nSets = (() => {
-        if(scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos') {
-          // Find last non-null sets count for this exercise
-          if(ex.sets) {
-            for(let w = week-2; w >= 0; w--) {
-              if(ex.sets[w] != null) return ex.sets[w];
-            }
-          }
-          return 4;
-        }
-        return parseSets(scheme) || 4;
-      })();
-      const planReps = parseReps(scheme);
+      // Barème via la source unique `nSetsForWeek` (§40) : `ex.sets` contient les REPS,
+      // s'en servir comme compte de séries donnait une ligne de trop sur les semaines de
+      // deload. Les trois sites (rendu + deux relectures) lisent la même fonction.
+      const nSets = nSetsForWeek(ex, week);
+      // Reps cibles : le barème de la semaine, ou celui de la référence si la semaine
+      // n'en prescrit pas (une semaine de deload n'affichait aucune cible de reps).
+      const planReps = planRepsForWeek(ex, week);
       const exStatus = getExStatus(ex.id, week);
       // Deload **effectif** (statut manuel, ou semaine de deload codée non overridée)
       // et deload seulement **implicite** (codée, statut jamais choisi) : dans ce dernier
@@ -5139,15 +5244,8 @@ function _bindLegacyEvents(week) {
 function saveSaisie(week, day) {
   const exs = EXERCISES.filter(e => e.day === day);
   exs.forEach(ex => {
-    const scheme = ex.repScheme[week - 1];
-    // Pour Deload/Taper : même nSets que la grille affichée (semaine précédente non-null)
-    let nSets;
-    if(scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos') {
-      nSets = 4;
-      if(ex.sets) { for(let w = week-2; w >= 0; w--) { if(ex.sets[w] != null) { nSets = ex.sets[w]; break; } } }
-    } else {
-      nSets = parseSets(scheme) || 4;  // aligné sur la grille affichée (renderer: || 4)
-    }
+    // Même source que la grille affichée (§40) — un écart ferait perdre ou inventer une série.
+    const nSets = nSetsForWeek(ex, week);
     const sets = [];
     let anyData = false;
     for(let s=0;s<nSets;s++) {
@@ -5666,15 +5764,8 @@ function _updateSetCheckmarks(prog, week, dayName) {
 function _updateLegacyCheckmarks(week, dayName) {
   const exs = EXERCISES.filter(e => e.day === dayName);
   exs.forEach(ex => {
-    const scheme = ex.repScheme[week - 1];
-    // For deload/taper: use previous non-null sets count (matches grid rendering)
-    let nSets;
-    if(scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos') {
-      nSets = 4;
-      if(ex.sets) { for(let w = week-2; w >= 0; w--) { if(ex.sets[w] != null) { nSets = ex.sets[w]; break; } } }
-    } else {
-      nSets = parseSets(scheme) || 4;
-    }
+    // Même source que la grille affichée (§40).
+    const nSets = nSetsForWeek(ex, week);
     let filledSets = 0;
 
     for(let s = 0; s < nSets; s++) {
@@ -10745,7 +10836,7 @@ const HELP = {
   },
   'session-status': {
     title: 'Statut de séance',
-    body: "Ton choix **fait foi** : il prime sur ce que prévoit le programme pour la semaine.\n**Normale** — analyse standard vs plan + reco S+1. Sur une semaine de deload prévue par le programme, la choisir explicitement dit « je l'ai entraînée normalement » : la semaine redevient une semaine classique (analysée, comptée dans le plateau, progression Lafay), avec le barème et la charge de la dernière semaine normale comme référence.\n**⚡ Post-compét** — après une compétition ou un effort intense : le RPE est majoré (fatigue non perçue), la séance est comparée à ton historique et ne génère aucune reco de charge.\n**🔵 Deload** — semaine allégée (~60 %) : aucune analyse de performance, aucune progression tirée de cette séance, et la semaine ne compte pas dans le plateau. La reco S+1 repart de la dernière semaine normale.\n**Sautée** — séance non réalisée : elle ne compte pas dans le compteur de plateau (et 2 semaines sautées d'affilée le remettent à zéro).\nQuand le programme prévoit un deload et que tu n'as rien choisi, le sélecteur affiche « 🔵 Deload (programme) ».",
+    body: "Ton choix **fait foi** : il prime sur ce que prévoit le programme pour la semaine.\n**Normale** — analyse standard vs plan + reco S+1. Sur une semaine de deload prévue par le programme, la choisir explicitement dit « je l'ai entraînée normalement » : la semaine redevient une semaine classique (analysée, comptée dans le plateau, progression Lafay), avec le barème et la charge de la dernière semaine normale comme référence. Comme le programme n'y prescrit aucun barème, la séance y est jugée à **effort équivalent** (1RM estimé) et non sur les reps brutes : 50 kg × 3 reps compte comme 47,5 kg × 5 reps, donc faire plus lourd sur moins de reps n'est plus pénalisé.\n**⚡ Post-compét** — après une compétition ou un effort intense : le RPE est majoré (fatigue non perçue), la séance est comparée à ton historique et ne génère aucune reco de charge.\n**🔵 Deload** — semaine allégée (~60 %) : aucune analyse de performance, aucune progression tirée de cette séance, et la semaine ne compte pas dans le plateau. La reco S+1 repart de la dernière semaine normale.\n**Sautée** — séance non réalisée : elle ne compte pas dans le compteur de plateau (et 2 semaines sautées d'affilée le remettent à zéro).\nQuand le programme prévoit un deload et que tu n'as rien choisi, le sélecteur affiche « 🔵 Deload (programme) ».",
   },
   'reco-s1': {
     title: 'Recommandation S+1',

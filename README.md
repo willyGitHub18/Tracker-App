@@ -17,7 +17,8 @@ Application de suivi d'entraînement personnalisée — PWA déployable sur iPho
 - **Statuts de séance** par exercice : Normale / ⚡ Post-compét / 🔵 Deload / Sautée.
   **Le statut choisi fait foi** — il prime sur ce que prévoit le programme pour la semaine (cf. journal §39) :
   - **Deload** : grille de saisie visible (charge ~60%), aucune analyse de progression, ne compte pas dans le plateau (sans le remettre à zéro non plus) ; la reco S+1 repart de la dernière semaine normale
-  - **Normale sur une semaine de deload du programme** : choisir explicitement *Normale* annule le deload prévu — la semaine redevient classique (analysée, comptée dans le plateau, progression Lafay), avec le barème et la charge de la dernière semaine normale comme référence. L'override est **par exercice** ; sans choix explicite, le deload du programme s'applique et le sélecteur affiche « 🔵 Deload (programme) »
+  - **Normale sur une semaine de deload du programme** : choisir explicitement *Normale* annule le deload prévu — la semaine redevient classique (analysée, comptée dans le plateau, progression Lafay), avec le barème et la charge de la dernière semaine normale comme référence. L'override est **par exercice** ; sans choix explicite, le deload du programme s'applique et le sélecteur affiche « 🔵 Deload (programme) ».
+    Le programme n'y prescrivant aucun barème, la séance y est jugée **à effort équivalent** (1RM estimé, Epley) et non sur les reps brutes : 50 kg × 3 reps compte comme 47,5 kg × 5 reps, donc faire plus lourd sur moins de reps ne se lit plus comme une contre-performance. Une vraie baisse reste détectée (40 kg × 3 → 77 % de la référence → recul). Les semaines **normales** gardent la comparaison aux reps du plan (cf. journal §40)
   - **Post-compét** : RPE corrigé +1.5, analyse vs historique perso, aucune recommandation de charge
   - **Sautée** : séance ignorée dans le calcul de plateau, plan S+1 reconduit
 - **Sélecteur de programme** en haut du tracker si plusieurs programmes actifs simultanément
@@ -154,13 +155,16 @@ Tracker-App/
     │   ├── db.js               # IndexedDB + cache in-memory + fallback localStorage
     │   ├── security.js         # esc(), sanitizeRecord(), validateImport(), safeId/safeLabel/sanitizeDeep + sanitizers d'import
     │   ├── data.js             # EXERCISES, MUSCLE_MAP, AGE_MODIFIERS, GROSSESSE_*, NUTRITION_*, CARDIO_*, MOBILITY_*
-    │   ├── store.js            # Accesseurs + gestion vacances multi-périodes
-    │   ├── progression.js      # Logique Lafay : weekOutcome, getNextPlan, calcAdj
-    │   ├── tracker.js          # Tracker générique (ATHX + programmes wizard)
+    │   ├── store.js            # Accesseurs (dont statut brut) + vacances multi-périodes : repriseCoeffFor, vacancesBreakWeeks
+    │   ├── progression.js      # Logique Lafay : weekOutcome, getNextPlan, calcAdj,
+    │   │                       #   consecutivePlateaux, isEffectiveDeload, prevNormalRef,
+    │   │                       #   perfRatioFor/e1RM, nSetsForWeek, planRepsForWeek
+    │   ├── tracker.js          # Tracker générique (ATHX + programmes wizard) + pendants
+    │   │                       #   « génériques » de la logique Lafay (_weekOutcomeGeneric…)
     │   ├── musculaire.js       # SRA, paintAllViews, cumul multi-programmes
     │   ├── io.js               # Export JSON/CSV, import avec validation
     │   ├── exercises-db.js     # Base wger.de + cache IndexedDB + fallback 35 exercices
-    │   ├── programs.js         # Storage multi-programmes, statuts, clôture, archive
+    │   ├── programs.js         # Storage multi-programmes, statuts (+ bruts), clôture, archive
     │   ├── generator.js        # Algo génération programme (age-aware, mixte, grossesse, cardio, mobilité)
     │   ├── grossesse.js        # Programme prénatal/post-natal complet (CNSF/HAS)
     │   ├── wizard.js           # Wizard de programme (8 étapes)

@@ -85,6 +85,46 @@ export function prevNormalRef(ex, week) {
   return null;
 }
 
+/**
+ * 1RM estimé (formule d'Epley) — permet de comparer deux séances de **barèmes
+ * différents** : 50 kg × 3 reps et 47,5 kg × 5 reps valent ~55 kg tous les deux.
+ * Utilisé uniquement là où le programme ne prescrit pas de barème (journal §40).
+ */
+export function e1RM(kg, reps) {
+  const k = Number(kg), r = Number(reps);
+  if(!isFinite(k) || k <= 0 || !isFinite(r) || r <= 0) return 0;
+  return k * (1 + r / 30);
+}
+
+/**
+ * Nombre de séries de la grille pour une semaine.
+ *
+ * ⚠ **`ex.sets` (`data.js`) contient les reps par série, pas un nombre de séries**,
+ * malgré son nom : `press.sets[10] === 5` alors que le barème de S11 est `4×5`. Les
+ * trois sites qui dessinaient puis relisaient la grille des semaines de deload s'en
+ * servaient comme d'un compte de séries → **une ligne de trop** (5 au lieu de 4), et
+ * ils doivent rester d'accord entre eux sous peine de perdre ou d'inventer une série.
+ * Le barème fait foi ; sur une semaine de deload/taper, celui de la semaine normale
+ * de référence (journal §40).
+ */
+export function nSetsForWeek(ex, week) {
+  const scheme = ex.repScheme?.[week - 1] || '';
+  let base = parseSets(scheme);
+  if(!base) base = parseSets(prevNormalRef(ex, week)?.scheme || '') || 4;
+  // Ne jamais masquer des séries **déjà saisies** : des séances ont pu être
+  // enregistrées sur la ligne excédentaire avant ce correctif.
+  const rec = normRecord(getRecord(ex.id, week));
+  const logged = (rec?.sets || [])
+    .filter(s => s && (s.kg != null || s.reps != null || s.skipped)).length;
+  return Math.max(base, logged);
+}
+
+/** Reps cibles d'une semaine : barème de la semaine, ou de la référence si non prescrit. */
+export function planRepsForWeek(ex, week) {
+  const scheme = ex.repScheme?.[week - 1] || '';
+  return parseReps(scheme) ?? parseReps(prevNormalRef(ex, week)?.scheme || '');
+}
+
 export function weekOutcome(ex, week) {
   const status = getExStatus(ex.id, week);
   if(status === 'skipped') return 'skipped';
@@ -97,8 +137,8 @@ export function weekOutcome(ex, week) {
   // Deload codée passée en « Normale » : le barème vient de la dernière semaine
   // normale, sinon 'Deload' ne fournit ni séries ni reps et les replis (4×5) seraient
   // faux dans un bloc en 4×4 — 4 reps sur un plan de 5 sortirait en `partial`.
-  const scheme   = (isOverriddenDeload(ex, week) ? prevNormalRef(ex, week)?.scheme : null)
-                   || ex.repScheme[week - 1];
+  const _ovr     = isOverriddenDeload(ex, week) ? prevNormalRef(ex, week) : null;
+  const scheme   = _ovr?.scheme || ex.repScheme[week - 1];
   const planReps = parseReps(scheme) || 5;
   const nSets    = parseSets(scheme) || 4;
 
@@ -118,12 +158,38 @@ export function weekOutcome(ex, week) {
   const avgReps = done.length ? done.reduce((a, s) => a + (s.reps || 0), 0) / done.length : null;
   const setPct  = nSets > 0 ? done.length / nSets : 0;
 
-  if(avgReps !== null && planReps > 0 && avgReps / planReps < 0.8) return 'crush';
+  const perfRatio = perfRatioFor(ex, week, { ovr: _ovr, sets, avgReps, planReps });
+
+  if(perfRatio !== null && perfRatio < 0.8) return 'crush';
   if(avgRpe !== null && avgRpe > 9.5) return 'overload';
-  if(setPct >= 1 && (avgReps === null || avgReps / planReps >= 0.95)) {
+  if(setPct >= 1 && (perfRatio === null || perfRatio >= 0.95)) {
     return (avgRpe !== null && avgRpe > 8.5) ? 'high_rpe' : 'success';
   }
   return 'partial';
+}
+
+/**
+ * Ratio de performance de la semaine, seul juge des seuils 0,8 / 0,95 / 1,1.
+ *
+ * Semaine normale → **reps réalisées / reps du plan** (le barème est la consigne, s'en
+ * écarter doit se voir). Semaine de deload passée en « Normale » → **équivalence en
+ * 1RM estimé** : le programme n'y prescrit aucun barème, et comparer les reps brutes
+ * punissait une séance plus lourde à reps moindres. Cas réel : press S12, 50 kg × 3
+ * reps × 5 séries à RPE 8 sortait en `crush` (3/5 = 60 % d'un objectif de 5 reps) avec
+ * « recul de 2 paliers », alors que 50 × 3 ≈ 55 kg de 1RM estimé contre 48,75 × 5
+ * ≈ 56,9, soit 97 % — une bonne séance (journal §40).
+ *
+ * Une vraie sous-performance reste détectée : 40 kg × 3 → 44 kg estimé, 77 % → `crush`.
+ */
+export function perfRatioFor(ex, week, { ovr, sets, avgReps, planReps }) {
+  if(avgReps == null || !(planReps > 0)) return null;
+  const refKg = ovr?.kg;
+  if(!ovr || !refKg) return avgReps / planReps;
+  const kgs = (sets || []).map(s => s?.kg || 0).filter(v => v > 0);
+  const bk  = kgs.length ? Math.max(...kgs) : 0;
+  const ref = e1RM(refKg, planReps);
+  if(!bk || !ref) return avgReps / planReps;
+  return e1RM(bk, avgReps) / ref;
 }
 
 /**
@@ -436,8 +502,28 @@ export function calcAdj(ex, week) {
     }
   }
 
-  // Axe reps
-  if(repRatio != null) {
+  // Axe reps — jugé par `perfRatioFor` : reps brutes sur une semaine normale, équivalence
+  // en 1RM estimé sur une deload passée en « Normale » (le programme n'y prescrit aucun
+  // barème). Cf. §40 : 50 kg × 3 reps ne doit pas se lire comme 60 % d'un objectif de 5.
+  const perfRatio = perfRatioFor(ex, week, { ovr: _ovr, sets, avgReps, planReps });
+  if(perfRatio != null && _ovr) {
+    const r    = round1(avgReps);
+    const eSes = round1(e1RM(bk, avgReps));
+    const eRef = round1(e1RM(planKg, planReps));
+    const equiv = `${r} reps à ${bk} ${ex.unit} — 1RM estimé ${eSes} kg contre ${eRef} attendus (${planKg} × ${planReps})`;
+    if(perfRatio < 0.8) {
+      signals.push({ type: 'danger', text: `${equiv}. Nettement en dessous — réduis la charge.` });
+      nextBonus -= (ex.id === 'squat' || ex.id === 'deadlift') ? 5 : 2.5;
+    } else if(perfRatio < 0.95) {
+      signals.push({ type: 'warn', text: `${equiv}. Un peu en dessous — consolide avant de progresser.` });
+      nextBonus -= 1.25;
+    } else if(perfRatio >= 1.1) {
+      signals.push({ type: 'good', text: `${equiv} — objectif dépassé. Augmente la charge.` });
+      nextBonus += 1.25;
+    } else {
+      signals.push({ type: 'good', text: `${equiv} — équivalent au barème attendu ✓` });
+    }
+  } else if(repRatio != null) {
     const r = round1(avgReps);
     if(repRatio < 0.8) {
       signals.push({ type: 'danger', text: `${r} reps/série (plan : ${planReps}). Réduis la charge.` });

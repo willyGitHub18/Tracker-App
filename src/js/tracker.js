@@ -12,8 +12,8 @@ import { getRecord, setRecord, getExStatus, setExStatus,
          getVacancesList, addVacances, removeVacances, clearAllVacances,
          repriseCoeffForWeek, repriseCoeffFor, mergeVacPeriods,
          vacancesBreakWeeks, ACTIVITE_LABELS } from './store.js';
-import { parseSets, parseReps, calcAdj, getNextPlan,
-         isEffectiveDeload, prevNormalRef } from './progression.js';
+import { parseSets, parseReps, calcAdj, getNextPlan, e1RM,
+         isEffectiveDeload, prevNormalRef, nSetsForWeek, planRepsForWeek } from './progression.js';
 import { repaintMuscles }  from './musculaire.js';
 import { renderGrossesseProgram } from './grossesse.js';
 import { getActiveProgram, getAllActivePrograms, getActiveProgramById,
@@ -844,10 +844,15 @@ function _calcAdjGeneric(prog, ex, week, semaine) {
     else signals.push({type:'neutral', text:`RPE ${Math.round(avgRpe*10)/10} — bon calibrage.`});
   }
   if(avgReps != null && planReps > 0) {
-    const ratio = avgReps / planReps;
-    if(ratio < 0.8) signals.push({type:'danger', text:`${Math.round(avgReps*10)/10} reps/série — insuffisant.`});
-    else if(ratio >= 0.95) signals.push({type:'good', text:`${Math.round(avgReps*10)/10} reps/série ✓`});
-    else signals.push({type:'warn', text:`${Math.round(avgReps*10)/10} reps/série (plan: ${planReps}).`});
+    const ratio = _perfRatioGeneric(rec, _ovrRef, avgReps, planReps);
+    const r = Math.round(avgReps*10)/10;
+    // Sur une deload overridée, le message explique l'équivalence (§40).
+    const lbl = _ovrRef
+      ? `${r} reps à ${bk} ${ex.unit || 'kg'} — 1RM estimé ${Math.round(e1RM(bk, avgReps)*10)/10} kg contre ${Math.round(e1RM(planKg, planReps)*10)/10} attendus`
+      : `${r} reps/série`;
+    if(ratio < 0.8) signals.push({type:'danger', text:`${lbl} — insuffisant.`});
+    else if(ratio >= 0.95) signals.push({type:'good', text:`${lbl} ✓`});
+    else signals.push({type:'warn', text:`${lbl} (plan: ${planReps}).`});
   }
   if(planKg && Math.abs(bk - planKg) >= 1.25) {
     const d = Math.round((bk-planKg)*10)/10;
@@ -903,6 +908,22 @@ function _prevNormalRefGeneric(prog, exId, week) {
 }
 
 /**
+ * Ratio de performance d'une semaine (programmes générés) — pendant de `perfRatioFor` :
+ * reps brutes en semaine normale, **équivalence en 1RM estimé** sur une deload passée
+ * en « Normale » (§40).
+ */
+function _perfRatioGeneric(rec, ovrRef, avgReps, planReps) {
+  if(avgReps == null || !(planReps > 0)) return null;
+  const refKg = ovrRef?.kg;
+  if(!ovrRef || !refKg) return avgReps / planReps;
+  const kgs = (rec?.sets || []).map(s => s?.kg || 0).filter(v => v > 0);
+  const bk  = kgs.length ? Math.max(...kgs) : 0;
+  const ref = e1RM(refKg, planReps);
+  if(!bk || !ref) return avgReps / planReps;
+  return e1RM(bk, avgReps) / ref;
+}
+
+/**
  * Classement de performance d'une semaine passée, pour les programmes générés —
  * pendant de `weekOutcome` (ATHX legacy). Extrait de `_getNextPlanGeneric`, qui
  * l'utilise désormais : une **seule** source de vérité pour « comment s'est passée
@@ -923,8 +944,9 @@ function _weekOutcomeGeneric(prog, exId, week) {
 
   // Deload passée en « Normale » : barème de la dernière semaine normale, pas celui
   // (gonflé en reps) de la semaine de deload.
-  const _ovrScheme = _isOverriddenDeloadGeneric(prog, exId, week)
-    ? _prevNormalRefGeneric(prog, exId, week)?.scheme : null;
+  const _ovrRefO = _isOverriddenDeloadGeneric(prog, exId, week)
+    ? _prevNormalRefGeneric(prog, exId, week) : null;
+  const _ovrScheme = _ovrRefO?.scheme || null;
   const ex    = _exForWeek(prog, exId, week);
   const nSets = _parseSetsGeneric(_ovrScheme || ex?.scheme) || 4;
 
@@ -938,9 +960,13 @@ function _weekOutcomeGeneric(prog, exId, week) {
   const avgReps  = done.length ? done.reduce((a,s)=>a+(s.reps||0),0)/done.length : null;
   const planReps = parseReps(_ovrScheme || ex?.scheme) || 5;
 
+  // Deload passée en « Normale » : équivalence en 1RM estimé plutôt que reps brutes —
+  // le programme n'y prescrit pas de barème (§40, même règle que le chemin legacy).
+  const _perf = _perfRatioGeneric(rec, _ovrRefO, avgReps, planReps);
+
   if(avgRpe != null && avgRpe > 9.5) return 'overload';
-  if(avgReps != null && planReps > 0 && avgReps/planReps < 0.8) return 'crush';
-  if(avgRpe != null && avgRpe <= 8.5 && avgReps != null && avgReps/planReps >= 0.95) return 'success';
+  if(_perf != null && _perf < 0.8) return 'crush';
+  if(avgRpe != null && avgRpe <= 8.5 && _perf != null && _perf >= 0.95) return 'success';
   if(avgRpe != null && avgRpe > 8.5) return 'high_rpe';
   return 'partial';
 }
@@ -1134,20 +1160,13 @@ function _renderLegacySaisie() {
         const _refKg  = _rcPlan ? _lastLoggedKgLegacy(ex.id, week) : null;
         if(_refKg) plan = Math.round(_refKg * _rcPlan.coeff / 1.25) * 1.25;
       }
-      // For deload/taper: use previous normal week's set count
-      const nSets = (() => {
-        if(scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos') {
-          // Find last non-null sets count for this exercise
-          if(ex.sets) {
-            for(let w = week-2; w >= 0; w--) {
-              if(ex.sets[w] != null) return ex.sets[w];
-            }
-          }
-          return 4;
-        }
-        return parseSets(scheme) || 4;
-      })();
-      const planReps = parseReps(scheme);
+      // Barème via la source unique `nSetsForWeek` (§40) : `ex.sets` contient les REPS,
+      // s'en servir comme compte de séries donnait une ligne de trop sur les semaines de
+      // deload. Les trois sites (rendu + deux relectures) lisent la même fonction.
+      const nSets = nSetsForWeek(ex, week);
+      // Reps cibles : le barème de la semaine, ou celui de la référence si la semaine
+      // n'en prescrit pas (une semaine de deload n'affichait aucune cible de reps).
+      const planReps = planRepsForWeek(ex, week);
       const exStatus = getExStatus(ex.id, week);
       // Deload **effectif** (statut manuel, ou semaine de deload codée non overridée)
       // et deload seulement **implicite** (codée, statut jamais choisi) : dans ce dernier
@@ -1346,15 +1365,8 @@ function _bindLegacyEvents(week) {
 export function saveSaisie(week, day) {
   const exs = EXERCISES.filter(e => e.day === day);
   exs.forEach(ex => {
-    const scheme = ex.repScheme[week - 1];
-    // Pour Deload/Taper : même nSets que la grille affichée (semaine précédente non-null)
-    let nSets;
-    if(scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos') {
-      nSets = 4;
-      if(ex.sets) { for(let w = week-2; w >= 0; w--) { if(ex.sets[w] != null) { nSets = ex.sets[w]; break; } } }
-    } else {
-      nSets = parseSets(scheme) || 4;  // aligné sur la grille affichée (renderer: || 4)
-    }
+    // Même source que la grille affichée (§40) — un écart ferait perdre ou inventer une série.
+    const nSets = nSetsForWeek(ex, week);
     const sets = [];
     let anyData = false;
     for(let s=0;s<nSets;s++) {
@@ -1873,15 +1885,8 @@ function _updateSetCheckmarks(prog, week, dayName) {
 function _updateLegacyCheckmarks(week, dayName) {
   const exs = EXERCISES.filter(e => e.day === dayName);
   exs.forEach(ex => {
-    const scheme = ex.repScheme[week - 1];
-    // For deload/taper: use previous non-null sets count (matches grid rendering)
-    let nSets;
-    if(scheme === 'Deload' || scheme === 'Taper' || scheme === 'Repos') {
-      nSets = 4;
-      if(ex.sets) { for(let w = week-2; w >= 0; w--) { if(ex.sets[w] != null) { nSets = ex.sets[w]; break; } } }
-    } else {
-      nSets = parseSets(scheme) || 4;
-    }
+    // Même source que la grille affichée (§40).
+    const nSets = nSetsForWeek(ex, week);
     let filledSets = 0;
 
     for(let s = 0; s < nSets; s++) {
