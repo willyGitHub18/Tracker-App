@@ -24,11 +24,11 @@ const HELP = {
   },
   'session-status': {
     title: 'Statut de séance',
-    body: "**Normale** — analyse standard vs plan + reco S+1.\n**⚡ Post-compét** — après une compétition ou un effort intense : le RPE est majoré (fatigue non perçue), la séance est comparée à ton historique et ne génère aucune reco de charge.\n**🔵 Deload** — semaine allégée (~60 %), sans progression.\n**Sautée** — séance non réalisée : elle ne compte pas dans le compteur de plateau.",
+    body: "Ton choix **fait foi** : il prime sur ce que prévoit le programme pour la semaine.\n**Normale** — analyse standard vs plan + reco S+1. Sur une semaine de deload prévue par le programme, la choisir explicitement dit « je l'ai entraînée normalement » : la semaine redevient une semaine classique (analysée, comptée dans le plateau, progression Lafay), avec le barème et la charge de la dernière semaine normale comme référence.\n**⚡ Post-compét** — après une compétition ou un effort intense : le RPE est majoré (fatigue non perçue), la séance est comparée à ton historique et ne génère aucune reco de charge.\n**🔵 Deload** — semaine allégée (~60 %) : aucune analyse de performance, aucune progression tirée de cette séance, et la semaine ne compte pas dans le plateau. La reco S+1 repart de la dernière semaine normale.\n**Sautée** — séance non réalisée : elle ne compte pas dans le compteur de plateau (et 2 semaines sautées d'affilée le remettent à zéro).\nQuand le programme prévoit un deload et que tu n'as rien choisi, le sélecteur affiche « 🔵 Deload (programme) ».",
   },
   'reco-s1': {
     title: 'Recommandation S+1',
-    body: "Charge suggérée pour la semaine suivante, façon Lafay :\n**+1 palier** — séries complètes, reps ≥ 95 % du plan et RPE ≤ 8.5.\n**Même charge** — RPE 8.5–9.5, ou reps 80–95 % du plan.\n**Recul** — RPE > 9.5 (−1), reps < 80 % (−2), ou plateau de 3 semaines consécutives (−1).",
+    body: "Charge suggérée pour la semaine suivante, façon Lafay :\n**+1 palier** — séries complètes, reps ≥ 95 % du plan et RPE ≤ 8.5. Une semaine réussie progresse toujours, même après plusieurs semaines de plateau.\n**Même charge** — RPE 8.5–9.5, ou reps 80–95 % du plan.\n**Recul** — RPE > 9.5 (−1), reps < 80 % (−2), ou plateau de 3 semaines consécutives (−1).\n**Après une coupure** — congé ou arrêt de 2 semaines et plus : le compteur de plateau repart de zéro, puisque la charge de reprise est réduite. Une seule semaine manquée ne casse rien.\n**Semaines de deload** — elles ne comptent pas dans le plateau, mais ne le remettent pas à zéro : un vrai plateau reste détectable malgré les deload régulières.",
   },
   'muscle-load': {
     title: 'Charge musculaire (modèle SRA)',

@@ -21,6 +21,19 @@ export function getExStatus(exId, week) {
   return dbGet(`status_${exId}_w${week}`) || 'normal';
 }
 
+/**
+ * Statut **brut** : `null` si l'utilisateur n'a jamais choisi de statut pour cette
+ * semaine, contre `'normal'` s'il a explicitement tapé « Normale ».
+ *
+ * `getExStatus` renvoyant `'normal'` par défaut, elle ne permet pas de distinguer
+ * les deux — or c'est précisément cette distinction qui fait qu'un « Normale » choisi
+ * à la main **annule** la semaine de deload codée dans le programme, alors qu'une
+ * semaine à laquelle on n'a pas touché la conserve (journal §39).
+ */
+export function getExStatusRaw(exId, week) {
+  return dbGet(`status_${exId}_w${week}`) || null;
+}
+
 export function setExStatus(exId, week, status) {
   const VALID = ['normal', 'hyrox', 'skipped', 'deload'];
   if(!VALID.includes(status)) return;

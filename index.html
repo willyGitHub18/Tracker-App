@@ -2834,6 +2834,19 @@ function getExStatus(exId, week) {
   return dbGet(`status_${exId}_w${week}`) || 'normal';
 }
 
+/**
+ * Statut **brut** : `null` si l'utilisateur n'a jamais choisi de statut pour cette
+ * semaine, contre `'normal'` s'il a explicitement tapé « Normale ».
+ *
+ * `getExStatus` renvoyant `'normal'` par défaut, elle ne permet pas de distinguer
+ * les deux — or c'est précisément cette distinction qui fait qu'un « Normale » choisi
+ * à la main **annule** la semaine de deload codée dans le programme, alors qu'une
+ * semaine à laquelle on n'a pas touché la conserve (journal §39).
+ */
+function getExStatusRaw(exId, week) {
+  return dbGet(`status_${exId}_w${week}`) || null;
+}
+
 function setExStatus(exId, week, status) {
   const VALID = ['normal', 'hyrox', 'skipped', 'deload'];
   if(!VALID.includes(status)) return;
@@ -3306,16 +3319,76 @@ function palier(ex) {
   return (ex.id === 'squat' || ex.id === 'deadlift') ? 2.5 : 1.25;
 }
 
+/**
+ * Semaine de deload/taper **codée dans le programme** (barème `repScheme`).
+ * Même couple de valeurs que la condition d'origine de `getNextPlan` — `'Repos'`
+ * en est volontairement exclu : il n'apparaît qu'en S17, où `getNextPlan` sort déjà
+ * avant (`week >= 17`), et l'inclure changerait le rendu de cette semaine pour rien.
+ */
+function isCodedDeload(ex, week) {
+  const s = ex.repScheme?.[week - 1] || '';
+  return s === 'Deload' || s === 'Taper';
+}
+
+/**
+ * Le statut choisi à la main **fait foi** ; le deload codé dans le programme n'est
+ * qu'un **défaut** (journal §39) :
+ *  - statut `'deload'` → deload, même sur une semaine normale du programme ;
+ *  - statut `'normal'` **explicite** → semaine classique, même sur une semaine de
+ *    deload codée (« override ») : analyse, progression Lafay et décompte de plateau
+ *    normaux ;
+ *  - aucun statut choisi → le deload codé s'applique, comme avant.
+ *
+ * Une semaine de deload effective est **transparente** au compteur de plateau (elle
+ * ne compte pas et ne casse pas la série) : ce n'est pas une tentative de
+ * progression. Sans ça, une deload saisie à ~60 % ressortait « réussie » et effaçait
+ * un vrai plateau (résidu laissé ouvert en §38, refermé ici).
+ */
+function isEffectiveDeload(ex, week) {
+  if(getExStatus(ex.id, week) === 'deload') return true;
+  return isCodedDeload(ex, week) && getExStatusRaw(ex.id, week) !== 'normal';
+}
+
+/** Une semaine de deload codée que l'utilisateur a explicitement repassée en « Normale ». */
+function isOverriddenDeload(ex, week) {
+  return isCodedDeload(ex, week) && getExStatusRaw(ex.id, week) === 'normal';
+}
+
+/**
+ * Référence de la dernière semaine **normale** avant `week` : son barème
+ * (`scheme`) et sa recommandation S+1 (`kg`).
+ *
+ * Sert à trois choses, toutes sur la même valeur pour éviter les contradictions à
+ * l'écran (leçon §37) : la ligne « Plan » du tracker, la charge de référence de
+ * l'analyse, et le barème séries × reps. Indispensable pour une deload codée passée
+ * en « Normale » : l'ATHX n'a **aucun** plan sur ces semaines (`plan[5] === null`) et
+ * un programme généré n'y a qu'un plan à 60 % avec des reps gonflées — juger la
+ * séance contre ça la classerait à tort (jusqu'à `crush`). Journal §39.
+ */
+function prevNormalRef(ex, week) {
+  for(let pw = week - 1; pw >= 1; pw--) {
+    if(isEffectiveDeload(ex, pw)) continue;
+    const nxt = getNextPlan(ex, pw);
+    return { week: pw, scheme: ex.repScheme?.[pw - 1] || '', kg: nxt?.kg || null,
+             outcome: nxt?.outcome || null };
+  }
+  return null;
+}
+
 function weekOutcome(ex, week) {
   const status = getExStatus(ex.id, week);
   if(status === 'skipped') return 'skipped';
   if(status === 'hyrox')   return 'hyrox';
-  if(status === 'deload')  return 'deload';
+  if(isEffectiveDeload(ex, week)) return 'deload';
 
   const rec = normRecord(getRecord(ex.id, week));
   if(!rec || !rec.sets || !rec.sets.some(s => s && (s.kg != null || s.skipped))) return 'nodata';
 
-  const scheme   = ex.repScheme[week - 1];
+  // Deload codée passée en « Normale » : le barème vient de la dernière semaine
+  // normale, sinon 'Deload' ne fournit ni séries ni reps et les replis (4×5) seraient
+  // faux dans un bloc en 4×4 — 4 reps sur un plan de 5 sortirait en `partial`.
+  const scheme   = (isOverriddenDeload(ex, week) ? prevNormalRef(ex, week)?.scheme : null)
+                   || ex.repScheme[week - 1];
   const planReps = parseReps(scheme) || 5;
   const nSets    = parseSets(scheme) || 4;
 
@@ -3365,7 +3438,13 @@ function consecutivePlateaux(ex, beforeWeek) {
   for(let w = beforeWeek - 1; w >= 1; w--) {
     if(brkWeeks.has(w)) break;
     const o = weekOutcome(ex, w);
-    if(o === 'nodata' || o === 'skipped') { if(++gap >= 2) break; continue; }
+    // Une semaine de deload **saisie** est transparente : ce n'est pas une tentative de
+    // progression, elle ne compte ni ne casse. Une semaine de deload **sans données**
+    // reste en revanche une semaine sans séance et alimente le compteur de trou — sinon
+    // le deload codé en S6 masquerait un vrai arrêt de 2 semaines (§39).
+    const noSession = o === 'nodata' || o === 'skipped'
+                      || (o === 'deload' && !hasSessionData(ex.id, w));
+    if(noSession) { if(++gap >= 2) break; continue; }
     gap = 0;
     if(['hyrox','deload'].includes(o)) continue;
     if(['partial','high_rpe'].includes(o)) { count++; continue; }
@@ -3374,23 +3453,32 @@ function consecutivePlateaux(ex, beforeWeek) {
   return count;
 }
 
+/** La semaine porte-t-elle une séance réellement saisie (charge ou série non effectuée) ? */
+function hasSessionData(exId, week) {
+  const rec = normRecord(getRecord(exId, week));
+  return !!rec?.sets?.some(s => s && (s.kg != null || s.skipped));
+}
+
 /**
  * Returns { kg, rule, outcome, plateauCount } or null.
  */
 function getNextPlan(ex, week) {
   if(week >= 17) return null;
 
-  const scheme = ex.repScheme?.[week - 1] || '';
-  const isDeloadWeek = scheme === 'Deload' || scheme === 'Taper';
+  // Deload **effectif** : le statut choisi à la main fait foi (§39). Un « Normale »
+  // explicite sur une semaine de deload codée fait donc tomber ce bloc et la semaine
+  // est traitée comme n'importe quelle semaine d'entraînement ; à l'inverse un statut
+  // 🔵 Deload posé sur une semaine normale y entre.
+  const isDeloadWeek = isEffectiveDeload(ex, week);
 
-  // If this is a structural deload/taper week, base S+1 on last normal week
-  // (the deload session kg is intentionally reduced and should not drive progression)
+  // Sur une semaine de deload, S+1 se base sur la dernière semaine normale
+  // (la charge de la séance deload est volontairement réduite et ne doit pas piloter
+  // la progression).
   if(isDeloadWeek) {
     // Find last non-deload week with data
     let refWeek = week - 1;
     while(refWeek >= 1) {
-      const refScheme = ex.repScheme?.[refWeek - 1] || '';
-      if(refScheme !== 'Deload' && refScheme !== 'Taper' && refScheme !== 'Repos') {
+      if(!isEffectiveDeload(ex, refWeek)) {
         const refRec = normRecord(getRecord(ex.id, refWeek));
         if(refRec?.sets?.some(s => s?.kg)) break;
       }
@@ -3473,12 +3561,14 @@ function getNextPlan(ex, week) {
   // pas afficher « Plateau : 3/3 » à côté d'une progression (cf. branche `success`).
   let plateauShown = plateauCount;
 
+  // NB : plus de branche `status === 'deload'` ici — un statut 🔵 Deload est désormais
+  // capté en amont par `isEffectiveDeload`, qui base S+1 sur la dernière semaine
+  // **normale** au lieu de reconduire le plan officiel. Même règle donc pour un deload
+  // manuel et pour un deload codé, et la perf réelle d'avant le deload est prise en
+  // compte au lieu d'être ignorée (§39).
   if(status === 'skipped') {
     nextKg = currentKg;
     rule   = 'Séance sautée — répète la même charge.';
-  } else if(status === 'deload') {
-    const planNext = ex.plan[week] || currentKg;
-    return { kg: Math.round(planNext / 1.25) * 1.25, rule: 'Séance deload — retour au plan officiel S+1.', outcome: 'deload', plateauCount };
   } else if(outcome === 'crush') {
     nextKg = Math.max(currentKg - 2 * p, p);
     rule   = 'Reps très insuffisantes — recul de 2 paliers (Lafay : réinitialisation).';
@@ -3515,28 +3605,39 @@ function getNextPlan(ex, week) {
  * Returns { type, signals[], hyrox, skipped, avgRpe, avgReps, ... }
  */
 function calcAdj(ex, week) {
-  const planKg   = ex.plan[week - 1];
-  const scheme   = ex.repScheme[week - 1];
+  // Deload codée passée en « Normale » : l'ATHX n'a aucun plan sur ces semaines
+  // (`plan[5] === null`), donc l'analyse repartait muette et l'override n'aurait rien
+  // donné de visible. Référence = dernière semaine normale (barème + reco), soit
+  // exactement la charge que la ligne « Plan » du tracker affiche déjà (§39).
+  const _ovr     = isOverriddenDeload(ex, week) ? prevNormalRef(ex, week) : null;
+  const planKg   = ex.plan[week - 1] || _ovr?.kg || null;
+  const scheme   = _ovr?.scheme || ex.repScheme[week - 1];
   const planReps = parseReps(scheme) || 5;
   const nSets    = parseSets(scheme) || 4;
-  if(!planKg) return null;
 
   const status   = getExStatus(ex.id, week);
 
+  // Statuts « pas d'analyse de perf » traités AVANT le garde `!planKg` : une semaine
+  // de deload codée de l'ATHX n'a pas de plan, le garde renvoyait donc `null` et la
+  // vue n'affichait rien du tout sur ces semaines (§39).
   if(status === 'skipped') {
     return { type: 'skipped', signals: [], nextBonus: 0, bk: null, avgRpe: null,
              avgReps: null, repRatio: null, setPct: null, skipped: true, hyrox: false, deload: false };
   }
-  if(status === 'deload') {
+  if(isEffectiveDeload(ex, week)) {
     const rec = normRecord(getRecord(ex.id, week));
     const _vals = (rec?.sets||[]).map(s=>s?.kg||0).filter(v=>v>0);
     const bk  = _vals.length ? Math.max(..._vals) : null;
+    const refW = prevNormalRef(ex, week)?.week;
     return { type: 'deload', signals: [
-      { type: 'neutral', text: 'Séance deload — pas d\'analyse de performance.' },
-      ...(bk ? [{ type: 'good', text: `Charge effectuée : ${bk} kg — progression S+1 basée sur S${week-1}.` }] : []),
+      { type: 'neutral', text: 'Séance deload — pas d\'analyse de performance, et la semaine ne compte pas dans le plateau.' },
+      ...(bk ? [{ type: 'good', text: `Charge effectuée : ${bk} ${ex.unit}${refW ? ` — progression S+1 basée sur S${refW}` : ''}.` }] : []),
+      { type: 'neutral', text: 'Si tu l\'as en fait entraînée normalement, choisis le statut « Normale » : elle sera analysée et comptée comme une semaine classique.' },
     ], nextBonus: 0, bk, avgRpe: null, avgReps: null, repRatio: null, setPct: null,
              skipped: false, hyrox: false, deload: true };
   }
+
+  if(!planKg) return null;
 
   const rec = normRecord(getRecord(ex.id, week));
   if(!rec || !rec.sets || !rec.sets.some(s => s && (s.kg != null || s.skipped))) return null;
@@ -4045,11 +4146,18 @@ function _renderProgSaisie(prog) {
   // Récap « Séance du jour » en tête (Phase 1)
   html += _seanceDuJourCard(prog, semaine, week);
 
-  // Deload / taper info banner
-  if(semaine.isDeload) {
+  // Deload / taper info banner. La bannière tombe si **tous** les exercices de la
+  // semaine ont été repassés en « Normale » : ce n'est alors plus une semaine de
+  // deload, l'annoncer contredirait l'analyse affichée sous chaque exercice (§39).
+  const _weekExIds = semaine.jours?.flatMap(d => d.exercices?.map(e => e.id) || []) || [];
+  const _allOverridden = _weekExIds.length > 0
+    && _weekExIds.every(id => getProgExStatusRaw(prog.id, id, week) === 'normal');
+  if(semaine.isDeload && !_allOverridden) {
+    const _someOverridden = _weekExIds.some(id => getProgExStatusRaw(prog.id, id, week) === 'normal');
     html += `<div class="day-status-banner day-status-hyrox">
       🔵 Semaine de Deload — charges réduites (~60%). Aucune analyse de progression.
       Saisie normale possible pour le suivi musculaire.
+      ${_someOverridden ? '<br>Certains exercices sont passés en « Normale » : ceux-là sont analysés et comptés normalement.' : ''}
     </div>`;
   } else if(semaine.isTaper) {
     html += `<div class="day-status-banner day-status-hyrox">
@@ -4070,6 +4178,8 @@ function _renderProgSaisie(prog) {
       const rec      = normRecord(getProgRecord(prog.id, ex.id, week));
       // Plan dynamique : utilise la recommandation S issue de S-1 si elle existe
       // (logique Lafay adaptative), sinon retombe sur le kgPlan théorique (1RM × % phase)
+      const isDeloadEff = _isEffectiveDeloadGeneric(prog, ex.id, week);
+      const isDeloadImplicit = isDeloadEff && exStatus === 'normal';
       let plan = ex.kgPlan;
       let planFromPrev = false;
       if(week > 1) {
@@ -4079,6 +4189,12 @@ function _renderProgSaisie(prog) {
           const prevNxt = _getNextPlanGeneric(prog, prevEx, week - 1, prevSemaine);
           if(prevNxt?.kg) { plan = prevNxt.kg; planFromPrev = true; }
         }
+      }
+      // Deload passée en « Normale » : le plan à 60 % de la semaine de deload n'a plus
+      // de sens, on prend la référence de la dernière semaine normale (§39).
+      if(_isOverriddenDeloadGeneric(prog, ex.id, week)) {
+        const _ovr = _prevNormalRefGeneric(prog, ex.id, week);
+        if(_ovr?.kg) { plan = _ovr.kg; planFromPrev = _ovr.outcome !== 'nodata'; }
       }
       // Semaine de reprise : S-1 est une semaine de congé, donc sans données → la reco
       // S-1 est nulle et le plan retombait sur le kgPlan théorique, à PLEINE charge.
@@ -4093,9 +4209,13 @@ function _renderProgSaisie(prog) {
       const nSets    = _parseSetsGeneric(scheme);
       const planReps = parseReps(scheme);
 
-      const btnN = exStatus === 'normal'  ? ' active-normal'  : '';
+      const statusLabel = isDeloadImplicit
+        ? '🔵 Deload (programme)'
+        : ({normal:'Normale',hyrox:'⚡ Post-compét',deload:'🔵 Deload',skipped:'Sautée'})[exStatus] || 'Normale';
+
+      const btnN = exStatus === 'normal' && !isDeloadImplicit ? ' active-normal'  : '';
       const btnH = exStatus === 'hyrox'   ? ' active-hyrox'   : '';
-      const btnD = exStatus === 'deload'  ? ' active-deload'  : '';
+      const btnD = exStatus === 'deload' || isDeloadImplicit ? ' active-deload'  : '';
       const btnS = exStatus === 'skipped' ? ' active-skipped' : '';
 
       html += `<div class="ex-block" data-exid="${ex.id}">
@@ -4105,7 +4225,7 @@ function _renderProgSaisie(prog) {
           <span class="ex-status-btns">
             <details class="ex-status">
               <summary class="ex-status-summary" aria-label="Changer le statut de l'exercice">
-                <span class="ex-status-current active-${exStatus}">${({normal:'Normale',hyrox:'⚡ Post-compét',deload:'🔵 Deload',skipped:'Sautée'})[exStatus] || 'Normale'}</span>
+                <span class="ex-status-current active-${isDeloadImplicit ? 'deload' : exStatus}">${statusLabel}</span>
                 <span class="ex-status-caret" aria-hidden="true">▾</span>
               </summary>
               <div class="ex-status-options">
@@ -4127,13 +4247,13 @@ function _renderProgSaisie(prog) {
       const showGrid = exStatus !== 'skipped';
       const deloadKg = plan ? Math.round(plan * 0.60 / 1.25) * 1.25 : null;
 
-      if(exStatus === 'deload' && deloadKg) {
+      if(isDeloadEff && deloadKg) {
         html += `<div class="ex-plan-txt" style="color:var(--blue)">🔵 Charge deload suggérée : <strong>${deloadKg} ${ex.unit || 'kg'}</strong> (~60%)</div>`;
       }
 
       // Analysis (skip for deload)
       const bk = bestKg(rec);
-      if(bk != null && exStatus !== 'deload' && exStatus !== 'skipped') {
+      if(bk != null && !isDeloadEff && exStatus !== 'skipped') {
         const adj = _calcAdjGeneric(prog, ex, week, semaine);
         if(adj?.signals?.length) {
           const cls = adj.type === 'ok' ? 'adj-ok'
@@ -4150,7 +4270,7 @@ function _renderProgSaisie(prog) {
 
         // S+1 recommendation
         const nxt = _getNextPlanGeneric(prog, ex, week, semaine);
-        if(nxt && !semaine.isDeload) {
+        if(nxt && !isDeloadEff) {
           const nextSem     = prog.semaines?.[week];
           const nextPlanKg  = nextSem?.jours?.flatMap(d=>d.exercices).find(e=>e.id===ex.id)?.kgPlan;
           const delta       = nextPlanKg ? Math.round((nxt.kg - nextPlanKg)*10)/10 : null;
@@ -4468,8 +4588,12 @@ function _calcAdjGeneric(prog, ex, week, semaine) {
   const rec = normRecord(getProgRecord(prog.id, ex.id, week));
   if(!rec?.sets?.some(s=>s && (s.kg != null || s.skipped))) return null;
 
-  const planKg   = ex.kgPlan;
-  const scheme   = ex.scheme;
+  // Deload passée en « Normale » : référence = dernière semaine normale (charge + barème),
+  // et non le plan à 60 % avec reps gonflées de la semaine de deload (§39).
+  const _ovrRef  = _isOverriddenDeloadGeneric(prog, ex.id, week)
+    ? _prevNormalRefGeneric(prog, ex.id, week) : null;
+  const planKg   = _ovrRef?.kg || ex.kgPlan;
+  const scheme   = _ovrRef?.scheme || ex.scheme;
   const planReps = parseReps(scheme) || 5;
   const nSets    = _parseSetsGeneric(scheme) || 4;
   const status   = getProgExStatus(prog.id, ex.id, week);
@@ -4491,7 +4615,12 @@ function _calcAdjGeneric(prog, ex, week, semaine) {
     };
   }
   if(status === 'skipped') return { type:'skipped', signals:[], skipped:true };
-  if(status === 'deload')  return { type:'deload', signals:[{type:'neutral',text:'Séance deload — aucune analyse.'}], deload:true };
+  if(_isEffectiveDeloadGeneric(prog, ex.id, week)) {
+    return { type:'deload', deload:true, signals:[
+      { type:'neutral', text:'Séance deload — aucune analyse de performance, et la semaine ne compte pas dans le plateau.' },
+      { type:'neutral', text:'Si tu l\'as en fait entraînée normalement, choisis le statut « Normale » : elle sera analysée et comptée comme une semaine classique.' },
+    ] };
+  }
 
   const sets = rec.sets.filter(s=>s && s.kg != null);
   const done = sets.filter(s=>s?.reps&&s.reps>0);
@@ -4530,6 +4659,43 @@ function _exForWeek(prog, exId, week) {
 }
 
 /**
+ * Deload **codé** d'un programme généré : le drapeau de semaine `isDeload`.
+ * `isTaper` en est exclu — la reco S+1 reste affichée pendant l'affûtage aujourd'hui,
+ * l'y inclure changerait un comportement hors sujet.
+ */
+function _isCodedDeloadGeneric(prog, week) {
+  return !!prog.semaines?.[week - 1]?.isDeload;
+}
+
+/** Pendants générés de `isEffectiveDeload` / `isOverriddenDeload` (§39). */
+function _isEffectiveDeloadGeneric(prog, exId, week) {
+  if(getProgExStatus(prog.id, exId, week) === 'deload') return true;
+  return _isCodedDeloadGeneric(prog, week) && getProgExStatusRaw(prog.id, exId, week) !== 'normal';
+}
+function _isOverriddenDeloadGeneric(prog, exId, week) {
+  return _isCodedDeloadGeneric(prog, week) && getProgExStatusRaw(prog.id, exId, week) === 'normal';
+}
+
+/**
+ * Pendant de `prevNormalRef` : barème + reco de la dernière semaine **normale**.
+ * Indispensable pour une deload générée passée en « Normale » — la semaine de deload
+ * porte un `kgPlan` à **60 %** du 1RM *et* des reps gonflées (`_repsForPhase`), donc
+ * juger une vraie séance contre ce barème la classerait jusqu'à `crush` (recul de
+ * 2 paliers) alors qu'elle est bonne. Journal §39.
+ */
+function _prevNormalRefGeneric(prog, exId, week) {
+  for(let pw = week - 1; pw >= 1; pw--) {
+    if(_isEffectiveDeloadGeneric(prog, exId, pw)) continue;
+    const pex = _exForWeek(prog, exId, pw);
+    if(!pex) return null;
+    const nxt = _getNextPlanGeneric(prog, pex, pw, prog.semaines?.[pw - 1]);
+    return { week: pw, scheme: pex.scheme || '', kgPlan: pex.kgPlan || null,
+             kg: nxt?.kg || null, outcome: nxt?.outcome || null };
+  }
+  return null;
+}
+
+/**
  * Classement de performance d'une semaine passée, pour les programmes générés —
  * pendant de `weekOutcome` (ATHX legacy). Extrait de `_getNextPlanGeneric`, qui
  * l'utilise désormais : une **seule** source de vérité pour « comment s'est passée
@@ -4543,13 +4709,17 @@ function _weekOutcomeGeneric(prog, exId, week) {
   const status = getProgExStatus(prog.id, exId, week);
   if(status === 'skipped') return 'skipped';
   if(status === 'hyrox')   return 'hyrox';
-  if(status === 'deload')  return 'deload';
+  if(_isEffectiveDeloadGeneric(prog, exId, week)) return 'deload';
 
   const rec = normRecord(getProgRecord(prog.id, exId, week));
   if(!rec?.sets?.some(s => s && (s.kg != null || s.skipped))) return 'nodata';
 
+  // Deload passée en « Normale » : barème de la dernière semaine normale, pas celui
+  // (gonflé en reps) de la semaine de deload.
+  const _ovrScheme = _isOverriddenDeloadGeneric(prog, exId, week)
+    ? _prevNormalRefGeneric(prog, exId, week)?.scheme : null;
   const ex    = _exForWeek(prog, exId, week);
-  const nSets = _parseSetsGeneric(ex?.scheme) || 4;
+  const nSets = _parseSetsGeneric(_ovrScheme || ex?.scheme) || 4;
 
   const skippedSets = rec.sets.filter(s => s?.skipped === true);
   if(skippedSets.length > 0 && !rec.sets.some(s => s && s.kg != null)) {
@@ -4559,7 +4729,7 @@ function _weekOutcomeGeneric(prog, exId, week) {
   const done     = rec.sets.filter(s => s?.reps);
   const avgRpe   = done.length ? done.reduce((a,s)=>a+(parseFloat(s.rpe)||7),0)/done.length : null;
   const avgReps  = done.length ? done.reduce((a,s)=>a+(s.reps||0),0)/done.length : null;
-  const planReps = parseReps(ex?.scheme) || 5;
+  const planReps = parseReps(_ovrScheme || ex?.scheme) || 5;
 
   if(avgRpe != null && avgRpe > 9.5) return 'overload';
   if(avgReps != null && planReps > 0 && avgReps/planReps < 0.8) return 'crush';
@@ -4580,7 +4750,14 @@ function _consecutivePlateauxGeneric(prog, exId, beforeWeek) {
   for(let w = beforeWeek - 1; w >= 1; w--) {
     if(brkWeeks.has(w)) break;
     const o = _weekOutcomeGeneric(prog, exId, w);
-    if(o === 'nodata' || o === 'skipped') { if(++gap >= 2) break; continue; }
+    // Deload saisie → transparente ; deload sans données → semaine sans séance, elle
+    // alimente le compteur de trou (même règle que le chemin legacy, §39).
+    const _recW = normRecord(getProgRecord(prog.id, exId, w));
+    const _hasData = !!_recW?.sets?.some(s => s && (s.kg != null || s.skipped));
+    if(o === 'nodata' || o === 'skipped' || (o === 'deload' && !_hasData)) {
+      if(++gap >= 2) break;
+      continue;
+    }
     gap = 0;
     if(o === 'hyrox' || o === 'deload') continue;
     if(o === 'partial' || o === 'high_rpe') { count++; continue; }
@@ -4640,7 +4817,19 @@ function _getNextPlanGeneric(prog, ex, week, semaine) {
   const p        = ex.id === 'squat' || ex.id === 'deadlift' ? 2.5 : 1.25;
 
   if(status === 'skipped') return { kg:bk, rule:'Séance sautée — même charge.', outcome:'skipped', plateauCount:0 };
-  if(status === 'deload')  return { kg: ex.kgPlan || bk, rule:'Retour au plan S+1.', outcome:'deload', plateauCount:0 };
+  // Deload **effectif** : statut manuel, ou semaine `isDeload` non repassée en
+  // « Normale ». S+1 se base sur la dernière semaine normale (la charge du deload est
+  // volontairement réduite), avec repli sur le plan théorique (§39).
+  if(_isEffectiveDeloadGeneric(prog, ex.id, week)) {
+    const refD = _prevNormalRefGeneric(prog, ex.id, week);
+    return {
+      kg: refD?.kg || ex.kgPlan || bk,
+      rule: refD?.week ? `Séance deload — S+1 basé sur S${refD.week} (dernière semaine normale).`
+                       : 'Séance deload — retour au plan S+1.',
+      outcome: 'deload',
+      plateauCount: 0,
+    };
+  }
 
   // Règle de plateau Lafay, désormais appliquée aussi aux programmes générés (avant :
   // seul l'ATHX legacy la connaissait). `success` est testé AVANT le plateau — une
@@ -4720,16 +4909,15 @@ function _renderLegacySaisie() {
       let plan = staticPlan;
       let planFromPrev = false;
       if(week > 1) {
-        // Trouver la dernière semaine normale (non-deload) avant cette semaine
-        for(let pw = week - 1; pw >= 1; pw--) {
-          const prevScheme = ex.repScheme[pw - 1];
-          if(prevScheme === 'Deload' || prevScheme === 'Taper' || prevScheme === 'Repos') continue;
-          const nxt = getNextPlan(ex, pw);
-          // `nodata` = S-1 sans données (typiquement une semaine de congé) : le plan
-          // officiel est reconduit, ce n'est pas une reco issue d'une perf réelle.
-          if(nxt?.kg) { plan = nxt.kg; planFromPrev = nxt.outcome !== 'nodata'; break; }
-          break; // si la semaine précédente n'a pas de données, garder le plan statique
-        }
+        // Source unique de la référence « dernière semaine normale » (`prevNormalRef`,
+        // progression.js) : la ligne « Plan », l'analyse `calcAdj` et le barème
+        // séries × reps lisent désormais la même valeur — c'est la divergence entre ces
+        // lecteurs qui avait produit les contradictions de §37. Elle saute les semaines
+        // de deload **effectives**, donc aussi un deload posé à la main (§39).
+        // `nodata` = semaine sans données (typiquement un congé) : le plan officiel est
+        // reconduit, ce n'est pas une reco issue d'une perf réelle.
+        const ref = prevNormalRef(ex, week);
+        if(ref?.kg) { plan = ref.kg; planFromPrev = ref.outcome !== 'nodata'; }
       }
       // Semaine de reprise (même correctif que le renderer générique, §37) : appliquer
       // le coefficient à la dernière charge réellement soulevée avant le congé, plutôt
@@ -4754,10 +4942,19 @@ function _renderLegacySaisie() {
       })();
       const planReps = parseReps(scheme);
       const exStatus = getExStatus(ex.id, week);
+      // Deload **effectif** (statut manuel, ou semaine de deload codée non overridée)
+      // et deload seulement **implicite** (codée, statut jamais choisi) : dans ce dernier
+      // cas le sélecteur affichait « Normale » alors que la semaine se comportait en
+      // deload — on le dit maintenant explicitement (§39).
+      const isDeloadEff = isEffectiveDeload(ex, week);
+      const isDeloadImplicit = isDeloadEff && exStatus === 'normal';
+      const statusLabel = isDeloadImplicit
+        ? '🔵 Deload (programme)'
+        : ({normal:'Normale',hyrox:'⚡ Post-Hyrox',deload:'🔵 Deload',skipped:'Sautée'})[exStatus] || 'Normale';
 
-      const btnN = exStatus==='normal' ?' active-normal' :'';
+      const btnN = exStatus==='normal' && !isDeloadImplicit ?' active-normal' :'';
       const btnH = exStatus==='hyrox'  ?' active-hyrox'  :'';
-      const btnD = exStatus==='deload' ?' active-deload' :'';
+      const btnD = exStatus==='deload' || isDeloadImplicit ?' active-deload' :'';
       const btnS = exStatus==='skipped'?' active-skipped':'';
 
       html += `<div class="ex-block" data-exid="${ex.id}">
@@ -4767,7 +4964,7 @@ function _renderLegacySaisie() {
           <span class="ex-status-btns">
             <details class="ex-status">
               <summary class="ex-status-summary" aria-label="Changer le statut de l'exercice">
-                <span class="ex-status-current active-${exStatus}">${({normal:'Normale',hyrox:'⚡ Post-Hyrox',deload:'🔵 Deload',skipped:'Sautée'})[exStatus] || 'Normale'}</span>
+                <span class="ex-status-current active-${isDeloadImplicit ? 'deload' : exStatus}">${statusLabel}</span>
                 <span class="ex-status-caret" aria-hidden="true">▾</span>
               </summary>
               <div class="ex-status-options">
@@ -4785,13 +4982,29 @@ function _renderLegacySaisie() {
         html += `<div class="ex-plan-txt">Plan : <strong>${plan} ${ex.unit}</strong>${planReps?` × <strong>${planReps} reps</strong>`:''} <span class="ex-ref">${ex.refText}</span></div>`;
 
         const bk = bestKg(rec);
-        const deloadKg = exStatus === 'deload' ? Math.round(plan * 0.60 / 1.25) * 1.25 : null;
+        const deloadKg = isDeloadEff ? Math.round(plan * 0.60 / 1.25) * 1.25 : null;
 
-        if(exStatus === 'deload') {
+        if(isDeloadEff) {
           html += `<div class="ex-plan-txt" style="color:var(--blue)">🔵 Charge deload suggérée : <strong>${deloadKg} ${ex.unit}</strong> (~60%) — saisie normale ci-dessous</div>`;
         }
 
-        if(bk != null && exStatus !== 'deload') {
+        // Semaine de deload effective : on affiche l'encart deload (via calcAdj) mais
+        // aucune analyse de perf ni reco. Un « Normale » explicite fait basculer la
+        // semaine dans le chemin classique ci-dessous (§39).
+        if(bk != null && isDeloadEff) {
+          const adjD = calcAdj(ex, week);
+          if(adjD?.signals?.length) {
+            html += `<div class="adj-box adj-ok" style="padding:8px 12px">
+              ${adjD.signals.map(s=>{
+                const ic  = s.type==='good'?'✓ ':'· ';
+                const col = s.type==='good'?'var(--green)':'var(--text2)';
+                return `<div style="display:flex;gap:6px;margin-bottom:2px"><span style="color:${col};font-weight:600;flex-shrink:0">${ic}</span><span>${esc(s.text)}</span></div>`;
+              }).join('')}
+            </div>`;
+          }
+        }
+
+        if(bk != null && !isDeloadEff) {
           const adj = calcAdj(ex, week);
           if(adj?.signals?.length) {
             const cls = adj.type==='ok'?'adj-ok':adj.type.includes('ahead')?'adj-ahead':(adj.type.includes('behind')&&!adj.type.includes('slight'))?'adj-behind':'adj-slight';
@@ -6640,6 +6853,16 @@ function setProgRecord(programId, exId, week, data) {
 function getProgExStatus(programId, exId, week) {
   const all = dbGet('programs_tracking') || {};
   return all[programId]?.[`status_${exId}_w${week}`] || 'normal';
+}
+
+/**
+ * Statut **brut** : `null` si jamais choisi, `'normal'` si « Normale » a été tapé
+ * explicitement. Pendant de `getExStatusRaw` (`store.js`) — sert à distinguer une
+ * semaine de deload du programme laissée telle quelle d'un override manuel (§39).
+ */
+function getProgExStatusRaw(programId, exId, week) {
+  const all = dbGet('programs_tracking') || {};
+  return all[programId]?.[`status_${exId}_w${week}`] || null;
 }
 
 function setProgExStatus(programId, exId, week, status) {
@@ -10522,11 +10745,11 @@ const HELP = {
   },
   'session-status': {
     title: 'Statut de séance',
-    body: "**Normale** — analyse standard vs plan + reco S+1.\n**⚡ Post-compét** — après une compétition ou un effort intense : le RPE est majoré (fatigue non perçue), la séance est comparée à ton historique et ne génère aucune reco de charge.\n**🔵 Deload** — semaine allégée (~60 %), sans progression.\n**Sautée** — séance non réalisée : elle ne compte pas dans le compteur de plateau.",
+    body: "Ton choix **fait foi** : il prime sur ce que prévoit le programme pour la semaine.\n**Normale** — analyse standard vs plan + reco S+1. Sur une semaine de deload prévue par le programme, la choisir explicitement dit « je l'ai entraînée normalement » : la semaine redevient une semaine classique (analysée, comptée dans le plateau, progression Lafay), avec le barème et la charge de la dernière semaine normale comme référence.\n**⚡ Post-compét** — après une compétition ou un effort intense : le RPE est majoré (fatigue non perçue), la séance est comparée à ton historique et ne génère aucune reco de charge.\n**🔵 Deload** — semaine allégée (~60 %) : aucune analyse de performance, aucune progression tirée de cette séance, et la semaine ne compte pas dans le plateau. La reco S+1 repart de la dernière semaine normale.\n**Sautée** — séance non réalisée : elle ne compte pas dans le compteur de plateau (et 2 semaines sautées d'affilée le remettent à zéro).\nQuand le programme prévoit un deload et que tu n'as rien choisi, le sélecteur affiche « 🔵 Deload (programme) ».",
   },
   'reco-s1': {
     title: 'Recommandation S+1',
-    body: "Charge suggérée pour la semaine suivante, façon Lafay :\n**+1 palier** — séries complètes, reps ≥ 95 % du plan et RPE ≤ 8.5.\n**Même charge** — RPE 8.5–9.5, ou reps 80–95 % du plan.\n**Recul** — RPE > 9.5 (−1), reps < 80 % (−2), ou plateau de 3 semaines consécutives (−1).",
+    body: "Charge suggérée pour la semaine suivante, façon Lafay :\n**+1 palier** — séries complètes, reps ≥ 95 % du plan et RPE ≤ 8.5. Une semaine réussie progresse toujours, même après plusieurs semaines de plateau.\n**Même charge** — RPE 8.5–9.5, ou reps 80–95 % du plan.\n**Recul** — RPE > 9.5 (−1), reps < 80 % (−2), ou plateau de 3 semaines consécutives (−1).\n**Après une coupure** — congé ou arrêt de 2 semaines et plus : le compteur de plateau repart de zéro, puisque la charge de reprise est réduite. Une seule semaine manquée ne casse rien.\n**Semaines de deload** — elles ne comptent pas dans le plateau, mais ne le remettent pas à zéro : un vrai plateau reste détectable malgré les deload régulières.",
   },
   'muscle-load': {
     title: 'Charge musculaire (modèle SRA)',

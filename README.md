@@ -12,10 +12,12 @@ Application de suivi d'entraînement personnalisée — PWA déployable sur iPho
 - **Recommandation S+1** inspirée de la méthode Lafay — appliquée aux programmes **générés comme** au programme ATHX legacy :
   - Progression (+1 palier) si toutes séries validées + RPE ≤ 8.5. Une semaine réellement réussie **progresse toujours**, même si les semaines précédentes formaient un plateau
   - Consolidation si RPE élevé ou reps incomplètes
-  - Recul automatique après 3 semaines de plateau **consécutives**. La série repart de zéro après une coupure : semaines de congé et semaine de reprise, ou tout trou de ≥ 2 semaines sans séance (congé « Ignorer », blessure, arrêt non saisi). Une seule semaine manquée reste transparente
+  - Recul automatique après 3 semaines de plateau **consécutives**. La série repart de zéro après une coupure : semaines de congé et semaine de reprise, ou tout trou de ≥ 2 semaines sans séance (congé « Ignorer », blessure, arrêt non saisi). Une seule semaine manquée reste transparente. Les semaines de **deload** sont transparentes (ni comptées ni remises à zéro) — un vrai plateau reste donc détectable malgré les deload régulières
   - Recul d'urgence si RPE > 9.5 ou reps < 80% du plan
-- **Statuts de séance** par exercice : Normale / ⚡ Post-compét / 🔵 Deload / Sautée
-  - **Deload** : grille de saisie visible (charge ~60%), aucune analyse de progression, ne compte pas dans le plateau
+- **Statuts de séance** par exercice : Normale / ⚡ Post-compét / 🔵 Deload / Sautée.
+  **Le statut choisi fait foi** — il prime sur ce que prévoit le programme pour la semaine (cf. journal §39) :
+  - **Deload** : grille de saisie visible (charge ~60%), aucune analyse de progression, ne compte pas dans le plateau (sans le remettre à zéro non plus) ; la reco S+1 repart de la dernière semaine normale
+  - **Normale sur une semaine de deload du programme** : choisir explicitement *Normale* annule le deload prévu — la semaine redevient classique (analysée, comptée dans le plateau, progression Lafay), avec le barème et la charge de la dernière semaine normale comme référence. L'override est **par exercice** ; sans choix explicite, le deload du programme s'applique et le sélecteur affiche « 🔵 Deload (programme) »
   - **Post-compét** : RPE corrigé +1.5, analyse vs historique perso, aucune recommandation de charge
   - **Sautée** : séance ignorée dans le calcul de plateau, plan S+1 reconduit
 - **Sélecteur de programme** en haut du tracker si plusieurs programmes actifs simultanément

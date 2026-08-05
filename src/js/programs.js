@@ -201,6 +201,16 @@ export function getProgExStatus(programId, exId, week) {
   return all[programId]?.[`status_${exId}_w${week}`] || 'normal';
 }
 
+/**
+ * Statut **brut** : `null` si jamais choisi, `'normal'` si « Normale » a été tapé
+ * explicitement. Pendant de `getExStatusRaw` (`store.js`) — sert à distinguer une
+ * semaine de deload du programme laissée telle quelle d'un override manuel (§39).
+ */
+export function getProgExStatusRaw(programId, exId, week) {
+  const all = dbGet('programs_tracking') || {};
+  return all[programId]?.[`status_${exId}_w${week}`] || null;
+}
+
 export function setProgExStatus(programId, exId, week, status) {
   const VALID = ['normal','deload','skipped','hyrox'];
   if(!VALID.includes(status)) return;
